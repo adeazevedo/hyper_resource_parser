@@ -17,14 +17,14 @@ def generate_snippets_to_url(model_class_name, model_class):
     #primary_key_name = detect_primary_key_field(model_class._meta.get_fields()).name
     primary_key_name = 'pk'
     arr = []
-    arr.append((' ' * 4) + 'url(r' +"'"+  context_name +'/(?P<'+ primary_key_name +'>[0-9]+)/$' +"'"+ ', views.' +
+    arr.append((' ' * 4) + 'url(r' +"'^"+  context_name +'/(?P<'+ primary_key_name +'>[0-9]+)/$' +"'"+ ', views.' +
                model_class_name + 'Detail.as_view(), name=' + "'" + model_class_name +'_detail' +"'" + '),\n')
-    arr.append((' ' * 4) + 'url(r' + "'" + context_name + '/(?P<' + primary_key_name +
+    arr.append((' ' * 4) + 'url(r' + "'^" + context_name + '/(?P<' + primary_key_name +
                '>[0-9]+)/(?P<attributes_functions>.*)/$' + "'" + ', views.' +
                model_class_name + 'Detail.as_view(), name=' + "'" + model_class_name + '_detail_af' + "'" + '),\n')
-    arr.append((' ' * 4) + 'url(r' + "'" + context_name + '/$' + "'" + ', views.' +
+    arr.append((' ' * 4) + 'url(r' + "'^" + context_name + '/$' + "'" + ', views.' +
                model_class_name + 'List.as_view(), name=' + "'" + model_class_name + '_list' + "'" + '),\n')
-    arr.append((' ' * 4) + 'url(r' + "'" + context_name + '/(?P<attributes_functions>.*)/?$' +
+    arr.append((' ' * 4) + 'url(r' + "'^" + context_name + '/(?P<attributes_functions>.*)/?$' +
                "'" + ', views.' + model_class_name + 'List.as_view(), name=' + "'" + model_class_name + '_list_af' +
                "'" + '),\n')
     return arr

@@ -1,7 +1,7 @@
 import os
 import sys, inspect
 import django
-from django.db.models import ForeignKey
+from django.db.models import ForeignKey, ManyToOneRel
 
 from django.contrib.gis.db.models.fields import GeometryField
 
@@ -19,11 +19,14 @@ def generate_snippets_to_serializer(model_class_name, model_class):
     else:
         class_name = 'Serializer(ModelSerializer)'
     arr.append('class ' +model_class_name + class_name+':\n')
-    for attr_name in dir(model_class):
-        attr = getattr(model_class, attr_name)
-        if hasattr(attr, 'field') and isinstance(attr.field, ForeignKey) and hasattr(attr.field.related_model, '__name__'):
-            view_name = attr.field.related_model.__name__ + "_detail"
-            arr.append((' ' * 4) + attr_name+" = HyperlinkedRelatedField(view_name='"+view_name+"', many=False, read_only=True)\n")
+    for field in model_class._meta.get_fields():
+        if isinstance(field, ForeignKey):
+            view_name = field.name + "_detail"
+            arr.append((' ' * 4) + field.name+" = HyperlinkedRelatedField(view_name='"+view_name+"', many=False, read_only=True)\n")
+        elif isinstance(field, ManyToOneRel) and field.related_name is not None:
+            view_name = field.name + "_detail"
+            arr.append((
+                       ' ' * 4) + field.name + " = HyperlinkedRelatedField(view_name='" + view_name + "', many=True, read_only=True)\n")
     arr.append((' ' * 4) + 'class Meta:\n')
     arr.append((' ' * 8) + 'model = ' +model_class_name + '\n')
     identifier = None
