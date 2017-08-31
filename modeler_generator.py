@@ -4,12 +4,15 @@ import re
 import django
 
 from django.contrib.gis.db.models.fields import GeometryField
+from django.contrib.gis.db import models
+from hyper_resource.models import FeatureModel
 
 
 def is_spatial(model_class):
-    for field in model_class._meta.get_fields():
-        if isinstance(field, GeometryField):
-            return True
+    if isinstance(model_class, models.Model) or isinstance(model_class, FeatureModel):
+        for field in model_class._meta.get_fields():
+            if isinstance(field, GeometryField):
+                return True
     return False
 
 def generate_file(package_name, default_name='models.py'):

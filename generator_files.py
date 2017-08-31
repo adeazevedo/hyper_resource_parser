@@ -33,6 +33,7 @@ def main(argv):
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", prj_name + ".settings")
 
     import django
+    django.setup()
     from urler_project_generator import generate_file as gf_prj_urler
     from viewer_generator import generate_file as gf_viewer
     from urler_generator import generate_file as gf_urler
@@ -41,11 +42,11 @@ def main(argv):
     from modeler_generator import generate_file as gf_modeler
     from django.contrib.gis.db.models.fields import GeometryField
     from django.conf import settings
-    
+
     file_model_app = app_name + '/models.py'
     if has_to_generate_models:
         os.system("python manage.py inspectdb > "+file_model_app)
-    django.setup()
+
     gf_modeler(app_name, default_name=file_model_app)
 
     if has_to_generate_views:

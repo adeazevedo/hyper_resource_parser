@@ -2,8 +2,10 @@ import os
 import sys, inspect
 import django
 import re
+from django.contrib.gis.db import models
 from django.contrib.gis.db.models import GeometryField
 
+from hyper_resource.models import FeatureModel
 
 def generate_get_root_response(a_name_space, model_class_name):
 
@@ -43,10 +45,10 @@ def generate_snippets_to_view(model_class_name, is_spatial):
 
 # TODO develop is_spatial
 def is_spatial(model_class):
-
-    for field in model_class._meta.get_fields():
-        if isinstance(field, GeometryField):
-            return True
+    if isinstance(model_class, models.Model) or isinstance(model_class, FeatureModel):
+        for field in model_class._meta.get_fields():
+            if isinstance(field, GeometryField):
+                return True
 
     return False
 
@@ -69,7 +71,7 @@ def imports_str_as_array(a_name):
 
 
 def generate_file(package_name, default_name='views.py'):
-    arr_tuple_name_and_class = [(name, method) for name, method in  inspect.getmembers(sys.modules[package_name + '.models'],inspect.isclass)  if (name != 'BusinessModel' and name != 'FeatureModel') ]
+    arr_tuple_name_and_class = [(name, method) for name, method in  inspect.getmembers(sys.modules[package_name + '.models'],inspect.isclass)  if (name != 'BusinessModel' and name != 'FeatureModel' and isinstance(method, django.db.models.base.ModelBase)) ]
     with open(default_name, 'w+') as sr:
         for import_str in imports_str_as_array(package_name):
             sr.write(import_str)
