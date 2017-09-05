@@ -13,9 +13,27 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
-from django.contrib import admin
+from django.conf.urls import include, url
+import sys
+
+#from django.contrib import admin
+basic_path = 'ibge/bcim/'
+basic_path_context = 'ibge/contexts/'
+basic_path_hydra = 'ibge/hydra/'
+
+host_name = sys.argv[-1]
+protocol = 'http'
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
+
+     url(r'^controle/',include('controle.urls',namespace='controle_v1')),
+     url(r'^'+ basic_path, include('bcim.urls', namespace='bcim_v1')),
+
 ]
+
+urlpatterns += [
+
+    url(r'^api-auth/', include('rest_framework.urls',namespace='rest_framework')),
+
+]
+

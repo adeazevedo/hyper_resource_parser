@@ -114,7 +114,6 @@ class BaseContext(object):
         contextdata = self.addIriTamplate(contextdata, request, self.serializer_object)
         return contextdata
 
-
 class AbstractResource(APIView):
     __metaclass__ = ABCMeta
 
@@ -516,6 +515,8 @@ class NonSpatialResource(AbstractResource):
         #return self.context_resource.context()
         return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
 
+class StyleResource(AbstractResource):
+    pass
 
 class SpatialResource(AbstractResource):
 

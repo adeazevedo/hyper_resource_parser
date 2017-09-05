@@ -1,0 +1,37 @@
+str "Area,
+AsGeoJSON,
+AsGML,
+AsKML,
+AsSVG,
+BoundingCircle,
+Centroid,
+Difference,
+Distance,
+Envelope,
+ForceRHR,
+GeoHash,
+Intersection,
+Length,
+MemSize,
+NumGeometries,
+NumPoints,
+Perimeter,
+PointOnSurface,
+Reverse,
+Scale,
+SnapToGrid,
+SymDifference,
+Transform,
+Translate,
+Union"
+
+arr_point
+['append', 'area', 'boundary', 'buffer', 'centroid', 'clone', 'contains', 'convex_hull', 'coord_seq', 'coords', 'count', 'crosses', 'crs', 'difference', 'dims', 'disjoint', 'distance', 'empty', 'envelope', 'equals', 'equals_exact', 'ewkb', 'ewkt', 'extend', 'extent', 'geojson', 'geom_type', 'geom_typeid', 'get_coords', 'get_srid', 'get_x', 'get_y', 'get_z', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'insert', 'intersection', 'intersects', 'json', 'kml', 'length', 'normalize', 'num_coords', 'num_geom', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'pop', 'prepared', 'ptr', 'ptr_type', 'relate', 'relate_pattern', 'remove', 'reverse', 'ring', 'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z', 'simple', 'simplify', 'sort', 'srid', 'srs', 'sym_difference', 'touches', 'transform', 'tuple', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
+arr_line
+['append', 'area', 'array', 'boundary', 'buffer', 'centroid', 'clone', 'contains', 'convex_hull', 'coord_seq', 'coords', 'count', 'crosses', 'crs', 'difference', 'dims', 'disjoint', 'distance', 'empty', 'envelope', 'equals', 'equals_exact', 'ewkb', 'ewkt', 'extend', 'extent', 'geojson', 'geom_type', 'geom_typeid', 'get_srid', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'insert', 'interpolate', 'interpolate_normalized', 'intersection', 'intersects', 'json', 'kml', 'length', 'merged', 'normalize', 'num_coords', 'num_geom', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'pop', 'prepared', 'project', 'project_normalized', 'ptr', 'ptr_type', 'relate', 'relate_pattern', 'remove', 'reverse', 'ring', 'set_srid', 'simple', 'simplify', 'sort', 'srid', 'srs', 'sym_difference', 'touches', 'transform', 'tuple', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
+arr_poly
+['append', 'area', 'boundary', 'buffer', 'centroid', 'clone', 'contains', 'convex_hull', 'coord_seq', 'coords', 'count', 'crosses', 'crs', 'difference', 'dims', 'disjoint', 'distance', 'empty', 'envelope', 'equals', 'equals_exact', 'ewkb', 'ewkt', 'extend', 'extent', 'exterior_ring', 'from_bbox', 'geojson', 'geom_type', 'geom_typeid', 'get_srid', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'insert', 'intersection', 'intersects', 'json', 'kml', 'length', 'normalize', 'num_coords', 'num_geom', 'num_interior_rings', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'pop', 'prepared', 'ptr', 'ptr_type', 'relate', 'relate_pattern', 'remove', 'reverse', 'ring', 'set_srid', 'shell', 'simple', 'simplify', 'sort', 'srid', 'srs', 'sym_difference', 'touches', 'transform', 'tuple', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt']
+all three together
+['append', 'area', 'array', 'boundary', 'buffer', 'centroid', 'clone', 'contains', 'convex_hull', 'coord_seq', 'coords', 'count', 'crosses', 'crs', 'difference', 'dims', 'disjoint', 'distance', 'empty', 'envelope', 'equals', 'equals_exact', 'ewkb', 'ewkt', 'extend', 'extent', 'exterior_ring', 'from_bbox', 'geojson', 'geom_type', 'geom_typeid', 'get_coords', 'get_srid', 'get_x', 'get_y', 'get_z', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'insert', 'interpolate', 'interpolate_normalized', 'intersection', 'intersects', 'json', 'kml', 'length', 'merged', 'normalize', 'num_coords', 'num_geom', 'num_interior_rings', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'pop', 'prepared', 'project', 'project_normalized', 'ptr', 'ptr_type', 'relate', 'relate_pattern', 'remove', 'reverse', 'ring', 'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z', 'shell', 'simple', 'simplify', 'sort', 'srid', 'srs', 'sym_difference', 'touches', 'transform', 'tuple', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
+dic_function_with_parameters = []
+

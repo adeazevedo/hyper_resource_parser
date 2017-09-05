@@ -51,7 +51,7 @@ def generate_snippets_to_serializer(model_class_name, model_class):
     if geom is not None:
         arr.append((' ' * 8) + "geo_field = '" + geom + "'\n")
     arr.append((' ' * 8) + "identifier = '" + identifier + "'\n")
-    arr.append((' ' * 8) + "identifiers = '[" + identifier + "]'\n\n\n")
+    arr.append((' ' * 8) + "identifiers = [pk, " + "'" + identifier + "'"+ "]\n\n\n")
     return arr
 
 def generate_file(package_name, default_name= '\serializers.py'):

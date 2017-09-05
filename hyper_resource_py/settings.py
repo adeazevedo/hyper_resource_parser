@@ -25,7 +25,7 @@ SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,19 +37,48 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
+    'rest_framework',
+    'rest_framework_gis',
+    'corsheaders',
+    'hyper_resource',
+    'bcim',
+    'controle',
 ]
 
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+MIDDLEWARE_CLASSES = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'hyper_resource_py.urls'
+
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'content-location',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+)
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_EXPOSE_HEADERS = ['accept',
+                       'accept-encoding',
+                       'authorization',
+                       'content-type',
+                       'content-location',
+                       'dnt',
+                       'origin',
+                       'user-agent',
+                       'x-csrftoken',
+                       'x-requested-with',
+                       ]
 
 TEMPLATES = [
     {
@@ -73,10 +102,44 @@ WSGI_APPLICATION = 'hyper_resource_py.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+if not 'IP_SGBD' in os.environ:
+    #os.environ['IP_SGBD'] = '10.0.0.93'
+    os.environ['IP_SGBD'] = '172.30.10.86'
+
+if not 'PORT_SGBD' in os.environ:
+    #os.environ['PORT_SGBD'] = '2345'
+    os.environ['PORT_SGBD'] = '54322'
+
+if not 'DB_NAME' in os.environ:
+    #os.environ['DB_NAME'] = 'idehco3'
+    os.environ['DB_NAME'] = 'gis'
+
+if not 'DB_USERNAME' in os.environ:
+    #os.environ['DB_USERNAME'] = 'idehco3'
+    os.environ['DB_USERNAME'] = 'ccar_prod'
+
+if not 'DB_PASSWORD' in os.environ:
+    #os.environ['DB_PASSWORD'] = 'idehco3'
+    os.environ['DB_PASSWORD'] = 'ccar_prod'
+
+ip_sgbd = os.environ['IP_SGBD']
+port_sgbd = os.environ['PORT_SGBD']
+db_name = os.environ['DB_NAME']
+user = os.environ['DB_USERNAME']
+password = os.environ['DB_PASSWORD']
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'OPTIONS': {
+            'options': '-c search_path=bcim,public,idehco3,administrativo,kanban',
+        },
+
+        'HOST': ip_sgbd,
+        'PORT': port_sgbd,
+        'NAME': db_name,
+        'USER': user,
+        'PASSWORD': password
     }
 }
 
@@ -118,3 +181,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',)
+}
