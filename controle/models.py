@@ -17,6 +17,7 @@ class Usuario(BusinessModel):
 class TipoGasto(BusinessModel):
     id= models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100)
+    tipo_gasto_generico = models.ForeignKey('self', db_column='id_tipogasto_generico', null=True)
 
 class Gasto(BusinessModel):
     id= models.AutoField(primary_key=True)

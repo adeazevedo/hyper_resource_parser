@@ -23,12 +23,27 @@ class GastoSerializer(ModelSerializer):
         return instance
 
 class TipoGastoSerializer(ModelSerializer):
+    tipo_gasto_generico = HyperlinkedRelatedField(view_name='controle_v1:TipoGasto_detail', many=False, read_only=True)
     class Meta:
         model = TipoGasto
-        fields = ['id','nome']
+        fields = ['id','nome', 'tipo_gasto_generico']
         identifier = 'id'
         identifiers = ['id', 'pk']
 
+    def updateOrCreate(self,validated_data, type):
+        pass
+    def create(self, validated_data):
+        um_tipo_gasto = self.initial_data['tipo_gasto_generico']
+        validated_data['tipo_gasto_generico_id'] = um_tipo_gasto
+        instance = super(TipoGastoSerializer, self).create(validated_data)
+        instance.tipo_gasto_id = um_tipo_gasto
+        return instance
+    def update(self, instance, validated_data):
+        um_tipo_gasto = self.initial_data['tipo_gasto_generico']
+        validated_data['tipo_gasto_generico_id'] = um_tipo_gasto
+        instance = super(TipoGastoSerializer, self).update(instance, validated_data)
+        instance.tipo_gasto_id = um_tipo_gasto
+        return instance
 
 class UsuarioSerializer(ModelSerializer):
     gastos = HyperlinkedRelatedField(view_name='gastos_detail', many=True, read_only=True)
