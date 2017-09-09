@@ -34,12 +34,18 @@ class TipoGastoSerializer(ModelSerializer):
         pass
     def create(self, validated_data):
         um_tipo_gasto = self.initial_data['tipo_gasto_generico']
+        if um_tipo_gasto != None and um_tipo_gasto != '':
+            arr = um_tipo_gasto.split('/')
+            um_tipo_gasto = arr[-1] if arr[-1] != '' else arr[-2]
         validated_data['tipo_gasto_generico_id'] = um_tipo_gasto
         instance = super(TipoGastoSerializer, self).create(validated_data)
         instance.tipo_gasto_id = um_tipo_gasto
         return instance
     def update(self, instance, validated_data):
         um_tipo_gasto = self.initial_data['tipo_gasto_generico']
+        if um_tipo_gasto != None and um_tipo_gasto != '':
+            arr = um_tipo_gasto.split('/')
+            um_tipo_gasto = arr[-1] if arr[-1] != '' else arr[-2]
         validated_data['tipo_gasto_generico_id'] = um_tipo_gasto
         instance = super(TipoGastoSerializer, self).update(instance, validated_data)
         instance.tipo_gasto_id = um_tipo_gasto
