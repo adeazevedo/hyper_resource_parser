@@ -97,10 +97,10 @@ class ConverterType():
         return float(value_as_str)
 
     def convert_to_date(self, value_as_str):
-        return datetime.datetime.strptime(value_as_str, "%Y-%m-%d").date()
+        return datetime.strptime(value_as_str, "%Y-%m-%d").date()
 
     def convert_to_datetime(self, value_as_str):
-        return datetime.datetime.strptime(value_as_str, "%Y-%m-%d %H:%M:%S")
+        return datetime.strptime(value_as_str, "%Y-%m-%d %H:%M:%S")
 
     def convert_to_time(self, value_as_str):
         return datetime.time.strptime(value_as_str, "%Y-%m-%d %H:%M:%S")
@@ -183,7 +183,7 @@ class QObjectFactory:
 
     def q_object_base_range(self, oper_operation):
         dc = {}
-        arr_value = self.raw_value_as_str.split(',')
+        arr_value = self.raw_value_as_str.split('&')
         arr_value_converted = [ self.convert_value_for(a_value) for a_value in arr_value]
         dc[self.attribute_name + '__' + oper_operation] = arr_value_converted
         return Q(**dc)
@@ -594,9 +594,9 @@ class BusinessModel(models.Model):
         return operation_name in self.public_operation_names()
 
     def is_attribute(self, attribute_name):
-        return attribute_name in self.field_names()
+        #return attribute_name in self.field_names()
 
-        #return (attribute_name in dir(self) and not callable(getattr(self, attribute_name)))
+        return (attribute_name in dir(self) and not callable(getattr(self, attribute_name)))
 
     def operations_with_parameters_type(self):
         return {}

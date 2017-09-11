@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
+APPEND_SLASH = True
 # Application definition
 
 INSTALLED_APPS = [
@@ -104,29 +104,32 @@ WSGI_APPLICATION = 'hyper_resource_py.wsgi.application'
 
 if not 'IP_SGBD' in os.environ:
     #os.environ['IP_SGBD'] = '10.0.0.93'
-    os.environ['IP_SGBD'] = '172.30.10.86'
+    #os.environ['IP_SGBD'] = '172.30.10.86'
+    os.environ['IP_SGBD'] = '127.0.0.1'
 
 if not 'PORT_SGBD' in os.environ:
     #os.environ['PORT_SGBD'] = '2345'
-    os.environ['PORT_SGBD'] = '54322'
+    #os.environ['PORT_SGBD'] = '54322'
+    os.environ['PORT_SGBD'] = '5432'
 
 if not 'DB_NAME' in os.environ:
-    #os.environ['DB_NAME'] = 'idehco3'
-    os.environ['DB_NAME'] = 'gis'
+    os.environ['DB_NAME'] = 'idehco3'
+    #os.environ['DB_NAME'] = 'gis'
 
 if not 'DB_USERNAME' in os.environ:
-    #os.environ['DB_USERNAME'] = 'idehco3'
-    os.environ['DB_USERNAME'] = 'ccar_prod'
+    os.environ['DB_USERNAME'] = 'idehco3'
+    #os.environ['DB_USERNAME'] = 'ccar_prod'
 
 if not 'DB_PASSWORD' in os.environ:
-    #os.environ['DB_PASSWORD'] = 'idehco3'
-    os.environ['DB_PASSWORD'] = 'ccar_prod'
+    os.environ['DB_PASSWORD'] = 'idehco3'
+    #os.environ['DB_PASSWORD'] = 'ccar_prod'
 
 ip_sgbd = os.environ['IP_SGBD']
 port_sgbd = os.environ['PORT_SGBD']
 db_name = os.environ['DB_NAME']
 user = os.environ['DB_USERNAME']
 password = os.environ['DB_PASSWORD']
+
 
 DATABASES = {
     'default': {

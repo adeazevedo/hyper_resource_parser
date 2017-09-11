@@ -280,7 +280,7 @@ class AbstractResource(APIView):
             return True
         if self._has_method(attrs_functs[0]):
             return False
-        return hasattr(self.object_model, attrs_functs[0])
+        return self.object_model.is_attribute(attrs_functs[0])
 
     def transform_path_with_url_as_array(self, arr_of_term):
 
@@ -389,14 +389,12 @@ class AbstractResource(APIView):
         self.name_of_last_operation_executed = attribute_or_function_name_striped
         if self.is_attribute_for(object, attribute_or_function_name):
             return getattr(object, attribute_or_function_name_striped)
-
         if len(parameters)> 0:
             if (isinstance(object, BusinessModel) or isinstance(object, GEOSGeometry)):
                 params = self.all_parameters_converted(attribute_or_function_name_striped, parameters)
             else:
                 params = ConverterType().convert_parameters(type(object), attribute_or_function_name, parameters)
             return getattr(object, attribute_or_function_name_striped)(*params)
-
         return getattr(object, attribute_or_function_name_striped)()
 
     def parametersConverted(self, params_as_array):

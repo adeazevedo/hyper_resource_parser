@@ -14,6 +14,9 @@ class Usuario(BusinessModel):
     email = models.CharField(null=True, max_length=100)
     senha = models.CharField(max_length=50)
 
+    def gastos(self):
+        return self.gastos.all()
+
 class TipoGasto(BusinessModel):
     id= models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100)
