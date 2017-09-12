@@ -76,17 +76,21 @@ class ConverterType():
         resp = requests.get(url_as_str)
         if 400 <= resp.status_code <= 599:
             raise HTTPError({resp.status_code: resp.reason})
-        js = resp.json()
+        if resp.headers['content-type'] == 'application/octet-stream':
+            return GEOSGeometry(buffer(resp.content))
 
-        if (js.get("type") and js["type"].lower()=='feature'):
-            return GEOSGeometry(json.dumps(js["geometry"]))
+        elif resp.headers['content-type'] in ['application/json', 'application/geojson']:
+            js = resp.json()
+            if (js.get("type") and js["type"].lower()=='feature'):
+                return GEOSGeometry(json.dumps(js["geometry"]))
 
-        elif  (js.get("type") and js["type"].lower()=='featurecollection'):
-            return self.make_geometrycollection_from_featurecollection(js)
+            elif  (js.get("type") and js["type"].lower()=='featurecollection'):
+                return self.make_geometrycollection_from_featurecollection(js)
 
-        else:
-            return GEOSGeometry(json.dumps(js))
+            else:
+                return GEOSGeometry(json.dumps(js))
 
+        return GEOSGeometry(resp.content)
     def convert_to_string(self, value_as_str):
         return str(value_as_str)
 
