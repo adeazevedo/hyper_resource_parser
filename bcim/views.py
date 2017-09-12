@@ -6,9 +6,7 @@ from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
 
-from bcim.contexts import UnidadeFederacaoContext, MunicipioContext, AldeiaIndigenaContext, UnidadeFederacaoListContext, \
-    SprintContext, TaskContext, SprintListContext, TaskListContext, AldeiaIndigenaListContext, \
-    OutrasUnidProtegidasContext, AglomeradoRuralDeExtensaoUrbanaContext
+from bcim.contexts import *
 from .serializers import *
 from hyper_resource.views import *
 

@@ -14,7 +14,7 @@ class Usuario(BusinessModel):
     email = models.CharField(null=True, max_length=100)
     senha = models.CharField(max_length=50)
 
-    def gastos(self):
+    def col_of_gasto(self):
         return self.gastos.all()
 
 class TipoGasto(BusinessModel):

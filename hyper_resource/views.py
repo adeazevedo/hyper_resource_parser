@@ -455,7 +455,10 @@ class NonSpatialResource(AbstractResource):
         if hasattr(self.current_object_state, 'model') and issubclass(self.current_object_state.model, Model):
             class_name = self.current_object_state.model.__name__ + 'Serializer'
             serializer_cls = self.object_model.class_for_name(self.serializer_class.__module__, class_name)
-            if isinstance(self.current_object_state.field, OneToOneField):
+            if isinstance(self.current_object_state, QuerySet):
+                self.current_object_state = serializer_cls(self.current_object_state, many=True,
+                                                           context={'request': self.request}).data
+            elif isinstance(self.current_object_state.field, OneToOneField):
                 self.current_object_state = serializer_cls(self.current_object_state, context={'request': self.request}).data
             else:
                 self.current_object_state = serializer_cls(self.current_object_state, many=True, context={'request': self.request}).data
@@ -677,6 +680,8 @@ class SpatialResource(AbstractResource):
             return (a_value, 'application/vnd.geo+json', geom, {'status': 200})
         elif isinstance(a_value, SpatialReference):
            a_value = { self.name_of_last_operation_executed: a_value.pretty_wkt}
+        elif isinstance(a_value, buffer):
+            return (a_value, 'application/octet-stream', self.object_model, {'status': 200})
         else:
             a_value = {self.name_of_last_operation_executed: a_value}
 
@@ -753,7 +758,8 @@ class FeatureResource(SpatialResource):
             else:
                 return Response({'Erro': 'The server can generate an image only from a geometry data'},
                                 status=status.HTTP_404_NOT_FOUND)
-
+        if dict_for_response[1] =='application/octet-stream':
+            return HttpResponse(dict_for_response[0], content_type='application/octet-stream')
         return Response(data=dict_for_response[0], content_type=dict_for_response[1])
 
     def options(self, request, *args, **kwargs):

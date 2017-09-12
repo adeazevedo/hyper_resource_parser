@@ -778,11 +778,11 @@ class AglomeradoRuralDeExtensaoUrbana(BusinessModel):
 
 
 class AglomeradoRuralIsolado(BusinessModel):
-    gid = models.AutoField(primary_key=True, db_column='id_objeto')
+    id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
-    tipoaglomr = models.CharField(max_length=35, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
+    tipoaglomrurisol = models.CharField(max_length=35, blank=True, null=True)
     geom = models.PointField(srid=4674, dim=4, blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
