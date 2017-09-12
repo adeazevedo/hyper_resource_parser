@@ -79,7 +79,7 @@ class ConverterType():
         if resp.headers['content-type'] == 'application/octet-stream':
             return GEOSGeometry(buffer(resp.content))
 
-        elif resp.headers['content-type'] in ['application/json', 'application/geojson']:
+        elif resp.headers['content-type'] in ['application/json', 'application/geojson', 'application/vnd.geo+json']:
             js = resp.json()
             if (js.get("type") and js["type"].lower()=='feature'):
                 return GEOSGeometry(json.dumps(js["geometry"]))
