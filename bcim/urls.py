@@ -12,7 +12,7 @@ urlpatterns = [
 
     url(r'^' + views.UnidadeFederacaoDetail.contextclassname + '/(?P<geocodigo>[0-9]{2})/(?P<attributes_functions>.*)/?$', views.UnidadeFederacaoDetail.as_view(), name='uf_detail_geocodigo'),
     url(r'^' + views.UnidadeFederacaoDetail.contextclassname + '/(?P<geocodigo>[0-9]{2})/?$', views.UnidadeFederacaoDetail.as_view(), name='uf_detail_geocodigo'),
-    url(r'^' + views.UnidadeFederacaoDetail.contextclassname + '/(?P<id_objeto>[0-9]*)/?$', views.UnidadeFederacaoDetail.as_view(), name='uf_detail_id_objeto'),
+    url(r'^' + views.UnidadeFederacaoDetail.contextclassname + '/(?P<id_objeto>[0-9]+)/?$', views.UnidadeFederacaoDetail.as_view(), name='uf_detail_id_objeto'),
     url(r'^' + views.UnidadeFederacaoDetail.contextclassname + '/(?P<sigla>[A-Za-z]{2})/?$', views.UnidadeFederacaoDetail.as_view(), name='uf_detail_sigla'),
     url(r'^' + views.UnidadeFederacaoDetail.contextclassname + '/(?P<sigla>[A-Za-z]{2})/(?P<attributes_functions>.*)/?$', views.UnidadeFederacaoDetail.as_view(), name='uf_detail_si'),
     url(r'^unidades-federativas/?$', views.UnidadeFederacaoList.as_view(), name='uf_list'),
@@ -367,7 +367,6 @@ urlpatterns = [
     url(r'^' + views.TaskList.contextclassname +'/(?P<attributes_functions>.*)/?$', views.TaskList.as_view(), name='task_list'),
 
     # urls generalized
-
 
 ]
 

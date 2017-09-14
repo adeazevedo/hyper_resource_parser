@@ -680,7 +680,7 @@ class SpatialResource(AbstractResource):
             return (a_value, 'application/vnd.geo+json', geom, {'status': 200})
         elif isinstance(a_value, SpatialReference):
            a_value = { self.name_of_last_operation_executed: a_value.pretty_wkt}
-        elif isinstance(a_value, buffer):
+        elif isinstance(a_value, memoryview):
             return (a_value, 'application/octet-stream', self.object_model, {'status': 200})
         else:
             a_value = {self.name_of_last_operation_executed: a_value}
@@ -809,6 +809,10 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = attributes_functions_str.split('/')
         return len(att_funcs) > 1 and  (att_funcs[0].lower() == 'filter')
 
+    def path_has_map_operation(self, attributes_functions_str):
+        att_funcs = attributes_functions_str.split('/')
+        return len(att_funcs) > 1 and (att_funcs[0].lower() == 'map')
+
 
     def q_object_for_filter_array_of_terms(self, array_of_terms):
         return FactoryComplexQuery().q_object_for_filter_expression(None, self.model_class(), array_of_terms)
@@ -822,6 +826,10 @@ class AbstractCollectionResource(AbstractResource):
         return self.q_object_for_filter_array_of_terms(arr[1:])
 
     def get_objects_from_filter_operation(self, attributes_functions_str):
+        q_object = self.q_object_for_filter_expression(attributes_functions_str)
+        return self.model_class().objects.filter(q_object)
+
+    def get_objects_from_map_operation(self, attributes_functions_str):
         q_object = self.q_object_for_filter_expression(attributes_functions_str)
         return self.model_class().objects.filter(q_object)
 
@@ -915,6 +923,9 @@ class SpatialCollectionResource(AbstractCollectionResource):
     def operation_names_model(self):
         return self.operation_controller.feature_collection_operations_dict().keys()
 
+    def path_has_only_spatial_operation(self, attributes_functions_str):
+        pass
+
 class FeatureCollectionResource(SpatialCollectionResource):
 
     def geometry_operations(self):
@@ -1000,7 +1011,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
         objects = []
         if self.path_has_filter_operation(attributes_functions_str) or self.path_has_spatial_operation(attributes_functions_str) or  self.is_filter_with_spatial_operation(attributes_functions_str):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
-
+        elif self.path_has_map_operation(attributes_functions_str):
+            objects = self.get_objects_from_map_operation(attributes_functions_str)
 
         return self.serializer_class(objects, many=True).data
 
