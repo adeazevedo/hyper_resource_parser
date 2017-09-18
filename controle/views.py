@@ -59,8 +59,10 @@ class UsuarioRegister(CollectionResource):
         self.context_resource.resource = self
 
     def post(self, request, *args, **kwargs):
-        print(request.data)
-        super(UsuarioRegister, self).post(request, *args, **kwargs)
+        print(request)
+        resp = super(UsuarioRegister, self).post(request, *args, **kwargs)
+        resp['x-access-token'] = self.object_model.getToken()
+        return resp
 
 class UsuarioLogin(CollectionResource):
     queryset = Usuario.objects.all()
@@ -76,7 +78,7 @@ class UsuarioLogin(CollectionResource):
             return Response(status=status.HTTP_404_NOT_FOUND, content_type='application/json')
         response = Response(status=status.HTTP_201_CREATED, content_type='application/json')
         response['Content-Location'] = request.path + str(res.id)
-        response['x-access-token'] =res.getToken()
+        response['x-access-token'] = res.getToken()
         return response
 
 

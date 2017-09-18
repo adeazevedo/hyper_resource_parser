@@ -883,10 +883,10 @@ class AbstractCollectionResource(AbstractResource):
         return response
 
     def post(self, request, *args, **kwargs):
-        print(request.data)
         serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
             obj =  serializer.save()
+            self.object_model = obj
             return self.basic_post(request, obj)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
