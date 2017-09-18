@@ -1,6 +1,8 @@
 import ast
 import re
 import json
+
+import jwt
 import requests
 
 from django.contrib.gis.db.models.functions import AsGeoJSON
@@ -22,6 +24,8 @@ from abc import ABCMeta, abstractmethod
 
 
 from hyper_resource.models import  FactoryComplexQuery, OperationController, BusinessModel, ConverterType
+from hyper_resource_py.settings import TOKEN_NEED, SECRET_KEY
+
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
     def select_parser(self, request, parsers):
@@ -128,9 +132,33 @@ class AbstractResource(APIView):
         self.initialize_context()
         self.iri_metadata = None
         self.operation_controller = OperationController()
-
+        self.token_need = self.token_is_need()
 
     content_negotiation_class = IgnoreClientContentNegotiation
+
+    def jwt_algorithm(self):
+        return 'HS256'
+
+    def token_is_ok(self, a_token):
+        try:
+            payload = jwt.decode(a_token, SECRET_KEY, algorithm=self.jwt_algorithm())
+            return True
+        except jwt.InvalidTokenError:
+            return False
+
+    def token_is_need(self):
+        return  False
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.token_is_need():
+            http_auth = 'HTTP_AUTHORIZATION'
+            if http_auth in request.META and request.META[http_auth].startswith('Bearer'):
+                a_token = request.META['HTTP_AUTHORIZATION'][7:].strip()
+                if self.token_is_ok(a_token):
+                    return super(AbstractResource, self).dispatch(request, *args, **kwargs)
+            return HttpResponse(json.dumps({"token": "token is needed or it is not ok"}), status=401,  content_type='application/json')
+        else:
+           return  super(AbstractResource, self).dispatch(request, *args, **kwargs)
 
     @abstractmethod #Must be override
     def initialize_context(self):
@@ -443,7 +471,6 @@ class AbstractResource(APIView):
         return paramsConveted
 
 class NonSpatialResource(AbstractResource):
-
 
     def response_of_request(self,  attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
@@ -850,7 +877,7 @@ class AbstractCollectionResource(AbstractResource):
         #return self.context_resource.context()
         return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
 
-    def basic_response(self, request, model_object):
+    def basic_post(self, request, model_object):
         response =  Response(status=status.HTTP_201_CREATED, content_type='application/json')
         response['Content-Location'] = request.path + str(model_object.id)
         return response
@@ -860,7 +887,7 @@ class AbstractCollectionResource(AbstractResource):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
             obj =  serializer.save()
-            return self.basic_response(request, obj)
+            return self.basic_post(request, obj)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CollectionResource(AbstractCollectionResource):

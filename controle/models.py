@@ -1,4 +1,7 @@
 from __future__ import unicode_literals
+
+import jwt
+
 from hyper_resource.models import FeatureModel, BusinessModel
 
 from hyper_resource.models import  BusinessModel
@@ -7,15 +10,54 @@ from hyper_resource.models import  BusinessModel
 from django.db import models
 
 # Create your models here.
+from hyper_resource_py.settings import SECRET_KEY
+
+
 class Usuario(BusinessModel):
     id= models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100)
+    nome_usuario = models.CharField(max_length=100)
+    avatar = models.CharField(max_length=100)
     data_nascimento = models.DateField(null=True)
     email = models.CharField(null=True, max_length=100)
     senha = models.CharField(max_length=50)
 
     def col_of_gasto(self):
         return self.gastos.all()
+
+    @classmethod
+    def jwt_algorithm(cls):
+        return 'HS256'
+
+    @classmethod
+    def getOneOrNone(cls, user_name, password):
+        return Usuario.objects.filter(nome_usuario=user_name, senha=password).first()
+
+    def getToken(self):
+        encoded = jwt.encode({'id': self.id, 'nome_usuario': self.nome_usuario}, SECRET_KEY,
+                             algorithm=Usuario.jwt_algorithm())
+        return encoded
+
+    @classmethod
+    def login(cls, user_name, password):
+        usuario = Usuario.getOneOrNone(user_name, password)
+        if usuario is None:
+            return None
+        a_dict = {}
+        a_dict['id'] = usuario.id
+        a_dict['nome'] = usuario.nome
+        a_dict['nome_usuario'] = usuario.nome_usuario
+        a_dict['avatar'] = usuario.avatar
+        a_dict['token'] = usuario.getToken()
+        return a_dict
+
+    @classmethod
+    def token_is_ok(cls, a_token):
+        try:
+            payload = jwt.decode(a_token, SECRET_KEY, algorithm=Usuario.jwt_algorithm())
+            return True
+        except jwt.InvalidTokenError:
+            return False
 
 class TipoGasto(BusinessModel):
     id= models.AutoField(primary_key=True)

@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'controle',
 ]
 
+TOKEN_NEED= False
+
 MIDDLEWARE_CLASSES = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',

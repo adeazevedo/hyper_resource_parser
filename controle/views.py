@@ -49,6 +49,37 @@ class GastoList(CollectionResource):
         self.context_resource = GastoContext()
         self.context_resource.resource = self
 
+
+class UsuarioRegister(CollectionResource):
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
+    contextclassname = 'usuario-list'
+    def initialize_context(self):
+        self.context_resource = UsuarioContext()
+        self.context_resource.resource = self
+
+    def post(self, request, *args, **kwargs):
+        print(request.data)
+        super(UsuarioRegister, self).post(request, *args, **kwargs)
+
+class UsuarioLogin(CollectionResource):
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
+    contextclassname = 'usuario-list'
+    def initialize_context(self):
+        self.context_resource = UsuarioContext()
+        self.context_resource.resource = self
+
+    def post(self, request, *args, **kwargs):
+        res = Usuario.getOneOrNone(request.data['nome_usuario'], request.data['senha'])
+        if res is None:
+            return Response(status=status.HTTP_404_NOT_FOUND, content_type='application/json')
+        response = Response(status=status.HTTP_201_CREATED, content_type='application/json')
+        response['Content-Location'] = request.path + str(res.id)
+        response['x-access-token'] =res.getToken()
+        return response
+
+
 class GastoDetail(NonSpatialResource):
     serializer_class = GastoSerializer
     contextclassname = 'gasto-list'
