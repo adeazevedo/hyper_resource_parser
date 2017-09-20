@@ -75,7 +75,9 @@ class UsuarioLogin(CollectionResource):
     def post(self, request, *args, **kwargs):
         res = Usuario.getOneOrNone(request.data['nome_usuario'], request.data['senha'])
         if res is None:
-            return Response(status=status.HTTP_404_NOT_FOUND, content_type='application/json')
+            res = Response(status=status.HTTP_401_UNAUTHORIZED, content_type='application/json')
+            res['WWW-Authenticate'] = 'Bearer'
+            return res
         response = Response(status=status.HTTP_201_CREATED, content_type='application/json')
         response['Content-Location'] = request.path + str(res.id)
         response['x-access-token'] = res.getToken()

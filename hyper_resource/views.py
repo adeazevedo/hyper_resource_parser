@@ -877,7 +877,7 @@ class AbstractCollectionResource(AbstractResource):
         #return self.context_resource.context()
         return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
 
-    def basic_post(self, request, model_object):
+    def basic_post(self, request):
         response =  Response(status=status.HTTP_201_CREATED, content_type='application/json')
         response['Content-Location'] = request.path + str(self.object_model.id)
         return response
@@ -887,7 +887,7 @@ class AbstractCollectionResource(AbstractResource):
         if serializer.is_valid():
             obj =  serializer.save()
             self.object_model = obj
-            return self.basic_post(request, obj)
+            return self.basic_post(request)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CollectionResource(AbstractCollectionResource):
