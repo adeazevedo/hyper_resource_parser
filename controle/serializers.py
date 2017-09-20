@@ -69,7 +69,7 @@ class UsuarioSerializer(ModelSerializer):
     gastos = HyperlinkedRelatedField(view_name='controle_v1:TipoGasto_detail', many=True, read_only=True)
     class Meta:
         model = Usuario
-        fields = ['gastos','id','nome','data_nascimento','email','senha']
+        fields = ['gastos','id','nome','nome_usuario','data_nascimento','email','senha']
         identifier = 'id'
         identifiers = ['id', 'pk']
 
