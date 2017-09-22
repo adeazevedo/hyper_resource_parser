@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-
+import base64
 import jwt
 
 from hyper_resource.models import FeatureModel, BusinessModel
@@ -58,6 +58,12 @@ class Usuario(BusinessModel):
             return True
         except jwt.InvalidTokenError:
             return False
+
+    def encodeField(self, a_field):
+        return base64.b64encode(a_field.encode())
+
+    def decodeField(self, a_field):
+        return base64.b64decode(a_field.encode())
 
 class TipoGasto(BusinessModel):
     id= models.AutoField(primary_key=True)
