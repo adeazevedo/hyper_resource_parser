@@ -63,7 +63,9 @@ def vocabularyDict():
     dic[object] = 'http://schema.org/Thing'
 
     dic['nome'] = 'http://schema.org/name'
+    dic['name'] = 'http://schema.org/name'
     dic['nomeAbrev'] = 'https://schema.org/alternateName'
+    dic['responsible'] = 'http://schema.org/accountablePerson'
 
     dic['FeatureCollection'] = 'http://geojson.org/geojson-ld/vocab.html#FeatureCollection'
     dic[GeometryField] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
@@ -246,7 +248,7 @@ class ContextResource:
         res_voc = voc if voc is not None else vocabulary(type(field))
         if res_voc is None:
             res_voc  = "http://schema.org/Thing"
-        return { "@id": res_voc, "@type": "@id"}
+        return res_voc #{ "@id": res_voc, "@type": "@id"}
 
 
     def attributes_contextualized_dict(self):

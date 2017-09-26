@@ -12,7 +12,7 @@ urlpatterns = format_suffix_patterns([
 
     url(r'^tipo-gasto-list/(?P<pk>[0-9]+)/?$', views.TipoGastoDetail.as_view(), name='TipoGasto_detail'),
     url(r'^tipo-gasto-list/(?P<pk>[0-9]+)/(?P<attributes_functions>.*)/?$', views.TipoGastoDetail.as_view(), name='TipoGasto_detail_af'),
-    url(r'^tipo-gasto-list?/?$', views.TipoGastoList.as_view(), name='TipoGasto_list'),
+    url(r'^tipo-gasto-list/?$', views.TipoGastoList.as_view(), name='TipoGasto_list'),
     url(r'^tipo-gasto-list/(?P<attributes_functions>.*)/?$', views.TipoGastoList.as_view(), name='TipoGasto_list_af'),
 
     url(r'^usuario-list/(?P<pk>[0-9]+)/?$', views.UsuarioDetail.as_view(), name='Usuario_detail'),
