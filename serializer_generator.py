@@ -17,7 +17,7 @@ def is_spatial(model_class):
                 return True
 
     return False
-def generate_snippets_to_serializer(model_class_name, model_class):
+def generate_snippets_to_serializer(package_name, model_class_name, model_class):
     arr = []
     if is_spatial(model_class):
         class_name = 'Serializer(GeoFeatureModelSerializer)'
@@ -26,12 +26,12 @@ def generate_snippets_to_serializer(model_class_name, model_class):
     arr.append('class ' +model_class_name + class_name+':\n')
     for field in model_class._meta.get_fields():
         if isinstance(field, ForeignKey):
-            view_name = field.name + "_detail"
-            arr.append((' ' * 4) + field.name+" = HyperlinkedRelatedField(view_name='"+view_name+"', many=False, read_only=True)\n")
+            view_name = type(field.related_model()).__name__ + "_detail"
+            arr.append((' ' * 4) + field.name+" = HyperlinkedRelatedField(view_name='"+package_name +':'+view_name+"', many=False, read_only=True)\n")
         elif isinstance(field, ManyToOneRel) and field.related_name is not None:
-            view_name = field.name + "_detail"
+            view_name = type(field.related_model()).__name__ + "_detail" #view_name = field.name + "_detail"
             arr.append((
-                       ' ' * 4) + field.name + " = HyperlinkedRelatedField(view_name='" + view_name + "', many=True, read_only=True)\n")
+                       ' ' * 4) + field.name + " = HyperlinkedRelatedField(view_name='" +package_name +':'+ view_name + "', many=True, read_only=True)\n")
     arr.append((' ' * 4) + 'class Meta:\n')
     arr.append((' ' * 8) + 'model = ' +model_class_name + '\n')
     identifier = None
@@ -39,6 +39,8 @@ def generate_snippets_to_serializer(model_class_name, model_class):
     fields = model_class._meta.get_fields()
     arr.append((' ' * 8) + 'fields = [')
     for i, field in enumerate(fields):
+        if isinstance(field, ManyToOneRel) and field.related_name is None:
+            continue
         arr.append("'" + field.name + "'")
         if i < len(fields) - 1:
             arr.append(',')
@@ -51,7 +53,7 @@ def generate_snippets_to_serializer(model_class_name, model_class):
     if geom is not None:
         arr.append((' ' * 8) + "geo_field = '" + geom + "'\n")
     arr.append((' ' * 8) + "identifier = '" + identifier + "'\n")
-    arr.append((' ' * 8) + "identifiers = [pk, " + "'" + identifier + "'"+ "]\n\n\n")
+    arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "'"+ "]\n\n\n")
     return arr
 
 def generate_file(package_name, default_name= '\serializers.py'):
@@ -63,7 +65,7 @@ def generate_file(package_name, default_name= '\serializers.py'):
         sr.write("from rest_framework_gis.serializers import GeoFeatureModelSerializer\n\n")
         sr.write("from rest_framework.serializers import ModelSerializer, HyperlinkedRelatedField\n\n")
         for model_class_arr in classes_from:
-            for snippet in generate_snippets_to_serializer(model_class_arr[0], model_class_arr[1]):
+            for snippet in generate_snippets_to_serializer(package_name, model_class_arr[0], model_class_arr[1]):
                 sr.write(snippet)
         sr.write('\n\n')
         sr.write('serializers_dict = {}')

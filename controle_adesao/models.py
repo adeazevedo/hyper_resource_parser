@@ -1,5 +1,13 @@
 from __future__ import unicode_literals
 from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, BusinessModel
 # This is an auto-generated Django model module.
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
@@ -31,7 +39,7 @@ class Publicacaoinformacaogeoespacial(BusinessModel):
     tem_download = models.CharField(max_length=20, blank=True, null=True)
     tem_vinde = models.CharField(max_length=20, blank=True, null=True)
     id_publicacao_informacao_geoespacial = models.AutoField(primary_key=True)
-    id_ator = models.ForeignKey(Ator, models.DO_NOTHING, db_column='id_ator')
+    ator = models.ForeignKey(Ator,  db_column='id_ator')
 
     class Meta:
         managed = True
@@ -47,7 +55,7 @@ class Representante(BusinessModel):
     telefone1 = models.CharField(max_length=25, blank=True, null=True)
     telefone2 = models.CharField(max_length=25, blank=True, null=True)
     celular_telefone3 = models.CharField(max_length=25, blank=True, null=True)
-    id_ator = models.ForeignKey(Ator, models.DO_NOTHING, db_column='id_ator')
+    ator = models.ForeignKey(Ator, db_column='id_ator', related_name="representantes")
 
     class Meta:
         managed = True

@@ -7,7 +7,7 @@ def generate_snippets_to_url(a_name, context_name = 'include'):
 
     arr = []
     arr.append((' ' * 4) + 'url(r' + "'" + '^'+ a_name +'-list/'+ "'" +',' + context_name +'(' +"'" +a_name+'.urls'+"'" +
-               ',namespace='+"'"+ a_name+'_v1'+"'" +')),\n')
+               ',namespace='+"'"+ a_name+"'" +')),\n')
     '''
     arr.append((' ' * 4) + 'url(r' + "'" + '^'+ a_name +'-list/contexts/' + "'" +','+ context_name + '(' + "'"+ 'context_api.urls' +"'"+
               ', namespace =' +"'" + 'context'+"'" + ')),\n')

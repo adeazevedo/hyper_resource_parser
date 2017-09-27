@@ -1,7 +1,7 @@
 from django.conf.urls import include, url
 urlpatterns = [
 
-    url(r'^controle_adesao-list/',include('controle_adesao.urls',namespace='controle_adesao_v1')),
+    url(r'^controle_adesao-list/',include('controle_adesao.urls',namespace='controle_adesao')),
 
 
 ]

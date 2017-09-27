@@ -17,7 +17,6 @@ def get_root_response(request):
       'ator-list': reverse('controle_adesao_v1:Ator_list' , request=request, format=format),
       'publicacaoinformacaogeoespacial-list': reverse('controle_adesao_v1:Publicacaoinformacaogeoespacial_list' , request=request, format=format),
       'representante-list': reverse('controle_adesao_v1:Representante_list' , request=request, format=format),
-
     }
 
     ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
@@ -86,3 +85,4 @@ class RepresentanteDetail(NonSpatialResource):
     def initialize_context(self):
         self.context_resource = RepresentanteContext()
         self.context_resource.resource = self
+
