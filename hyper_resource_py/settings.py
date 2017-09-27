@@ -42,8 +42,7 @@ INSTALLED_APPS = [
     'rest_framework_gis',
     'corsheaders',
     'hyper_resource',
-    'bcim',
-    'controle',
+    'controle_adesao',
 ]
 
 TOKEN_NEED= False
@@ -112,7 +111,7 @@ if not 'IP_SGBD' in os.environ:
 
 if not 'PORT_SGBD' in os.environ:
     #os.environ['PORT_SGBD'] = '2345'
-    os.environ['PORT_SGBD'] = '54322'
+    os.environ['PORT_SGBD'] = '54329'
     #os.environ['PORT_SGBD'] = '5432'
 
 if not 'DB_NAME' in os.environ:
@@ -121,11 +120,11 @@ if not 'DB_NAME' in os.environ:
 
 if not 'DB_USERNAME' in os.environ:
     #os.environ['DB_USERNAME'] = 'idehco3'
-    os.environ['DB_USERNAME'] = 'ccar_prod'
+    os.environ['DB_USERNAME'] = 'docker'
 
 if not 'DB_PASSWORD' in os.environ:
     #os.environ['DB_PASSWORD'] = 'idehco3'
-    os.environ['DB_PASSWORD'] = 'ccar_prod'
+    os.environ['DB_PASSWORD'] = 'docker'
 
 ip_sgbd = os.environ['IP_SGBD']
 port_sgbd = os.environ['PORT_SGBD']
@@ -138,7 +137,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'OPTIONS': {
-            'options': '-c search_path=bcim,public,idehco3,administrativo,kanban',
+            'options': '-c search_path=public',
         },
 
         'HOST': ip_sgbd,
