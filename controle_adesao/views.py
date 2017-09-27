@@ -14,9 +14,9 @@ def get_root_response(request):
     format = None
     root_links = {
 
-      'ator-list': reverse('controle_adesao_v1:Ator_list' , request=request, format=format),
-      'publicacaoinformacaogeoespacial-list': reverse('controle_adesao_v1:Publicacaoinformacaogeoespacial_list' , request=request, format=format),
-      'representante-list': reverse('controle_adesao_v1:Representante_list' , request=request, format=format),
+      'ator-list': reverse('controle_adesao:Ator_list' , request=request, format=format),
+      'publicacaoinformacaogeoespacial-list': reverse('controle_adesao:Publicacaoinformacaogeoespacial_list' , request=request, format=format),
+      'representante-list': reverse('controle_adesao:Representante_list' , request=request, format=format),
     }
 
     ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
