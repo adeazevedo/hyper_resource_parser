@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['*']
 
 APPEND_SLASH = True
 # Application definition
+TOKEN_NEED= False
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -46,8 +47,6 @@ INSTALLED_APPS = [
     'controle',
     'bcim',
 ]
-
-TOKEN_NEED= False
 
 MIDDLEWARE_CLASSES = [
     'corsheaders.middleware.CorsMiddleware',
@@ -137,7 +136,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'OPTIONS': {
-            'options': '-c search_path=ggt,bcim,public,controle',
+            'options': '-c search_path=ggt,bcim,public,administrativo',
         },
 
         'HOST': ip_sgbd,

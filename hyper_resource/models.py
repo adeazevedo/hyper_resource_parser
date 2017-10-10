@@ -31,6 +31,9 @@ from django.contrib.gis.db.models import ForeignKey
 from requests import ConnectionError
 from requests import HTTPError
 
+import sys
+if sys.version_info > (3,):
+    buffer = memoryview
 
 def dict_map_geo_field_geometry():
     dic = {}
@@ -541,8 +544,12 @@ class BusinessModel(models.Model):
     def id(self):
         return self.pk
 
+    def name_string(self):
+        return self.__str__()
+
     def attribute_primary_ley(self):
         return self.serializer_class.Meta.identifier
+
     def model_class(self):
         return type(self)
 
@@ -555,7 +562,6 @@ class BusinessModel(models.Model):
         for key, value in dic.items():
             if self._key_is_identifier(key):
                 a_dict[key] = value
-
         return a_dict
 
     def all_operation_name_and_value(self):

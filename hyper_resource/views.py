@@ -314,7 +314,7 @@ class AbstractResource(APIView):
 
         arr = []
         http_str = ''
-        arr_term = filter(lambda ele: ele != '', arr_of_term)
+        arr_term =  [ele for ele in arr_of_term if ele != '']
 
         found_url = False
         size_of_term = len(arr_term)

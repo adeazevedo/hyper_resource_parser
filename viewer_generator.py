@@ -11,7 +11,7 @@ def generate_get_root_response(a_name_space, model_class_name):
 
     context_name = convert_camel_case_to_hifen(model_class_name) + '-list'
 
-    return "'"+ context_name +"'"+': reverse(' + "'" +a_name_space +'_v1:'+ model_class_name+'_list'+"'"+' , request=request, format=format),\n'
+    return "'"+ context_name +"'"+': reverse(' + "'" +a_name_space +':'+ model_class_name+'_list'+"'"+' , request=request, format=format),\n'
 
 
 
