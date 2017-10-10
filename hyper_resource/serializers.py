@@ -11,7 +11,7 @@ class BusinessSerializer(ModelSerializer):
         return None
 
     def field_relationship_to_validate_dict(self):
-        pass
+        return {}
 
     def transform_relationship_from_request(self, validated_data):
         for key, value in self.field_relationship_to_validate_dict().items():
