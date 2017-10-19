@@ -20,9 +20,9 @@ def is_spatial(model_class):
 def generate_snippets_to_serializer(package_name, model_class_name, model_class):
     arr = []
     if is_spatial(model_class):
-        class_name = 'Serializer(GeoFeatureModelSerializer)'
+        class_name = 'Serializer(GeoBusinessSerializer)'
     else:
-        class_name = 'Serializer(ModelSerializer)'
+        class_name = 'Serializer(BusinessSerializer)'
     arr.append('class ' +model_class_name + class_name+':\n')
     for field in model_class._meta.get_fields():
         if isinstance(field, ForeignKey):
@@ -62,8 +62,10 @@ def generate_file(package_name, default_name= '\serializers.py'):
 
     with open(default_name, 'w+') as sr:
         sr.write("from "+package_name+".models import *\n")
+        sr.write("from hyper_resource.serializers import *\n")
         sr.write("from rest_framework_gis.serializers import GeoFeatureModelSerializer\n\n")
-        sr.write("from rest_framework.serializers import ModelSerializer, HyperlinkedRelatedField\n\n")
+        sr.write("from rest_framework.serializers import HyperlinkedRelatedField\n\n")
+
         for model_class_arr in classes_from:
             for snippet in generate_snippets_to_serializer(package_name, model_class_arr[0], model_class_arr[1]):
                 sr.write(snippet)
