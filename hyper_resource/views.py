@@ -24,7 +24,7 @@ from abc import ABCMeta, abstractmethod
 
 
 from hyper_resource.models import  FactoryComplexQuery, OperationController, BusinessModel, ConverterType
-from hyper_resource_py.settings import TOKEN_NEED, SECRET_KEY
+SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
 
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
