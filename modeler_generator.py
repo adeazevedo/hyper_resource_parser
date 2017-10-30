@@ -34,6 +34,8 @@ def generate_file(package_name, default_name='models.py'):
                     line = line.replace('models.Model', 'FeatureModel')
                 elif class_name_in_line is not None:
                     line = line.replace('models.Model', 'BusinessModel')
+                elif 'models.IntegerField(primary_key=True)' in line:
+                    line = line.replace('models.IntegerField(primary_key=True)', 'models.AutoField(primary_key=True)')
                 nm.write(line)
             nm.close()
         sr.close()

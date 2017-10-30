@@ -879,7 +879,7 @@ class AbstractCollectionResource(AbstractResource):
 
     def basic_post(self, request):
         response =  Response(status=status.HTTP_201_CREATED, content_type='application/json')
-        response['Content-Location'] = request.path + str(self.object_model.id)
+        response['Content-Location'] = request.path + str(self.object_model.pk)
         return response
 
     def post(self, request, *args, **kwargs):
