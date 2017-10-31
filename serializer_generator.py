@@ -17,8 +17,18 @@ def is_spatial(model_class):
                 return True
 
     return False
+def generate_snippet_field_relationship_to_validate_dict(field_names):
+    new_str = ''
+    new_str = (" " * 4) + "def field_relationship_to_validate_dict(self):\n"
+    new_str += (' ' * 8) + "a_dict = {}\n"
+    for field_name in field_names:
+         new_str += (" " * 8) + "a_dict[" + "'" +field_name + '_id' +"'] = " + "'" + field_name + "'\n"
+    new_str += (" " * 8) + "return a_dict\n"
+    return new_str
+
 def generate_snippets_to_serializer(package_name, model_class_name, model_class):
     arr = []
+    field_names_fk = []
     if is_spatial(model_class):
         class_name = 'Serializer(GeoBusinessSerializer)'
     else:
@@ -26,6 +36,7 @@ def generate_snippets_to_serializer(package_name, model_class_name, model_class)
     arr.append('class ' +model_class_name + class_name+':\n')
     for field in model_class._meta.get_fields():
         if isinstance(field, ForeignKey):
+            field_names_fk.append(field.name)
             view_name = type(field.related_model()).__name__ + "_detail"
             arr.append((' ' * 4) + field.name+" = HyperlinkedRelatedField(view_name='"+package_name +':'+view_name+"', many=False, read_only=True)\n")
         elif isinstance(field, ManyToOneRel) and field.related_name is not None:
@@ -53,7 +64,11 @@ def generate_snippets_to_serializer(package_name, model_class_name, model_class)
     if geom is not None:
         arr.append((' ' * 8) + "geo_field = '" + geom + "'\n")
     arr.append((' ' * 8) + "identifier = '" + identifier + "'\n")
-    arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "'"+ "]\n\n\n")
+    arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "'"+ "]\n")
+    if len(field_names_fk) > 0:
+        arr.append("\n")
+        arr.append(generate_snippet_field_relationship_to_validate_dict(field_names_fk))
+    arr.append("\n")
     return arr
 
 def generate_file(package_name, default_name= '\serializers.py'):
