@@ -312,7 +312,7 @@ class ContextResource:
         iri_templates = []
         dict = {}
         dict["@type"] = "IriTemplate"
-        dict["template"] = self.host_with_path() + "{/list*}"  # Ex.: http://host/unidades-federativas/nome,sigla,geom
+        dict["template"] = self.host_with_path() + "{list*}"  # Ex.: http://host/unidades-federativas/nome,sigla,geom
         dict["mapping"] = [ {"@type": "iriTemplateMapping", "variable": "list*", "property": "hydra:property", "required": True}]
 
         iri_templates.append(dict)

@@ -110,7 +110,7 @@ class BaseContext(object):
         except:
             return ""
         serializer = None #ContextSerializer(classobject)
-        contextdata = serializer.data
+        contextdata = {} #serializer.data
         hydradata = self.getHydraData(request)
         if "@context" in hydradata:
             hydradata["@context"].update(contextdata["@context"])
