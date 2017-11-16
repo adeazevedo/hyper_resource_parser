@@ -17,9 +17,9 @@ def generate_snippets_to_url(model_class_name, model_class):
     #   pass
 
     arr = []
-    arr.append('class ' + model_class_name + 'Context(FeatureContext):' + '\n')
+    arr.append('class ' + model_class_name + 'DetailContext(FeatureContext):' + '\n')
     arr.append((' ' * 4) + 'pass\n')
-    arr.append('class ' + model_class_name + 'CollectionContext(FeatureCollectionContext):' + '\n')
+    arr.append('class ' + model_class_name + 'ListContext(FeatureCollectionContext):' + '\n')
     arr.append((' ' * 4) + 'pass\n')
     return arr
 

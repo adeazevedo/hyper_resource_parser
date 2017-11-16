@@ -52,3 +52,9 @@ class AglomeradoRuralDeExtensaoUrbanaContext(FeatureContext):
     pass
 class AglomeradoRuralIsoladoContext(FeatureContext):
     pass
+
+class TrechoFerroviarioListContext(FeatureCollectionContext):
+    pass
+
+class TrechoFerroviarioDetailContext(FeatureContext):
+    pass

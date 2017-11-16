@@ -794,10 +794,10 @@ class FeatureModel(BusinessModel):
         return self.get_geometry_object().y
 
     def convex_hull(self):
-        return self.get_geometry_object().convex_hull
+        return self.get_geometry_object().convex_hull()
 
     def get_x(self):
-        return self.get_geometry_object().get_x
+        return self.get_geometry_object().get_x()
 
     def index(self):
         return self.get_geometry_object().index

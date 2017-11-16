@@ -160,9 +160,14 @@ class AbstractResource(APIView):
         else:
            return  super(AbstractResource, self).dispatch(request, *args, **kwargs)
 
-    @abstractmethod #Must be override
+    #@abstractmethod #Could be override
     def initialize_context(self):
-       pass
+        context_module_name = self.__class__.__module__.split('.')[0] + '.contexts'
+        context_module = importlib.import_module(context_module_name)
+        context_class_name = self.__class__.__name__ + 'Context'
+        context_class = getattr(context_module, context_class_name )
+        self.context_resource = context_class()
+        self.context_resource.resource = self
 
     # todo
     def path_request_is_ok(self, a_path):
