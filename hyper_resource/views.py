@@ -149,6 +149,14 @@ class AbstractResource(APIView):
     def token_is_need(self):
         return  False
 
+    def add_url_in_header(self, url, response, rel):
+        link = ' <'+url+'>; rel=\"'+rel+'\" '
+        if "Link" not in response:
+            response['Link'] = link
+        else:
+            response['Link'] += "," + link
+        return response
+
     def dispatch(self, request, *args, **kwargs):
         if self.token_is_need():
             http_auth = 'HTTP_AUTHORIZATION'
@@ -255,6 +263,14 @@ class AbstractResource(APIView):
         obj = get_object_or_404(queryset, **dicti)
         #self.check_object_permissions(self.request, obj)
         return obj
+
+    def patch(self, request, *args, **kwargs):
+        return super(AbstractResource, self).patch(request, *args, **kwargs)
+
+    def head(self, request, *args, **kwargs):
+        resp =  Response(status=status.HTTP_200_OK)
+        return resp
+
 
     def put(self, request, *args, **kwargs):
         obj = self.get_object(kwargs)
@@ -777,7 +793,8 @@ class FeatureResource(SpatialResource):
 
         if status in [500]:
            return Response({'Error ': 'The server can not process this request. Status:' + str(status)}, status=status)
-
+        if 'HTTP_ACCEPT'  not in request.META:
+            request.META['HTTP_ACCEPT'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
         accept = request.META['HTTP_ACCEPT']
         if accept.lower() == "image/png" or kwargs.get('format', None) == 'png':
             if len(dict_for_response) == 3:

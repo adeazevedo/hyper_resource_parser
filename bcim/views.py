@@ -183,7 +183,7 @@ class MunicipioList(FeatureCollectionResource):
         db_table = 'lim_municipio_a'
 
     def initialize_context(self):
-        self.context_resource = MunicipioContext()
+        self.context_resource = MunicipioListContext()
         self.context_resource.resource = self
 
 class MunicipioDetail(FeatureResource):
@@ -194,7 +194,7 @@ class MunicipioDetail(FeatureResource):
     lookup_field = "geocodigo"
 
     def initialize_context(self):
-        self.context_resource = MunicipioContext()
+        self.context_resource = MunicipioDetailContext()
         self.context_resource.resource = self
 
 
@@ -357,7 +357,7 @@ class AldeiaIndigenaDetail(FeatureResource):
     serializer_class = AldeiaIndigenaSerializer
     contextclassname = 'aldeias-indigenas'
     def initialize_context(self):
-        self.context_resource = AldeiaIndigenaContext()
+        self.context_resource = AldeiaIndigenaDetailContext()
         self.context_resource.resource = self
 
 
@@ -599,11 +599,17 @@ class TrechoFerroviarioList(FeatureCollectionResource):
     queryset = TrechoFerroviario.objects.all()
     serializer_class = TrechoFerroviarioSerializer
     contextclassname = 'trechos-ferroviarios'
+    def initialize_context(self):
+        self.context_resource = TrechoFerroviarioListContext()
+        self.context_resource.resource= self
 
 class TrechoFerroviarioDetail(FeatureResource):
 
     serializer_class = TrechoFerroviarioSerializer
     contextclassname = 'trechos-ferroviarios'
+    def initialize_context(self):
+        self.context_resource = TrechoFerroviarioDetailContext()
+        self.context_resource.resource= self
 
 class TrechoHidroviarioList(FeatureCollectionResource):
 

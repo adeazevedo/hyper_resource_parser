@@ -27,10 +27,13 @@ class UnidadeFederacaoContext(FeatureContext):
 class UnidadeFederacaoListContext(FeatureContext):
     pass
 
-class MunicipioContext(FeatureContext):
+class MunicipioListContext(FeatureContext):
     pass
 
-class AldeiaIndigenaContext(FeatureContext):
+class MunicipioDetailContext(FeatureContext):
+    pass
+
+class AldeiaIndigenaDetailContext(FeatureContext):
     pass
 
 class AldeiaIndigenaListContext(FeatureContext):
@@ -43,7 +46,11 @@ class TaskContext(ContextResource):
 
 class SprintListContext(FeatureContext):
     pass
+class SprintDetailContext(FeatureContext):
+    pass
 class TaskListContext(FeatureContext):
+    pass
+class TaskDetailContext(FeatureContext):
     pass
 
 class OutrasUnidProtegidasContext(FeatureContext):
