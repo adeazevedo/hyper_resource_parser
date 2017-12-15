@@ -31,14 +31,14 @@ def generate_snippets_to_view(model_class_name, is_spatial):
     arr.append(serializer_class_snippet)
     arr.append(context)
     arr.append((' ' * 4) + 'def initialize_context(self):\n')
-    arr.append((' ' * 8) + 'self.context_resource = ' + model_class_name + 'Context()\n')
+    arr.append((' ' * 8) + 'self.context_resource = ' + model_class_name + 'ListContext()\n')
     arr.append((' ' * 8) + 'self.context_resource.resource = self\n')
     arr.append('\n')
     arr.append('class ' + model_class_name + 'Detail(' + super_class_name +'):\n')
     arr.append(serializer_class_snippet)
     arr.append(context)
     arr.append((' ' * 4) + 'def initialize_context(self):\n')
-    arr.append((' ' * 8) + 'self.context_resource = ' + model_class_name + 'Context()\n')
+    arr.append((' ' * 8) + 'self.context_resource = ' + model_class_name + 'DetailContext()\n')
     arr.append((' ' * 8) + 'self.context_resource.resource = self\n')
 
     return arr
