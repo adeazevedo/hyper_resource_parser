@@ -887,6 +887,7 @@ class FeatureModel(BusinessModel):
 
     def disjoint(self, other_GEOSGeometry):
         return self.get_geometry_object().disjoint(other_GEOSGeometry)
+# Change de secrey key
 SECRET_KEY = '!ijb)p^wxprqdccf7*kxzu6l^&sf%_+w@!$6e#yl^^47i3j0f6asdfg'
 
 class HyperUser(BusinessModel):
