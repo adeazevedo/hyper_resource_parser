@@ -211,6 +211,7 @@ class SupportedOperation():
 def initialize_dict():
         dict = {}
         oc = OperationController()
+        dict[GeometryField]= oc.geometry_operations_dict()
         dict[GEOSGeometry] = oc.geometry_operations_dict()
         dict[Point] = oc.point_operations_dict()
         dict[Polygon] = oc.polygon_operations_dict()
@@ -250,7 +251,6 @@ class ContextResource:
             res_voc  = "http://schema.org/Thing"
         return res_voc #{ "@id": res_voc, "@type": "@id"}
 
-
     def attributes_contextualized_dict(self):
         dic_field = {}
         fields = self.resource.fields_to_web()
@@ -258,11 +258,8 @@ class ContextResource:
             dic_field[field_model.name] = self.attribute_contextualized_dict_for(field_model)
         return dic_field
 
-
     def selectedAttributeContextualized_dict(self, attribute_name_array):
-
         return {k: v for k, v in list(self.attributes_contextualized_dict().items()) if k in attribute_name_array}
-
 
     def supportedPropertyFor(self, field):
         voc = vocabulary(field.name)
@@ -282,9 +279,9 @@ class ContextResource:
             arr_dict.append(SupportedProperty(property_name=field.name, required=field.null, readable=True, writeable=True, is_unique=False, is_identifier=field.primary_key, is_external=False))
         return [supportedAttribute.context() for supportedAttribute in arr_dict]
 
-    def supportedOperationsFor(self, object):
+    def supportedOperationsFor(self, object, object_type=None):
         dict = initialize_dict()
-        a_type = type(object)
+        a_type = type(object_type) if object_type is not None else type(object)
         dict_operations = dict[a_type] if a_type in dict else {}
         arr = []
         for k, v_typed_called in dict_operations.items():
@@ -323,13 +320,15 @@ class ContextResource:
         self.dict_context = {}
         self.dict_context["@context"] = self.selectedAttributeContextualized_dict(attributes_name)
 
-    def set_context_to_only_one_attribute(self, object, attribute_name):
+    def set_context_to_only_one_attribute(self, object, attribute_name, attribute_type=None):
         self.set_context_to_attributes([attribute_name])
 
         obj = getattr(object, attribute_name, None)
-        isGeometry = isinstance(obj, GEOSGeometry)
+        a_type = attribute_type if attribute_type is not None else type(obj)
+        isGeometry = isinstance(obj, GEOSGeometry) or isinstance(attribute_type, GeometryField)
+
         if isGeometry:
-           self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(obj)
+           self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(obj, a_type)
 
     def set_context_to_operation(self, object, operation_name):
         self.dict_context = {}
@@ -339,7 +338,7 @@ class ContextResource:
         self.dict_context["@context"] = dict
         isGeometry = isinstance(object, GEOSGeometry)
         if isGeometry:
-            self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object)
+            self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
 
     def set_context_to_object(self, object, attribute_name):
         self.dict_context = {}
@@ -347,7 +346,7 @@ class ContextResource:
         if len(self.dict_context["@context"]) == 0:
             self.set_context_to_operation(object, attribute_name)
         else:
-            self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object)
+            self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
 
     def initalize_context(self):
         self.dict_context = {}

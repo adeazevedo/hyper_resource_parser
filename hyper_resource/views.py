@@ -164,7 +164,9 @@ class AbstractResource(APIView):
                 a_token = request.META['HTTP_AUTHORIZATION'][7:].strip()
                 if self.token_is_ok(a_token):
                     return super(AbstractResource, self).dispatch(request, *args, **kwargs)
-            return HttpResponse(json.dumps({"token": "token is needed or it is not ok"}), status=401,  content_type='application/json')
+            resp = HttpResponse(json.dumps({"token": "token is needed or it is not ok"}), status=401,  content_type='application/json')
+            resp['WWW-Authenticate'] = 'Bearer realm="Access to the staging site"'
+            return resp
         else:
            return  super(AbstractResource, self).dispatch(request, *args, **kwargs)
 
@@ -192,9 +194,15 @@ class AbstractResource(APIView):
         return self.model_class().__name__
 
     def attribute_names_to_web(self):
-        return self.serializer_class.Meta.fields
+        return [field.name for field in self.object_model.fields()]
+        #return self.serializer_class.Meta.fields
 
-
+    def field_for(self, attribute_name):
+        fields_model = self.object_model.fields()
+        for field in fields_model:
+            if field.name == attribute_name:
+                return field
+        return None
     def fields_to_web_for_attribute_names(self, attribute_names):
         fields_model = self.object_model.fields()
         # Poderia ser ModelClass._meta.get_field(field_name) Obs: raise FieldDoesNotExist
@@ -216,7 +224,8 @@ class AbstractResource(APIView):
 
     def _set_context_to_only_one_attribute(self, attribute_name):
 
-        self.context_resource.set_context_to_only_one_attribute(self.current_object_state, attribute_name)
+        attribute_type = self.field_for(attribute_name)
+        self.context_resource.set_context_to_only_one_attribute(self.current_object_state, attribute_name, attribute_type)
 
     def _set_context_to_operation(self, operation_name):
 
@@ -572,9 +581,6 @@ class SpatialResource(AbstractResource):
     def __init__(self):
         super(SpatialResource, self).__init__()
         self.iri_style = None
-    # Must be override
-    def initialize_context(self):
-        pass
 
     def get_geometry_object(self, object_model):
         return getattr(object_model, self.geometry_field_name(), None)
@@ -768,8 +774,9 @@ class FeatureResource(SpatialResource):
         elif self.path_has_only_attributes(attributes_functions_str):
             output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
             dict_attribute = output[0]
-            if len(attributes_functions_str.split(',')) > 1:
-                self._set_context_to_attributes(dict_attribute.keys())
+            att_names = attributes_functions_str.split(',')
+            if len(att_names) > 1:
+                self._set_context_to_attributes(att_names)
             else:
                 self._set_context_to_only_one_attribute(attributes_functions_str)
         elif self.path_has_url(attributes_functions_str.lower()):
@@ -894,8 +901,37 @@ class AbstractCollectionResource(AbstractResource):
         basic_response = self.basic_get(request, *args, **kwargs)
         return Response(data=basic_response["data"],status=basic_response["status"], content_type=basic_response["content_type"])
 
+    def basic_options(self, request, *args, **kwargs):
+        self.object_model = self.model_class()()
+        self.set_basic_context_resource(request)
+        attributes_functions_str = self.kwargs.get("attributes_functions", None)
+
+        if self.is_simple_path(attributes_functions_str):  # to get query parameters
+            return {"data": {},"status": 200, "content_type": "application/json"}
+
+        elif self.path_has_only_attributes(attributes_functions_str):
+            output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
+            dict_attribute = output[0]
+            if len(attributes_functions_str.split(',')) > 1:
+                self._set_context_to_attributes(dict_attribute.keys())
+            else:
+                self._set_context_to_only_one_attribute(attributes_functions_str)
+            return {"data": {},"status": 200, "content_type": "application/json"}
+
+        #elif self.path_has_url(attributes_functions_str.lower()):
+        #    pass
+        elif self.path_has_only_spatial_operation(attributes_functions_str):
+            return {"data": self.get_objects_with_spatial_operation_serialized(attributes_functions_str), "status": 200,
+                    "content_type": "application/json"}
+
+        elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
+            return {"data": self.get_objects_serialized_by_functions(attributes_functions_str),"status": 200, "content_type": "application/json"}
+
+        else:
+            return {"data": "This request has invalid attribute or operation","status": 400, "content_type": "application/json"}
+
     def options(self, request, *args, **kwargs):
-        self.basic_get(request, *args, **kwargs)
+        self.basic_options(request, *args, **kwargs)
         #return self.context_resource.context()
         return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
 

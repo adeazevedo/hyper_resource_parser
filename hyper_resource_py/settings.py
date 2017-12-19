@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_gis',
     'corsheaders',
     'hyper_resource',
+    'user_management',
     'controle_adesao',
     'controle',
     'bcim',
@@ -136,7 +137,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'OPTIONS': {
-            'options': '-c search_path=ggt,bcim,public,administrativo',
+            'options': '-c search_path=ggt,bcim,public,administrativo,user_management',
+
         },
 
         'HOST': ip_sgbd,

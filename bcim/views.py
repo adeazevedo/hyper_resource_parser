@@ -150,6 +150,9 @@ class UnidadeFederacaoList(FeatureCollectionResource):
     iri_metadata = 'http://www.metadados.geo.ibge.gov.br/geonetwork_ibge/srv/por/csw?request=GetRecordById&service=CSW&version=2.0.2&elementSetName=full&id=ff2d4215-9843-4137-bad9-c15f2a8caa9e'
     iri_style = 'http://styles.idehco4.tk/styles/unidade_federacao.sld'
 
+    def token_is_need(self):
+        return True
+
     def get_queryset_old(self):
 
         geocodigo_uf = self.kwargs.get("geocodigo")
