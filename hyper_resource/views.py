@@ -892,15 +892,15 @@ class AbstractCollectionResource(AbstractResource):
     def operation_names_model(self):
         return self.operation_controller.collection_operations_dict()
 
-    @abstractmethod  # Must be override
-    def basic_get(request, *args, **kwargs):
-        pass
-
     def get(self, request, *args, **kwargs):
 
         basic_response = self.basic_get(request, *args, **kwargs)
-        return Response(data=basic_response["data"],status=basic_response["status"], content_type=basic_response["content_type"])
-
+        response =  Response(data=basic_response["data"],status=basic_response["status"], content_type=basic_response["content_type"])
+        iri_father = request.build_absolute_uri()
+        idx = iri_father.index(self.contextclassname)
+        iri_father = iri_father[:idx]
+        self.add_url_in_header(iri_father,response, 'up')
+        return response
     def basic_options(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
         self.set_basic_context_resource(request)
