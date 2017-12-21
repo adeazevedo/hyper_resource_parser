@@ -45,6 +45,7 @@ def vocabularyDict():
     dic[False] = 'http://schema.org/Boolean'
     dic[FloatField] = 'http://schema.org/Float'
     dic[float] = 'http://schema.org/Float'
+    dic[ForeignKey] = 'http://schema.org/Integer'
     dic[IntegerField] = 'http://schema.org/Integer'
     dic[AutoField]= 'http://schema.org/Integer'
     dic[int] = 'http://schema.org/Integer'
@@ -66,6 +67,8 @@ def vocabularyDict():
     dic['name'] = 'http://schema.org/name'
     dic['nomeAbrev'] = 'https://schema.org/alternateName'
     dic['responsible'] = 'http://schema.org/accountablePerson'
+    dic['usuario'] = 'http://schema.org/Person'
+    dic['user'] = 'http://schema.org/Person'
 
     dic['FeatureCollection'] = 'http://geojson.org/geojson-ld/vocab.html#FeatureCollection'
     dic[GeometryField] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
@@ -246,10 +249,12 @@ class ContextResource:
 
     def attribute_contextualized_dict_for(self, field):
         voc = vocabulary(field.name)
-        res_voc = voc if voc is not None else vocabulary(type(field))
+        voc_type = vocabulary(type(field))
+        res_voc = voc if voc is not None else voc_type
         if res_voc is None:
             res_voc  = "http://schema.org/Thing"
-        return res_voc #{ "@id": res_voc, "@type": "@id"}
+        #return res_voc #{ "@id": res_voc, "@type": "@id"}
+        return {'@id': res_voc, '@type':  voc_type }
 
     def attributes_contextualized_dict(self):
         dic_field = {}
@@ -266,9 +271,6 @@ class ContextResource:
         res_voc = voc if voc is not None else vocabulary(type(field))
         return { "@id": res_voc, "@type": "@id"}
 
-    def supportedProperties(self):
-        arr_dict = []
-        return arr_dict
 
     def supportedProperties(self):
         arr_dict = []

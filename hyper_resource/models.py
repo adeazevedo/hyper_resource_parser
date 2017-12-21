@@ -225,6 +225,10 @@ class QObjectFactory:
         d['eq'] = self.q_object_for_eq
         d['neq'] = self.q_object_for_neq
         d['between'] = self.q_object_for_between
+        d['*in'] = self.q_object_for_in
+        d['*eq'] = self.q_object_for_eq
+        d['*neq'] = self.q_object_for_neq
+        d['*between'] = self.q_object_for_between
 
         return d.get(self.operation_or_operator, self.q_object_for_spatial_operation)
 
@@ -246,8 +250,8 @@ class FactoryComplexQuery:
         return [field.name for field in self.fields(mode_class)]
 
     def base_operators(self):
-        return ['neq', 'eq','lt','lte','gt','gte','between','isnull','like','notlike','in','notin']
-        #'*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','*like','*notlike','*in','*notin']
+        return ['neq', 'eq','lt','lte','gt','gte','between','isnull','like','notlike','in','notin',
+        '*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','*like','*notlike','*in','*notin']
 
     def logical_operators(self):
         return ['or', 'and', '*or', '*and']

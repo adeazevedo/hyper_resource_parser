@@ -122,7 +122,7 @@ class AbstractResource(APIView):
     __metaclass__ = ABCMeta
 
     serializer_class = None
-
+    contextclassname= ''
     def __init__(self):
         super(AbstractResource, self).__init__()
         self.current_object_state = None
@@ -133,6 +133,8 @@ class AbstractResource(APIView):
         self.iri_metadata = None
         self.operation_controller = OperationController()
         self.token_need = self.token_is_need()
+
+
 
     content_negotiation_class = IgnoreClientContentNegotiation
 
@@ -178,6 +180,7 @@ class AbstractResource(APIView):
         context_class = getattr(context_module, context_class_name )
         self.context_resource = context_class()
         self.context_resource.resource = self
+
 
     # todo
     def path_request_is_ok(self, a_path):
@@ -896,10 +899,11 @@ class AbstractCollectionResource(AbstractResource):
 
         basic_response = self.basic_get(request, *args, **kwargs)
         response =  Response(data=basic_response["data"],status=basic_response["status"], content_type=basic_response["content_type"])
-        iri_father = request.build_absolute_uri()
-        idx = iri_father.index(self.contextclassname)
-        iri_father = iri_father[:idx]
+        iri_base = request.build_absolute_uri()
+        idx = iri_base.index(self.contextclassname)
+        iri_father = iri_base[:idx]
         self.add_url_in_header(iri_father,response, 'up')
+        self.add_url_in_header(iri_base[:-1] + '.jsonld',response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
         return response
     def basic_options(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
