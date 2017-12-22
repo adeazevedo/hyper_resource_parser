@@ -36,10 +36,21 @@ class APIRoot(APIView):
         response = self.base_context.addContext(request, response)
         return response
 
+    def add_url_in_header(self, url, response, rel):
+        link = ' <'+url+'>; rel=\"'+rel+'\" '
+        if "Link" not in response:
+            response['Link'] = link
+        else:
+            response['Link'] += "," + link
+        return response
+
     def get(self, request, *args, **kwargs):
         root_links = get_root_response(request)
         response = Response(root_links)
+        entry_pointURL = reverse('controle_v1:api_root', request=request)
+        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
         return self.base_context.addContext(request, response)
+
 
 class GastoList(CollectionResource):
     queryset = Gasto.objects.all()

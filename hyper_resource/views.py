@@ -1,7 +1,7 @@
 import ast
 import re
 import json
-
+import random
 import jwt
 import requests
 
@@ -24,6 +24,8 @@ from abc import ABCMeta, abstractmethod
 
 
 from hyper_resource.models import  FactoryComplexQuery, OperationController, BusinessModel, ConverterType
+from image_generator.img_generator import BuilderPNG
+
 SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
 
 
@@ -158,6 +160,14 @@ class AbstractResource(APIView):
         else:
             response['Link'] += "," + link
         return response
+    def add_base_headers(self, request, response):
+        iri_base = request.build_absolute_uri()
+        if self.contextclassname not in iri_base:
+            return;
+        idx = iri_base.index(self.contextclassname)
+        iri_father = iri_base[:idx]
+        self.add_url_in_header(iri_father,response, 'up')
+        self.add_url_in_header(iri_base[:-1] + '.jsonld',response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
 
     def dispatch(self, request, *args, **kwargs):
         if self.token_is_need():
@@ -502,6 +512,38 @@ class AbstractResource(APIView):
                 #paramsConveted.append (value)
 
         return paramsConveted
+
+    def generate_tmp_file(self, suffix='', length_name=10):
+        return ''.join([random.choice('0123456789ABCDEF') for i in range(length_name)]) + suffix
+
+    def get_style_file(self, request):
+        if 'HTTP_LAYERSTYLE' in request.META:
+            layer_style_url = request.META['HTTP_LAYERSTYLE']
+            response = requests.get(layer_style_url)
+            if response.status_code == 200:
+                file_name = self.generate_tmp_file(suffix="_tmp_style.xml")
+                with open(file_name, "w+") as st:
+                    st.write(response.text.encode('UTF-8'))
+                    st.close()
+                return file_name
+        return None
+
+    def get_png(self, queryset, request):
+        style = self.get_style_file(request)
+
+        if isinstance(queryset, GEOSGeometry):
+            wkt = queryset.wkt
+            geom_type = queryset.geom_type
+        else:
+            wkt = queryset.geom.wkt
+            geom_type = queryset.geom.geom_type
+
+        config = {'wkt': wkt, 'type': geom_type}
+        if style is not None:
+            config["style"] = style
+            config["deleteStyle"] = True
+        builder_png = BuilderPNG(config)
+        return builder_png.generate()
 
 class NonSpatialResource(AbstractResource):
 
@@ -899,12 +941,9 @@ class AbstractCollectionResource(AbstractResource):
 
         basic_response = self.basic_get(request, *args, **kwargs)
         response =  Response(data=basic_response["data"],status=basic_response["status"], content_type=basic_response["content_type"])
-        iri_base = request.build_absolute_uri()
-        idx = iri_base.index(self.contextclassname)
-        iri_father = iri_base[:idx]
-        self.add_url_in_header(iri_father,response, 'up')
-        self.add_url_in_header(iri_base[:-1] + '.jsonld',response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
+        self.add_base_headers(request, response)
         return response
+
     def basic_options(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
         self.set_basic_context_resource(request)

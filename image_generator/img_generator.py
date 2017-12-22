@@ -1,14 +1,17 @@
 import sys
 import random
-from bc_edgv import settings
+from hyper_resource_py import settings
 import os
 
 try:
     import mapnik
 except:
-    print ('\n\nThe mapnik library and python bindings must have been compiled and \
-installed successfully before running this script.\n\n')
-    sys.exit(1)
+    print ('***************************************************************************************************************************')
+    print ('** The mapnik library and python bindings must have been compiled and \
+installed successfully before running this script. **')
+    print('** So.It is not possible generate images                                                                                 **')
+    print ('***************************************************************************************************************************')
+    #sys.exit(1)
 
 STYLE_XML = 'image_generator/style.xml'
 
