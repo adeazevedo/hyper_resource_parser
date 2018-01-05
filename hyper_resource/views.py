@@ -1002,29 +1002,34 @@ class CollectionResource(AbstractCollectionResource):
     def operations_with_parameters_type(self):
         return self.operation_controller.collection_operations_dict()
 
+
+
     def get_objects_serialized(self):
         objects = self.model_class().objects.all()
         return self.serializer_class(objects, many=True, context={'request': self.request}).data
 
-    def get_objects_serialized_by_only_attributes(self, attribute_names_str):
+    def get_objects_by_only_attributes(self, attribute_names_str):
         arr = []
         attribute_names_str_as_array = attribute_names_str.split(',')
 
-        values = self.model_class().objects.values(*attribute_names_str_as_array)
-        for dic in values:
+        return self.model_class().objects.values(*attribute_names_str_as_array)
+
+    def get_objects_serialized_by_only_attributes(self, attribute_names_str, query_set):
+        arr = []
+        attribute_names_str_as_array = attribute_names_str.split(',')
+        for obj in query_set:
             a_dic = {}
             for att_name in attribute_names_str_as_array:
-                a_dic[att_name] = dic[att_name]
+                a_dic[att_name] = obj[att_name]
                 arr.append(a_dic)
         return arr
 
-    def get_objects_serialized_by_functions(self, attributes_functions_str):
+    def get_objects_by_functions(self, attributes_functions_str):
 
         objects = []
         if self.path_has_filter_operation(attributes_functions_str):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
-
-        return self.serializer_class(objects, many=True, context={'request': self.request}).data
+        return objects
 
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
@@ -1032,18 +1037,29 @@ class CollectionResource(AbstractCollectionResource):
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
 
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
-            return {"data": self.get_objects_serialized(),"status": 200, "content_type": "application/json"}
+            objects = self.model_class().objects.all()
+            serialized_data =  self.serializer_class(objects, many=True).data
+            resp =  Response(data= serialized_data,status=200, content_type="application/json")
+            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            return resp
 
         elif self.path_has_only_attributes(attributes_functions_str):
-            return {"data": self.get_objects_serialized_by_only_attributes(attributes_functions_str),"status": 200, "content_type": "application/json"}
-
+            query_set = self.get_objects_by_only_attributes(attributes_functions_str)
+            serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, query_set)
+            resp =  Response(data= serialized_data,status=200, content_type="application/json")
+            self.add_key_value_in_header(resp, 'Etag', str(hash(query_set)))
+            return resp
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
-            return {"data": self.get_objects_serialized_by_functions(attributes_functions_str),"status": 200, "content_type": "application/json"}
+            objects = self.get_objects_by_functions(attributes_functions_str)
+            serialized_data = self.serializer_class(objects, many=True).data
+            resp =  Response(data= serialized_data,status=200, content_type="application/json")
+            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            return resp
 
         else:
-            return {"data": "This request has invalid attribute or operation","status": 400, "content_type": "application/json"}
 
+            return Response(data="This request has invalid attribute or operation", status=400, content_type="application/json")
 
 class SpatialCollectionResource(AbstractCollectionResource):
 

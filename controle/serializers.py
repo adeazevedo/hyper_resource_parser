@@ -12,28 +12,7 @@ class GastoSerializer(ModelSerializer):
         identifier = 'id'
         identifiers = ['id', 'pk']
 
-    def create(self, validated_data):
-        um_tipo_gasto = self.initial_data['tipo_gasto']
-        #um_usuario = self.initial_data['usuario']
-        if um_tipo_gasto != None and um_tipo_gasto != '':
-            arr = um_tipo_gasto.split('/')
-            um_tipo_gasto = arr[-1] if arr[-1] != '' else arr[-2]
-        validated_data['tipo_gasto_id'] = um_tipo_gasto
-        validated_data['usuario_id'] = 1
-        instance = super(GastoSerializer, self).create(validated_data)
-        instance.tipo_gasto_id = um_tipo_gasto
-        instance.usuario_id = 1
-        return instance
 
-    def update(self, instance, validated_data):
-        um_tipo_gasto = self.initial_data['tipo_gasto']
-        if um_tipo_gasto != None and um_tipo_gasto != '':
-            arr = um_tipo_gasto.split('/')
-            um_tipo_gasto = arr[-1] if arr[-1] != '' else arr[-2]
-        validated_data['tipo_gasto_id'] = um_tipo_gasto
-        instance = super(GastoSerializer, self).update(instance, validated_data)
-        instance.tipo_gasto_id = um_tipo_gasto
-        return instance
 
 
 class TipoGastoSerializer(ModelSerializer):
