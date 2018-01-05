@@ -1129,17 +1129,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
             arr = self.inject_geometry_attribute_in_spatial_operation_for_path(arr)
         return self.get_objects_from_spatial_operation(arr)
 
-    def get_objects_with_spatial_operation_serialized(self, attributes_functions_str):
-        att_func_arr = attributes_functions_str.split('/')
-        arr = att_func_arr
-        if self.is_spatial_operation(att_func_arr[0]) and not self.path_has_geometry_attribute(att_func_arr[0]):
-            if self.path_has_url(attributes_functions_str):
-                arr = self.transform_path_with_url_as_array(att_func_arr)
-            arr = self.inject_geometry_attribute_in_spatial_operation_for_path(arr)
-        objects = self.get_objects_from_spatial_operation(arr)
-        return self.serializer_class(objects, many=True).data
-
-
     def get_objects_by_only_attributes(self, attribute_names_str):
         arr = []
         attribute_names_str_as_array = attribute_names_str.split(',')
@@ -1164,16 +1153,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
             objects = self.get_objects_from_map_operation(attributes_functions_str)
 
         return objects
-
-    def get_objects_serialized_by_functions(self, attributes_functions_str):
-
-        objects = []
-        if self.path_has_filter_operation(attributes_functions_str) or self.path_has_spatial_operation(attributes_functions_str) or  self.is_filter_with_spatial_operation(attributes_functions_str):
-            objects = self.get_objects_from_filter_operation(attributes_functions_str)
-        elif self.path_has_map_operation(attributes_functions_str):
-            objects = self.get_objects_from_map_operation(attributes_functions_str)
-
-        return self.serializer_class(objects, many=True).data
 
     def basic_response(self, request, model_object):
         response = Response(status=status.HTTP_201_CREATED, content_type='application/geojson')
@@ -1218,6 +1197,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
 
         else:
-            return {"data": "This request has invalid attribute or operation","status": 400, "content_type": "application/json"}
+            return Response(data="This request has invalid attribute or operation", status=400, content_type="application/json")
 
 
