@@ -9,7 +9,8 @@ except:
     print ('***************************************************************************************************************************')
     print ('** The mapnik library and python bindings must have been compiled and \
 installed successfully before running this script. **')
-    print('** So.It is not possible generate images                                                                                 **')
+    print('** So it is not possible generate images                                                                                 **')
+    print('** From image_generator>img_generator.py                                                                                 **')
     print ('***************************************************************************************************************************')
     #sys.exit(1)
 

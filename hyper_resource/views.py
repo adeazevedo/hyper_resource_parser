@@ -153,6 +153,9 @@ class AbstractResource(APIView):
     def token_is_need(self):
         return  False
 
+    def add_key_value_in_header(self, response, key, value ):
+        response[key] = value
+
     def add_url_in_header(self, url, response, rel):
         link = ' <'+url+'>; rel=\"'+rel+'\" '
         if "Link" not in response:
@@ -286,13 +289,15 @@ class AbstractResource(APIView):
         #self.check_object_permissions(self.request, obj)
         return obj
 
+    def get(self, request, *args, **kwargs):
+        return super(AbstractResource, self).get(request, *args, **kwargs)
+
     def patch(self, request, *args, **kwargs):
         return super(AbstractResource, self).patch(request, *args, **kwargs)
 
     def head(self, request, *args, **kwargs):
         resp =  Response(status=status.HTTP_200_OK)
         return resp
-
 
     def put(self, request, *args, **kwargs):
         obj = self.get_object(kwargs)
@@ -308,6 +313,8 @@ class AbstractResource(APIView):
         obj = self.get_object(kwargs)
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 
     def operation_names_model(self):
         return self.object_model.operation_names()
@@ -939,8 +946,7 @@ class AbstractCollectionResource(AbstractResource):
 
     def get(self, request, *args, **kwargs):
 
-        basic_response = self.basic_get(request, *args, **kwargs)
-        response =  Response(data=basic_response["data"],status=basic_response["status"], content_type=basic_response["content_type"])
+        response = self.basic_get(request, *args, **kwargs)
         self.add_base_headers(request, response)
         return response
 
@@ -1085,6 +1091,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def operations_with_parameters_type(self):
         return self.operation_controller.feature_collection_operations_dict()
 
+    def get_serialized(self, objects):
+          return self.serializer_class(objects, many=True).data
+
     def get_objects_serialized(self):
         objects = self.model_class().objects.all()
         return self.serializer_class(objects, many=True).data
@@ -1111,6 +1120,15 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def path_has_geometry_attribute(self, term_of_path):
         return term_of_path.lower() == self.geometry_field_name()
 
+    def get_objects_with_spatial_operation(self, attributes_functions_str):
+        att_func_arr = attributes_functions_str.split('/')
+        arr = att_func_arr
+        if self.is_spatial_operation(att_func_arr[0]) and not self.path_has_geometry_attribute(att_func_arr[0]):
+            if self.path_has_url(attributes_functions_str):
+                arr = self.transform_path_with_url_as_array(att_func_arr)
+            arr = self.inject_geometry_attribute_in_spatial_operation_for_path(arr)
+        return self.get_objects_from_spatial_operation(arr)
+
     def get_objects_with_spatial_operation_serialized(self, attributes_functions_str):
         att_func_arr = attributes_functions_str.split('/')
         arr = att_func_arr
@@ -1121,18 +1139,31 @@ class FeatureCollectionResource(SpatialCollectionResource):
         objects = self.get_objects_from_spatial_operation(arr)
         return self.serializer_class(objects, many=True).data
 
-    def get_objects_serialized_by_only_attributes(self, attribute_names_str):
+
+    def get_objects_by_only_attributes(self, attribute_names_str):
         arr = []
         attribute_names_str_as_array = attribute_names_str.split(',')
+        return self.model_class().objects.values(*attribute_names_str_as_array)
 
-        values = self.model_class().objects.values(*attribute_names_str_as_array)
-        for dic in values:
+    def get_objects_serialized_by_only_attributes(self, attribute_names_str, objects):
+        arr = []
+        attribute_names_str_as_array = attribute_names_str.split(',')
+        for dic in objects:
             a_dic = {}
             for att_name in attribute_names_str_as_array:
                 a_dic[att_name] = dic[att_name] if not isinstance(dic[att_name], GEOSGeometry) else json.loads(dic[att_name].json)
                 arr.append(a_dic)
         return arr
 
+    def get_objects_by_functions(self, attributes_functions_str):
+
+        objects = []
+        if self.path_has_filter_operation(attributes_functions_str) or self.path_has_spatial_operation(attributes_functions_str) or  self.is_filter_with_spatial_operation(attributes_functions_str):
+            objects = self.get_objects_from_filter_operation(attributes_functions_str)
+        elif self.path_has_map_operation(attributes_functions_str):
+            objects = self.get_objects_from_map_operation(attributes_functions_str)
+
+        return objects
 
     def get_objects_serialized_by_functions(self, attributes_functions_str):
 
@@ -1155,19 +1186,36 @@ class FeatureCollectionResource(SpatialCollectionResource):
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
 
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
-            return {"data": self.get_objects_serialized(),"status": 200, "content_type": "application/json"}
+            objects = self.model_class().objects.all()
+            serialized_data =  self.serializer_class(objects, many=True).data
+            resp =  Response(data= serialized_data,status=200, content_type="application/json")
+            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            return resp
 
         elif self.path_has_only_attributes(attributes_functions_str):
-            return {"data": self.get_objects_serialized_by_only_attributes(attributes_functions_str),"status": 200, "content_type": "application/json"}
+            objects = self.get_objects_by_only_attributes(attributes_functions_str)
+            serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
+            resp =  Response(data= serialized_data,status=200, content_type="application/json")
+            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            return resp
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass
         elif self.path_has_only_spatial_operation(attributes_functions_str):
-            return {"data": self.get_objects_with_spatial_operation_serialized(attributes_functions_str), "status": 200,
-                    "content_type": "application/json"}
+            objects = self.get_objects_with_spatial_operation(attributes_functions_str)
+            serialized_data = self.serializer_class(objects, many=True).data
+            resp =  Response(data= serialized_data,status=200, content_type="application/json")
+            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            return resp
+
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
-            return {"data": self.get_objects_serialized_by_functions(attributes_functions_str),"status": 200, "content_type": "application/json"}
+            objects = self.get_objects_by_functions(attributes_functions_str)
+            serialized_data = self.serializer_class(objects, many=True).data
+            resp =  Response(data= serialized_data,status=200, content_type="application/json")
+            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            return resp
+
 
         else:
             return {"data": "This request has invalid attribute or operation","status": 400, "content_type": "application/json"}
