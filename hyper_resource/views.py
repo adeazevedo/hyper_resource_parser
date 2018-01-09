@@ -21,7 +21,8 @@ from hyper_resource.contexts import *
 from rest_framework.negotiation import BaseContentNegotiation
 from django.contrib.gis.db import models
 from abc import ABCMeta, abstractmethod
-
+from datetime import datetime
+from django.core.cache import cache
 
 from hyper_resource.models import  FactoryComplexQuery, OperationController, BusinessModel, ConverterType
 from image_generator.img_generator import BuilderPNG
@@ -120,6 +121,8 @@ class BaseContext(object):
         contextdata = self.addIriTamplate(contextdata, request, self.serializer_object)
         return contextdata
 
+
+
 class AbstractResource(APIView):
     __metaclass__ = ABCMeta
 
@@ -137,8 +140,18 @@ class AbstractResource(APIView):
         self.token_need = self.token_is_need()
 
 
-
     content_negotiation_class = IgnoreClientContentNegotiation
+
+
+    def get_resource_from_cache(self, iri_with_content_type):
+        return cache.get(iri_with_content_type)
+
+
+    def get_or_make_e_tag(self, ):
+        #resource = cache.get(iri_with_content_type)
+        dt = datetime.now()
+
+        return self.__class__.__name__ + self.id + dt.microsecond
 
     def jwt_algorithm(self):
         return 'HS256'
@@ -876,10 +889,11 @@ class FeatureResource(SpatialResource):
         return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
 
 class AbstractCollectionResource(AbstractResource):
+
+
     def __init__(self):
         super(AbstractCollectionResource, self).__init__()
         self.queryset = None
-
 
     def token_is_http_or_https(self, token):
         return  token.lower() in ['http:', 'https:']
@@ -1002,8 +1016,6 @@ class CollectionResource(AbstractCollectionResource):
     def operations_with_parameters_type(self):
         return self.operation_controller.collection_operations_dict()
 
-
-
     def get_objects_serialized(self):
         objects = self.model_class().objects.all()
         return self.serializer_class(objects, many=True, context={'request': self.request}).data
@@ -1038,7 +1050,7 @@ class CollectionResource(AbstractCollectionResource):
 
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
             objects = self.model_class().objects.all()
-            serialized_data =  self.serializer_class(objects, many=True).data
+            serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
             resp =  Response(data= serialized_data,status=200, content_type="application/json")
             self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
             return resp
@@ -1052,7 +1064,7 @@ class CollectionResource(AbstractCollectionResource):
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
             objects = self.get_objects_by_functions(attributes_functions_str)
-            serialized_data = self.serializer_class(objects, many=True).data
+            serialized_data = self.serializer_class(objects, many=True, context={'request': request} ).data
             resp =  Response(data= serialized_data,status=200, content_type="application/json")
             self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
             return resp
@@ -1170,22 +1182,37 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return objects
 
-    def basic_response(self, request, model_object):
-        response = Response(status=status.HTTP_201_CREATED, content_type='application/geojson')
-        response['Content-Location'] = request.path + str(model_object.id)
-        return response
+    def basic_response(self, request, objects):
+        serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
+        resp =  Response(data= serialized_data,status=200, content_type="application/json")
+        dt = datetime.now()
+        local_hash = self.__class__.__name__ + str(dt.microsecond)
+        self.add_key_value_in_header(resp, 'Etag', local_hash)
+        iri_with_content_type = request.build_absolute_uri() + request.META['HTTP_ACCEPT']
+        cache.set(iri_with_content_type,(local_hash, serialized_data), 3600)
+        return resp
 
     def basic_get(self, request, *args, **kwargs):
+
+        key = request.build_absolute_uri() + request.META.get('HTTP_ACCEPT', 'application/vnd.geo+json')
+
+        tuple_etag_serialized_data = cache.get(key)
+
+        if tuple_etag_serialized_data is not None:
+           if tuple_etag_serialized_data[0] == request.META.get('HTTP_IF_NONE_MATCH', '') or tuple_etag_serialized_data[0] == request.META.get('HTTP_IF_MATCH', ''):
+            return Response(data={},status=304, content_type="application/json")
+
+           resp = Response(data= tuple_etag_serialized_data[1],status=200, content_type="application/json")
+           self.add_key_value_in_header(resp, 'Etag', tuple_etag_serialized_data[0])
+           return resp
+
         self.object_model = self.model_class()()
         self.set_basic_context_resource(request)
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
 
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
             objects = self.model_class().objects.all()
-            serialized_data =  self.serializer_class(objects, many=True).data
-            resp =  Response(data= serialized_data,status=200, content_type="application/json")
-            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
-            return resp
+            return self.basic_response(request, objects)
 
         elif self.path_has_only_attributes(attributes_functions_str):
             objects = self.get_objects_by_only_attributes(attributes_functions_str)
@@ -1198,19 +1225,11 @@ class FeatureCollectionResource(SpatialCollectionResource):
         #    pass
         elif self.path_has_only_spatial_operation(attributes_functions_str):
             objects = self.get_objects_with_spatial_operation(attributes_functions_str)
-            serialized_data = self.serializer_class(objects, many=True).data
-            resp =  Response(data= serialized_data,status=200, content_type="application/json")
-            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
-            return resp
-
+            return self.basic_response(request, objects)
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
             objects = self.get_objects_by_functions(attributes_functions_str)
-            serialized_data = self.serializer_class(objects, many=True).data
-            resp =  Response(data= serialized_data,status=200, content_type="application/json")
-            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
-            return resp
-
+            return self.basic_response(request, objects)
 
         else:
             return Response(data="This request has invalid attribute or operation", status=400, content_type="application/json")
