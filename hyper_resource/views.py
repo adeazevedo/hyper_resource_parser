@@ -11,6 +11,7 @@ from django.db.models.base import ModelBase
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 # Create your views here.
+from django.utils.http import quote_etag
 from requests import ConnectionError
 from requests import HTTPError
 from rest_framework import status
@@ -23,12 +24,25 @@ from django.contrib.gis.db import models
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from django.core.cache import cache
-
+import hashlib
 from hyper_resource.models import  FactoryComplexQuery, OperationController, BusinessModel, ConverterType
 from image_generator.img_generator import BuilderPNG
 
 SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
 
+HTTP_IF_NONE_MATCH = 'HTTP_IF_NONE_MATCH'
+HTTP_IF_MATCH = 'HTTP_IF_MATCH'
+HTTP_IF_UNMODIFIED_SINCE = 'HTTP_IF_UNMODIFIED_SINCE'
+HTTP_IF_MODIFIED_SINCE = 'HTTP_IF_MODIFIED_SINCE'
+HTTP_ACCEPT = 'HTTP_ACCEPT'
+CONTENT_TYPE = 'CONTENT_TYPE'
+ETAG = 'Etag'
+CONTENT_TYPE_GEOJSON = "application/vnd.geo+json"
+CONTENT_TYPE_JSON = "application/json"
+CONTENT_TYPE_LD_JSON = "application/ld+json"
+CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
+CONTENT_TYPE_IMAGE_PNG = "image/png"
+SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG)
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
     def select_parser(self, request, parsers):
@@ -122,6 +136,14 @@ class BaseContext(object):
         return contextdata
 
 
+class RequiredObject:
+    #Responds an object with four attributes: representation of what was required, content_type, object, dict=>dic[status] = status_code
+    def __init__(self, representation_object, content_type, origin_object, status_code, etag=None):
+        self.representation_object = representation_object
+        self.content_type = content_type
+        self.origin_object = origin_object
+        self.status_code = status_code
+        self.etag = etag
 
 class AbstractResource(APIView):
     __metaclass__ = ABCMeta
@@ -138,20 +160,24 @@ class AbstractResource(APIView):
         self.iri_metadata = None
         self.operation_controller = OperationController()
         self.token_need = self.token_is_need()
-
+        self.e_tag = None
+        self.temporary_content_type = None
 
     content_negotiation_class = IgnoreClientContentNegotiation
 
+    def generate_e_tag(self, data):
+        return str(hash(data))
 
-    def get_resource_from_cache(self, iri_with_content_type):
-        return cache.get(iri_with_content_type)
+    def set_etag_in_header(self, response, e_tag):
+        if not response.streaming:
+            response[ETAG] = e_tag
+        return response
 
-
-    def get_or_make_e_tag(self, ):
-        #resource = cache.get(iri_with_content_type)
-        dt = datetime.now()
-
-        return self.__class__.__name__ + self.id + dt.microsecond
+    def inject_e_tag(self, etag=None):
+        if self.e_tag is None and self.object_model is not None:
+            self.e_tag = hash(self.object_model)
+        if etag is not None:
+            self.e_tag += str(etag)
 
     def jwt_algorithm(self):
         return 'HS256'
@@ -192,7 +218,7 @@ class AbstractResource(APIView):
                 a_token = request.META['HTTP_AUTHORIZATION'][7:].strip()
                 if self.token_is_ok(a_token):
                     return super(AbstractResource, self).dispatch(request, *args, **kwargs)
-            resp = HttpResponse(json.dumps({"token": "token is needed or it is not ok"}), status=401,  content_type='application/json')
+            resp = HttpResponse(json.dumps({"token": "token is needed or it is not ok"}), status=401,  content_type=CONTENT_TYPE_JSON)
             resp['WWW-Authenticate'] = 'Bearer realm="Access to the staging site"'
             return resp
         else:
@@ -297,21 +323,85 @@ class AbstractResource(APIView):
 
     def get_object(self, a_dict):
         dicti = self.dic_with_only_identitier_field(a_dict)
-        queryset = self.model_class().objects.all()
-        obj = get_object_or_404(queryset, **dicti)
+        #queryset = self.model_class().objects.all()
+        #obj = get_object_or_404(queryset, **dicti)
+        obj = get_object_or_404(self.model_class(), **dicti)
         #self.check_object_permissions(self.request, obj)
         return obj
 
-    def get(self, request, *args, **kwargs):
-        return super(AbstractResource, self).get(request, *args, **kwargs)
+    def serialized_data(self, request, object_or_list_of_object, is_many):
+        return self.serializer_class(object_or_list_of_object, many=is_many, context={'request': request}).data
 
+    def default_content_type(self):
+        return CONTENT_TYPE_JSON
+
+    def content_type_or_default_content_type(self, request):
+        a_content_type=  request.META.get(HTTP_ACCEPT, '')
+        if a_content_type not in SUPPORTED_CONTENT_TYPES:
+            return self.default_content_type()
+        return a_content_type
+    #todo
+    def basic_response(self, request, serialized_object, status, content_type):
+        return Response(data=serialized_object,status=status, content_type=content_type)
+
+    #Answer if a client's etag is equal server's etag
+    def conditional_etag_match(self, request):
+        key = self.get_key_cache(request)
+        tuple_etag_serialized_data = cache.get(key)
+        if tuple_etag_serialized_data is None:
+            return False
+        return tuple_etag_serialized_data[0] == request.META.get(HTTP_IF_NONE_MATCH, '')
+
+    #Answer if a get(request) is conditional
+    def is_conditional_get(self, request):
+        return request.META.get(HTTP_IF_NONE_MATCH, None) is not None or \
+               request.META.get(HTTP_IF_UNMODIFIED_SINCE,  None) is not None
+
+
+    #Should be overrided
+    # Answer a formatted string(iri + accept) which is a key to retrieve an object in the cache
+    def get_key_cache(self, request):
+        #key is composed by: url + accept. Note that, in client request HTTP_ACCEPT is in header. Default is application/json
+        return request.build_absolute_uri() + request.META.get(HTTP_ACCEPT, CONTENT_TYPE_JSON)
+
+    def set_key_with_data_in_cache(self, key, etag, data, seconds=3600):
+        if isinstance(data, memoryview):
+            return
+        if cache.get(key) is None:
+            cache.set(key,(etag, data), 3600)
+
+    #Must be overrided. Abstract
+    def response_base_get(self, request):
+        pass
+
+    #Should be overrided
+    def response_conditional_get(self, request, *args, **kwargs):
+        if self.conditional_etag_match(request):
+            return Response(data={},status=304, content_type=CONTENT_TYPE_JSON)
+        return self.response_base_get(request, *args, **kwargs)
+
+    #Could be overrided
+    def get(self, request, *args, **kwargs):
+        #return super(AbstractResource, self).get(request, *args, **kwargs)
+        resp = None
+        if self.is_conditional_get(request):
+           resp = self.response_conditional_get(request, *args, **kwargs)
+        else:
+           resp = self.response_base_get(request, *args, **kwargs)
+
+        self.add_base_headers(request, resp)
+
+        return resp
+
+    # Could be overrided
     def patch(self, request, *args, **kwargs):
         return super(AbstractResource, self).patch(request, *args, **kwargs)
 
+    # Could be overrided
     def head(self, request, *args, **kwargs):
         resp =  Response(status=status.HTTP_200_OK)
         return resp
-
+    # Could be overrided
     def put(self, request, *args, **kwargs):
         obj = self.get_object(kwargs)
         serializer = self.serializer_class(obj, data=request.data, context={'request': request})
@@ -321,13 +411,11 @@ class AbstractResource(APIView):
             return resp
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    # Could be overrided
     def delete(self, request, *args, **kwargs):
         obj = self.get_object(kwargs)
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 
     def operation_names_model(self):
         return self.object_model.operation_names()
@@ -437,15 +525,11 @@ class AbstractResource(APIView):
         dic = self.operations_with_parameters_type()
         return (attribute_or_method_name in dic) and len(dic[attribute_or_method_name].parameters)
 
-
-
     def function_name(self, attributes_functions_str):
         functions_dic = self.operations_with_parameters_type()
         if str(attributes_functions_str[-1]) in functions_dic:
             return str(attributes_functions_str[-1])
         return str(attributes_functions_str[-2])
-
-
 
     def response_resquest_with_attributes(self,  attributes_functions_name):
         a_dict ={}
@@ -456,8 +540,7 @@ class AbstractResource(APIView):
            a_dict[attr_name] = obj
 
         self.current_object_state = a_dict
-        return (a_dict, 'application/json', self.object_model, {'status': 200})
-
+        return (a_dict, CONTENT_TYPE_JSON, self.object_model, {'status': 200})
 
     def all_parameters_converted(self, attribute_or_function_name, parameters):
         parameters_converted = []
@@ -465,7 +548,6 @@ class AbstractResource(APIView):
             parameters_type = self.operations_with_parameters_type()[attribute_or_function_name].parameters
             for i in range(0, len(parameters)):
                parameters_converted.append(parameters_type[i](parameters[i]))
-
 
             return parameters_converted
 
@@ -587,7 +669,7 @@ class NonSpatialResource(AbstractResource):
 
         a_value = {self.name_of_last_operation_executed: self.current_object_state}
 
-        return (a_value, 'application/json', self.object_model, {'status': 200})
+        return (a_value, CONTENT_TYPE_JSON, self.object_model, {'status': 200})
 
     def basic_get(self, request, *args, **kwargs):
 
@@ -600,7 +682,7 @@ class NonSpatialResource(AbstractResource):
         if self.is_simple_path(attributes_functions_str):
 
             serializer = self.serializer_class(self.object_model, context={'request': self.request})
-            output = (serializer.data, 'application/json', self.object_model, {'status': 200})
+            output = (serializer.data, CONTENT_TYPE_JSON, self.object_model, {'status': 200})
 
         elif self.path_has_only_attributes(attributes_functions_str):
             output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
@@ -751,60 +833,7 @@ class SpatialResource(AbstractResource):
         d["properties"] = a_dict
         return d
 
-    def response_resquest_with_attributes(self,  attributes_functions_name):
-        a_dict ={}
-        attributes = attributes_functions_name.strip().split(',')
 
-        #self.current_object = self.object_model
-        for attr_name in attributes:
-           obj = self._value_from_object(self.object_model, attr_name, [])
-           if isinstance(obj, GEOSGeometry):
-               geom = obj
-               obj = json.loads(obj.geojson)
-               if len(attributes) == 1:
-                   return (obj, 'application/vnd.geo+json', geom, {'status': 200})
-           a_dict[attr_name] = obj
-        if self.geometry_field_name() in attributes:
-            a_dict = self.dict_as_geojson(a_dict)
-        self.current_object_state = a_dict
-
-        return (a_dict, 'application/json', self.object_model, {'status': 200})
-
-    def response_request_attributes_functions_str_with_url(self, attributes_functions_str):
-        attributes_functions_str = re.sub(r':/+', '://', attributes_functions_str)
-        arr_of_two_url = self.attributes_functions_splitted_by_url(attributes_functions_str)
-        resp = requests.get(arr_of_two_url[1])
-        if resp.status_code in[400, 401, 404]:
-            return ({},'application/json', self.object_model, {'status': resp.status_code})
-        if resp.status_code == 500:
-            return ({},'application/json', self.object_model,{'status': resp.status_code})
-        j = resp.text
-        attributes_functions_str = arr_of_two_url[0] + j
-
-        return self.response_of_request(attributes_functions_str)
-
-    def response_of_request(self,  attributes_functions_str):
-        att_funcs = attributes_functions_str.split('/')
-
-        #obj = self.get_geometry_object(self.object_model)
-
-       # if (not self.is_operation(att_funcs[0])) and self.is_attribute(att_funcs[0]):
-        #    att_funcs = att_funcs[1:]
-
-        self.current_object_state = self._execute_attribute_or_method(self.object_model, att_funcs[0], att_funcs[1:])
-        a_value = self.current_object_state
-        if isinstance(a_value, GEOSGeometry):
-            geom = a_value
-            a_value = json.loads(a_value.geojson)
-            return (a_value, 'application/vnd.geo+json', geom, {'status': 200})
-        elif isinstance(a_value, SpatialReference):
-           a_value = { self.name_of_last_operation_executed: a_value.pretty_wkt}
-        elif isinstance(a_value, memoryview):
-            return (a_value, 'application/octet-stream', self.object_model, {'status': 200})
-        else:
-            a_value = {self.name_of_last_operation_executed: a_value}
-
-        return (a_value, 'application/json', self.object_model, {'status': 200})
 
 class FeatureResource(SpatialResource):
 
@@ -821,67 +850,174 @@ class FeatureResource(SpatialResource):
     def operations_with_parameters_type(self):
 
         dic = self.object_model.operations_with_parameters_type()
-
         return dic
+
+    def get_key_cache(self, request):
+        #key is composed by: url + accept. Note that, in client request HTTP_ACCEPT is in header. Default is application/json
+        return request.build_absolute_uri() + self.content_type_or_default_content_type(request)
+
+    #Responds a List with four elements: value of what was requested, content_type, object, dict=>dic[status] = status_code
+    def response_resquest_with_attributes(self,  attributes_functions_name):
+        a_dict ={}
+        attributes = attributes_functions_name.strip().split(',')
+
+        for attr_name in attributes:
+           obj = self._value_from_object(self.object_model, attr_name, [])
+           if isinstance(obj, GEOSGeometry):
+               geom = obj
+               obj = json.loads(obj.geojson)
+               if len(attributes) == 1:
+                   return RequiredObject(obj, CONTENT_TYPE_GEOJSON, geom, 200)
+           a_dict[attr_name] = obj
+        if self.geometry_field_name() in attributes:
+            a_dict = self.dict_as_geojson(a_dict)
+        self.current_object_state = a_dict
+        return RequiredObject(a_dict, CONTENT_TYPE_JSON, self.object_model,  200)
+
+    def response_request_attributes_functions_str_with_url(self, attributes_functions_str):
+        attributes_functions_str = re.sub(r':/+', '://', attributes_functions_str)
+        arr_of_two_url = self.attributes_functions_splitted_by_url(attributes_functions_str)
+        resp = requests.get(arr_of_two_url[1])
+        if resp.status_code in[400, 401, 404]:
+            return RequiredObject({},CONTENT_TYPE_JSON, self.object_model,  resp.status_code)
+        if resp.status_code == 500:
+            return RequiredObject({},CONTENT_TYPE_JSON, self.object_model,resp.status_code)
+        j = resp.text
+        attributes_functions_str = arr_of_two_url[0] + j
+        #external_etag = resp.headers['etag']
+        #self.inject_e_tag(external_etag)
+        return self.response_of_request(attributes_functions_str)
+
+    def response_of_request(self,  attributes_functions_str):
+        att_funcs = attributes_functions_str.split('/')
+        self.current_object_state = self._execute_attribute_or_method(self.object_model, att_funcs[0], att_funcs[1:])
+        a_value = self.current_object_state
+        if isinstance(a_value, GEOSGeometry):
+            geom = a_value
+            a_value = json.loads(a_value.geojson)
+            return RequiredObject(a_value, CONTENT_TYPE_GEOJSON, self.object_model,  200)
+        elif isinstance(a_value, SpatialReference):
+           a_value = { self.name_of_last_operation_executed: a_value.pretty_wkt}
+        elif isinstance(a_value, memoryview):
+            return RequiredObject(a_value, CONTENT_TYPE_OCTET_STREAM, self.object_model,200)
+        else:
+            a_value = {self.name_of_last_operation_executed: a_value}
+
+        return RequiredObject(a_value, CONTENT_TYPE_JSON, self.object_model, 200)
 
     def basic_get(self, request, *args, **kwargs):
 
         self.object_model = self.get_object(kwargs)
         self.current_object_state = self.object_model
         self.set_basic_context_resource(request)
+        self.e_tag = str(hash(self.object_model))
         # self.request.query_params.
         attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
-
         if self.is_simple_path(attributes_functions_str):
             serializer = self.serializer_class(self.object_model)
-            output = (serializer.data, 'application/vnd.geo+json', self.object_model, {'status': 200})
+            required_object = RequiredObject(serializer.data, CONTENT_TYPE_GEOJSON, self.object_model, 200)
 
         elif self.path_has_only_attributes(attributes_functions_str):
-            output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
-            dict_attribute = output[0]
+            required_object = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
+
             att_names = attributes_functions_str.split(',')
             if len(att_names) > 1:
                 self._set_context_to_attributes(att_names)
             else:
                 self._set_context_to_only_one_attribute(attributes_functions_str)
         elif self.path_has_url(attributes_functions_str.lower()):
-            output = self.response_request_attributes_functions_str_with_url( attributes_functions_str)
+            required_object = self.response_request_attributes_functions_str_with_url( attributes_functions_str)
             self.context_resource.set_context_to_object(self.current_object_state, self.name_of_last_operation_executed)
         else:
             s = str(attributes_functions_str)
             if s[-1] == '/':
                s = s[:-1]
-            output = self.response_of_request(s)
+            required_object = self.response_of_request(s)
             self._set_context_to_operation(self.name_of_last_operation_executed)
+        self.inject_e_tag()
+        self.temporary_content_type= required_object.content_type
+        return required_object
 
-        return output
+    def generate_key_cache(self, request, content_type):
+        return self.request.build_absolute_uri() + content_type
 
-    def get(self, request, *args, **kwargs):
+    def is_image_content_type(self, request, **kwargs):
+        return self.content_type_or_default_content_type(request) == CONTENT_TYPE_IMAGE_PNG or kwargs.get('format', None) == "png"
 
-        dict_for_response = self.basic_get(request, *args, **kwargs)
-        status = dict_for_response[3]['status']
-        if status in [400, 401,404]:
+    def is_binary_content_type(self,required_object ):
+        return required_object.content_type == CONTENT_TYPE_OCTET_STREAM
+
+    def response_base_get_binary(self, request, required_object):
+         key = self.generate_key_cache(request, CONTENT_TYPE_OCTET_STREAM)
+         e_tag = self.generate_e_tag(required_object.origin_object)
+         self.set_key_with_data_in_cache(key, e_tag, required_object.representation_object )
+         resp = HttpResponse(required_object.representation_object, content_type=CONTENT_TYPE_OCTET_STREAM)
+         self.set_etag_in_header(resp, e_tag)
+         return resp
+
+    def response_base_get_with_image(self, request, required_object):
+
+        queryset = required_object.representation_object
+        image = self.get_png(queryset, request)
+        required_object.representation_object = image
+        key = self.generate_key_cache(request, CONTENT_TYPE_IMAGE_PNG)
+        e_tag = self.generate_e_tag(image)
+        self.set_key_with_data_in_cache(key,(e_tag, image))
+        resp = HttpResponse(image, content_type=CONTENT_TYPE_IMAGE_PNG)
+        self.set_etag_in_header(resp, e_tag)
+        return resp
+
+
+    def response_base_object_in_cache(self, request ):
+        tuple_etag_serialized_data = self.resource_in_cache_or_None(request)
+        if tuple_etag_serialized_data is not None:
+
+            if request.META[HTTP_ACCEPT] in [CONTENT_TYPE_IMAGE_PNG, CONTENT_TYPE_OCTET_STREAM]:
+                resp = HttpResponse(tuple_etag_serialized_data[1], content_type=request.META[HTTP_ACCEPT])
+            else:
+                resp = Response(data=tuple_etag_serialized_data[1],status=200, content_type=self.content_type_or_default_content_type(request))
+
+            self.set_etag_in_header(resp, tuple_etag_serialized_data[0])
+            return resp
+
+    def response_base_get(self, request, *args, **kwargs):
+        resource = self.resource_in_cache_or_None(request)
+        if resource is not None:
+            return self.response_base_object_in_cache(request )
+
+        required_object = self.basic_get(request, *args, **kwargs)
+        status = required_object.status_code
+        if status in [400,401,404]:
             return Response({'Error ': 'The request has problem. Status:' + str(status)}, status=status)
-
         if status in [500]:
            return Response({'Error ': 'The server can not process this request. Status:' + str(status)}, status=status)
-        if 'HTTP_ACCEPT'  not in request.META:
-            request.META['HTTP_ACCEPT'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
-        accept = request.META['HTTP_ACCEPT']
-        if accept.lower() == "image/png" or kwargs.get('format', None) == 'png':
-            if len(dict_for_response) == 3:
-                queryset = dict_for_response[2]
-                image = self.get_png(queryset, request)
-                # headers = response._headers
-                return HttpResponse(image, content_type="image/png")
-                # headers.update(response._headers)
-                # response._headers = headers
-            else:
-                return Response({'Erro': 'The server can generate an image only from a geometry data'},
-                                status=status.HTTP_404_NOT_FOUND)
-        if dict_for_response[1] =='application/octet-stream':
-            return HttpResponse(dict_for_response[0], content_type='application/octet-stream')
-        return Response(data=dict_for_response[0], content_type=dict_for_response[1])
+
+        if self.is_image_content_type(request, **kwargs):
+           return self.response_base_get_with_image(request, required_object)
+
+        if self.is_binary_content_type(required_object):
+            return self.response_base_get_binary(request, required_object)
+
+        key = self.generate_key_cache(request, required_object.content_type)
+
+        self.set_key_with_data_in_cache(key, self.e_tag, required_object.representation_object )
+        resp =  Response(data=required_object.representation_object,status=200, content_type=required_object.content_type)
+        self.set_etag_in_header(resp, self.e_tag)
+        return resp
+
+    def default_content_type(self):
+        return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
+
+    def resource_in_cache_or_None(self, request):
+        key = self.get_key_cache(request)
+        return cache.get(key)
+
+    def response_conditional_get(self, request, *args, **kwargs):
+        a_content_type = self.content_type_or_default_content_type(request)
+        if self.conditional_etag_match(request):
+            return Response(data={},status=304, content_type=a_content_type)
+
+        return self.response_base_get(request, *args, **kwargs)
 
     def options(self, request, *args, **kwargs):
         self.basic_get(request, *args, **kwargs)
@@ -970,7 +1106,7 @@ class AbstractCollectionResource(AbstractResource):
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
 
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
-            return {"data": {},"status": 200, "content_type": "application/json"}
+            return {"data": {},"status": 200, "content_type": CONTENT_TYPE_JSON}
 
         elif self.path_has_only_attributes(attributes_functions_str):
             output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
@@ -979,19 +1115,19 @@ class AbstractCollectionResource(AbstractResource):
                 self._set_context_to_attributes(dict_attribute.keys())
             else:
                 self._set_context_to_only_one_attribute(attributes_functions_str)
-            return {"data": {},"status": 200, "content_type": "application/json"}
+            return {"data": {},"status": 200, "content_type": CONTENT_TYPE_JSON}
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass
         elif self.path_has_only_spatial_operation(attributes_functions_str):
             return {"data": self.get_objects_with_spatial_operation_serialized(attributes_functions_str), "status": 200,
-                    "content_type": "application/json"}
+                    "content_type": CONTENT_TYPE_JSON}
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
-            return {"data": self.get_objects_serialized_by_functions(attributes_functions_str),"status": 200, "content_type": "application/json"}
+            return {"data": self.get_objects_serialized_by_functions(attributes_functions_str),"status": 200, "content_type": CONTENT_TYPE_JSON}
 
         else:
-            return {"data": "This request has invalid attribute or operation","status": 400, "content_type": "application/json"}
+            return {"data": "This request has invalid attribute or operation","status": 400, "content_type": CONTENT_TYPE_JSON}
 
     def options(self, request, *args, **kwargs):
         self.basic_options(request, *args, **kwargs)
@@ -999,7 +1135,7 @@ class AbstractCollectionResource(AbstractResource):
         return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
 
     def basic_post(self, request):
-        response =  Response(status=status.HTTP_201_CREATED, content_type='application/json')
+        response =  Response(status=status.HTTP_201_CREATED, content_type=CONTENT_TYPE_JSON)
         response['Content-Location'] = request.path + str(self.object_model.pk)
         return response
 
@@ -1051,31 +1187,31 @@ class CollectionResource(AbstractCollectionResource):
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
             objects = self.model_class().objects.all()
             serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
-            resp =  Response(data= serialized_data,status=200, content_type="application/json")
-            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
+            self.add_key_value_in_header(resp, ETAG, str(hash(objects)))
             return resp
 
         elif self.path_has_only_attributes(attributes_functions_str):
             query_set = self.get_objects_by_only_attributes(attributes_functions_str)
             serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, query_set)
-            resp =  Response(data= serialized_data,status=200, content_type="application/json")
-            self.add_key_value_in_header(resp, 'Etag', str(hash(query_set)))
+            resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
+            self.add_key_value_in_header(resp, ETAG, str(hash(query_set)))
             return resp
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
             objects = self.get_objects_by_functions(attributes_functions_str)
             serialized_data = self.serializer_class(objects, many=True, context={'request': request} ).data
-            resp =  Response(data= serialized_data,status=200, content_type="application/json")
-            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
+            self.add_key_value_in_header(resp, ETAG, str(hash(objects)))
             return resp
 
         else:
 
-            return Response(data="This request has invalid attribute or operation", status=400, content_type="application/json")
+            return Response(data="This request has invalid attribute or operation", status=400, content_type=CONTENT_TYPE_JSON)
 
 class SpatialCollectionResource(AbstractCollectionResource):
 
-    #To do
+    #todo
     def path_request_is_ok(self, attributes_functions_str):
         return True
 
@@ -1118,13 +1254,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def operations_with_parameters_type(self):
         return self.operation_controller.feature_collection_operations_dict()
-
-    def get_serialized(self, objects):
-          return self.serializer_class(objects, many=True).data
-
-    def get_objects_serialized(self):
-        objects = self.model_class().objects.all()
-        return self.serializer_class(objects, many=True).data
 
     def get_objects_from_spatial_operation(self, array_of_terms):
         q_object = self.q_object_for_filter_array_of_terms(array_of_terms)
@@ -1184,26 +1313,26 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def basic_response(self, request, objects):
         serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
-        resp =  Response(data= serialized_data,status=200, content_type="application/json")
+        resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
         dt = datetime.now()
         local_hash = self.__class__.__name__ + str(dt.microsecond)
-        self.add_key_value_in_header(resp, 'Etag', local_hash)
-        iri_with_content_type = request.build_absolute_uri() + request.META['HTTP_ACCEPT']
+        self.add_key_value_in_header(resp, ETAG, local_hash)
+        iri_with_content_type = request.build_absolute_uri() + request.META[HTTP_ACCEPT]
         cache.set(iri_with_content_type,(local_hash, serialized_data), 3600)
         return resp
 
     def basic_get(self, request, *args, **kwargs):
 
-        key = request.build_absolute_uri() + request.META.get('HTTP_ACCEPT', 'application/vnd.geo+json')
+        key = request.build_absolute_uri() + request.META.get(HTTP_ACCEPT, CONTENT_TYPE_GEOJSON)
 
         tuple_etag_serialized_data = cache.get(key)
 
         if tuple_etag_serialized_data is not None:
-           if tuple_etag_serialized_data[0] == request.META.get('HTTP_IF_NONE_MATCH', '') or tuple_etag_serialized_data[0] == request.META.get('HTTP_IF_MATCH', ''):
-            return Response(data={},status=304, content_type="application/json")
+           if tuple_etag_serialized_data[0] == request.META.get(HTTP_IF_NONE_MATCH, ''):
+            return Response(data={},status=304, content_type=CONTENT_TYPE_JSON)
 
-           resp = Response(data= tuple_etag_serialized_data[1],status=200, content_type="application/json")
-           self.add_key_value_in_header(resp, 'Etag', tuple_etag_serialized_data[0])
+           resp = Response(data= tuple_etag_serialized_data[1],status=200, content_type=CONTENT_TYPE_JSON)
+           self.add_key_value_in_header(resp, ETAG, tuple_etag_serialized_data[0])
            return resp
 
         self.object_model = self.model_class()()
@@ -1217,8 +1346,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
         elif self.path_has_only_attributes(attributes_functions_str):
             objects = self.get_objects_by_only_attributes(attributes_functions_str)
             serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
-            resp =  Response(data= serialized_data,status=200, content_type="application/json")
-            self.add_key_value_in_header(resp, 'Etag', str(hash(objects)))
+            resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
+            self.add_key_value_in_header(resp, ETAG, str(hash(objects)))
             return resp
 
         #elif self.path_has_url(attributes_functions_str.lower()):
@@ -1232,6 +1361,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
             return self.basic_response(request, objects)
 
         else:
-            return Response(data="This request has invalid attribute or operation", status=400, content_type="application/json")
+            return Response(data="This request has invalid attribute or operation", status=400, content_type=CONTENT_TYPE_JSON)
 
 
