@@ -387,6 +387,9 @@ class AbstractResource(APIView):
     def is_image_content_type(self, request, **kwargs):
         return self.content_type_or_default_content_type(request) == CONTENT_TYPE_IMAGE_PNG or kwargs.get('format', None) == "png"
 
+    def accept_is_binary(self, request):
+        return request.META.get(HTTP_ACCEPT, '') == CONTENT_TYPE_OCTET_STREAM
+
     # Should be overrided
     def is_binary_content_type(self,required_object ):
         return required_object.content_type == CONTENT_TYPE_OCTET_STREAM
@@ -999,7 +1002,7 @@ class FeatureResource(SpatialResource):
         if self.is_image_content_type(request, **kwargs):
            return self.response_base_get_with_image(request, required_object)
 
-        if self.is_binary_content_type(required_object):
+        if self.is_binary_content_type(required_object) or self.accept_is_binary(request):
             return self.response_base_get_binary(request, required_object)
 
         key = self.get_key_cache(request, a_content_type=required_object.content_type)
