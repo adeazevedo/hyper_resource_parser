@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from hyper_resource.models import FeatureModel, BusinessModel
 from hyper_resource.models import FeatureModel, BusinessModel

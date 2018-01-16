@@ -403,12 +403,12 @@ class AbstractResource(APIView):
     #Should be overrided
     def response_base_get_with_image(self, request, required_object):
 
-        queryset = required_object.representation_object
-        image = self.get_png(queryset, request)
+        queryset = required_object.origin_object
+        image = self.get_png(self.current_object_state, request)
         required_object.representation_object = image
         key = self.get_key_cache(request, CONTENT_TYPE_IMAGE_PNG)
         e_tag = self.generate_e_tag(image)
-        self.set_key_with_data_in_cache(key,(e_tag, image))
+        self.set_key_with_data_in_cache(key,e_tag, image)
         resp = HttpResponse(image, content_type=CONTENT_TYPE_IMAGE_PNG)
         self.set_etag_in_header(resp, e_tag)
         return resp
