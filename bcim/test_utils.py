@@ -14,6 +14,7 @@ from django.test.runner import DiscoverRunner
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'bc_edgv.settings'
 
+
 #python manage.py test bcim.test_utils  --testrunner=bcim.test_utils.NoDbTestRunner
 
 class NoDbTestRunner(DiscoverRunner):

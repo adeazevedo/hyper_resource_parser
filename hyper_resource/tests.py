@@ -11,7 +11,7 @@ from django.test import TestCase
 # Create your tests here.
 from django.contrib.gis.db import models
 
-from hyper_resource.models import FeatureModel, point_operations, geometry_operations, FactoryComplexQuery
+from hyper_resource.models import FeatureModel, FactoryComplexQuery
 from hyper_resource.views import AbstractResource, FeatureCollectionResource, AbstractCollectionResource
 from django.contrib.gis.geos import GEOSGeometry
 from django.test import SimpleTestCase
@@ -95,9 +95,6 @@ class FeatureModelTestCase(SimpleTestCase):
 
     def test_get_geometry_type(self):
         self.assertEquals(self.ponto.get_geometry_type(), Point)
-
-    def test_operations_with_parameters_type(self):
-        self.assertEquals(self.ponto.operations_with_parameters_type().keys(), point_operations().keys())
 
     def test_fields(self):
         self.assertEquals(self.ponto.fields()[0].name, 'id_objeto')
