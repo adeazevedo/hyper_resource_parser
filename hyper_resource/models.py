@@ -187,6 +187,11 @@ class QObjectFactory:
         field_type = self.field_type()
         if field_type is None:
             return None
+        if isinstance(a_value, bool):
+            return a_value
+        if (a_value.lower() == 'false' or a_value.lower() == 'true') and self.operation_or_operator == 'isnull':
+            return  False if a_value.lower() == 'false' else True
+
         return converter.value_converted(self.field_type(), a_value)
 
 
@@ -250,8 +255,8 @@ class FactoryComplexQuery:
         return [field.name for field in self.fields(mode_class)]
 
     def base_operators(self):
-        return ['neq', 'eq','lt','lte','gt','gte','between','isnull','like','notlike','in','notin',
-        '*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','*like','*notlike','*in','*notin']
+        return ['neq', 'eq','lt','lte','gt','gte','between','isnull','isnotnull', 'like','notlike','in','notin',
+        '*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','isnotnull','*like','*notlike','*in','*notin']
 
     def logical_operators(self):
         return ['or', 'and', '*or', '*and']
@@ -271,6 +276,14 @@ class FactoryComplexQuery:
 
     def q_object_for_filter_expression(self, q_object_or_none, model_class, expression_as_array):
         #'sigla/in/rj,es,go/and/data/between/2017-02-01,2017-06-30/' = ['sigla','in','rj,es,go','and','data', 'between','2017-02-01,2017-06-30']
+        if '' in expression_as_array:
+            expression_as_array.remove('')
+
+        if len(expression_as_array)  == 2 and expression_as_array[1].lower() in ['isnull', 'isnotnull']:
+            boolean = expression_as_array[1].lower() == 'isnull'
+            expression_as_array[1] = 'isnull'
+            expression_as_array.append(boolean)
+
         if len(expression_as_array)  < 3:
             return q_object_or_none
         oper = expression_as_array[0]
