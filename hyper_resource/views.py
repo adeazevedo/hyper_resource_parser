@@ -397,10 +397,13 @@ class AbstractResource(APIView):
     def response_base_get_binary(self, request, required_object):
          key = self.get_key_cache(request, CONTENT_TYPE_OCTET_STREAM)
          import geobuf
-         pbf = geobuf.encode(required_object.representation_object) # GeoJSON or TopoJSON -> Geobuf string
-         e_tag = self.generate_e_tag(pbf)
-         self.set_key_with_data_in_cache(key, e_tag, pbf )
-         resp = HttpResponse(pbf, content_type=CONTENT_TYPE_OCTET_STREAM)
+         if isinstance(required_object.representation_object, str):
+             result = geobuf.encode(required_object.representation_object) # GeoJSON or TopoJSON -> Geobuf string
+         else:
+             result = required_object.representation_object
+         e_tag = self.generate_e_tag(result)
+         self.set_key_with_data_in_cache(key, e_tag, result )
+         resp = HttpResponse(result, content_type=CONTENT_TYPE_OCTET_STREAM)
          self.set_etag_in_header(resp, e_tag)
          return resp
     #Should be overrided
@@ -979,8 +982,8 @@ class FeatureResource(SpatialResource):
             return RequiredObject(a_value, CONTENT_TYPE_GEOJSON, self.object_model,  200)
         elif isinstance(a_value, SpatialReference):
            a_value = { self.name_of_last_operation_executed: a_value.pretty_wkt}
-        elif isinstance(a_value, memoryview):
-            return RequiredObject(a_value, CONTENT_TYPE_OCTET_STREAM, self.object_model,200)
+        elif isinstance(a_value, memoryview) or isinstance(a_value, buffer):
+           return RequiredObject(a_value, CONTENT_TYPE_OCTET_STREAM, self.object_model,200)
         else:
             a_value = {self.name_of_last_operation_executed: a_value}
 
