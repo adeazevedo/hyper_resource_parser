@@ -15,7 +15,7 @@ ALLOWED_HOSTS = ['*']
 
 APPEND_SLASH = True
 # Application definition
-TOKEN_NEED= False
+TOKEN_NEED = False
 
 
 # Application definition
@@ -90,7 +90,7 @@ WSGI_APPLICATION = PROJECT_NAME + '.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-
+"""
 if not 'IP_SGBD' in os.environ:
     os.environ['IP_SGBD'] = '172.30.10.86'
 
@@ -127,7 +127,7 @@ DATABASES = {
         'PASSWORD': password
     }
 }
-
+"""
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators

@@ -1,12 +1,17 @@
 import os
-import sys, inspect
+import sys, inspect, importlib
 import ast
+ALLOWED_DATABASES = ['postgres', 'postgresql', 'sqlite', '']
+
 def main(argv):
     has_to_generate_models  = False
     has_to_generate_views  = True
     has_to_generate_urls  = True
     has_to_generate_serializers  = True
     has_to_generate_contexters  = True
+
+    has_to_generate_settings = True
+
     size_of_arguments = len(argv)
     if size_of_arguments < 3:
         print('Usage: python generator_files.py django_project_name django_app_name')
@@ -30,6 +35,20 @@ def main(argv):
     if size_of_arguments > 7:
         has_to_generate_contexters = ast.literal_eval(argv[7])
 
+    if size_of_arguments > 8:
+        has_to_generate_settings = ast.literal_eval(argv[8])
+
+    from settings_generator import generate_file as gf_settings
+
+    if has_to_generate_settings:
+
+        generate_db = raw_input('What database do i have to generate? (Leave blank to keep the databases original settings): ')
+
+        if generate_db.lower() not in ALLOWED_DATABASES:
+            print('Database option not allowed, keeping the original database configuration')
+
+        gf_settings(prj_name, app_name, generate_db.lower())
+
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", prj_name + ".settings")
 
     import django
@@ -44,6 +63,7 @@ def main(argv):
     from django.conf import settings
 
     file_model_app = app_name + '/models.py'
+    sys.modules[app_name + '.models'] = importlib.import_module(app_name + '.models')
     if has_to_generate_models:
         os.system("python manage.py inspectdb > "+file_model_app)
 
