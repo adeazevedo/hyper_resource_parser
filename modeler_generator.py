@@ -9,16 +9,23 @@ from hyper_resource.models import FeatureModel
 
 
 def is_spatial(model_class):
-    if isinstance(model_class, models.Model) or isinstance(model_class, FeatureModel):
+    #if isinstance(model_class, models.Model) or isinstance(model_class, FeatureModel):
         for field in model_class._meta.get_fields():
-            if isinstance(field, GeometryField):
-                return True
-    return False
+          if isinstance(field, GeometryField):
+             return True
+        return False
 
 def generate_file(package_name, default_name='models.py'):
 
     classes_from = inspect.getmembers(sys.modules[package_name + '.models'], inspect.isclass)
-    geo_classes = map(lambda x: x[0], filter(lambda x: is_spatial(x[1]), classes_from))
+    classes_from = inspect.getmembers(sys.modules[package_name + '.models'], inspect.isclass)
+    #geo_classes = map(lambda x: x[0], filter(lambda x: is_spatial(x[1]), geo_classes )
+
+    for ele in classes_from:
+        print(ele[0])
+        print(is_spatial(ele[1]))
+    geo_classes = [ele[0] for ele in classes_from if is_spatial( ele[1])]
+    print(geo_classes)
     old_model = default_name
     new_model = default_name+'.new'
     with open(old_model, 'r') as sr:

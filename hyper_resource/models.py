@@ -38,6 +38,11 @@ if sys.version_info > (3,):
     buffer = memoryview
 
 def dict_map_geo_field_geometry():
+    """
+    Returns a dict whose his keys are geometric types
+    and his respective values is a geometric model
+    :return:
+    """
     dic = {}
     dic[GeometryField] = GEOSGeometry
     dic[LineStringField] = LineString
@@ -49,6 +54,10 @@ def dict_map_geo_field_geometry():
     return dic
 
 class Type_Called():
+    """
+    Type_called is a definition type that contains a name,
+    a list of parameters and a return type
+    """
     def __init__(self, a_name='', params=[], answer=None):
         self.name = a_name
         self.parameters = params
@@ -96,22 +105,53 @@ class ConverterType():
                 return GEOSGeometry(json.dumps(js))
 
         return GEOSGeometry(resp.content)
+
     def convert_to_string(self, value_as_str):
+        """
+        Recebe um valor e retorna sua representação em string
+        :param value_as_str:
+        :return:
+        """
         return str(value_as_str)
 
     def convert_to_int(self, value_as_str):
+        """
+        Recebe um valor e retorna sua representação em int
+        :param value_as_str:
+        :return:
+        """
         return int(value_as_str)
 
     def convert_to_float(self, value_as_str):
+        """
+        Recebe um valor e retorna sua representação em float
+        :param value_as_str:
+        :return:
+        """
         return float(value_as_str)
 
     def convert_to_date(self, value_as_str):
+        """
+        Recebe um valor e retorna sua representação em date
+        :param value_as_str:
+        :return:
+        """
         return datetime.strptime(value_as_str, "%Y-%m-%d").date()
 
     def convert_to_datetime(self, value_as_str):
+        """
+        Recebe um valor e retorna sua representação em datetime
+        :param value_as_str:
+        :return:
+        """
         return datetime.strptime(value_as_str, "%Y-%m-%d %H:%M:%S")
 
     def convert_to_time(self, value_as_str):
+        """
+        Recebe um valor e retorna sua representação em time
+        :param value_as_str:
+        :return:
+        """
         return datetime.time.strptime(value_as_str, "%Y-%m-%d %H:%M:%S")
 
     def convert_to_geometry(self, value_as_str):
@@ -125,6 +165,14 @@ class ConverterType():
 
 
     def operation_to_convert_value(self, a_type):
+        """
+        Receive type (a_type) and returns a convertion
+        method references to this type.
+        Example: a_type = float, return = a method to convert
+        values to float
+        :param a_type:
+        :return:
+        """
         d = {}
         d[str] = self.convert_to_string
         d[int] = self.convert_to_int
@@ -153,16 +201,54 @@ class ConverterType():
         return d[a_type]
 
     def value_converted(self, a_type, value):
+        """
+        Return the received 'value' converted to the same type of 'a_type'
+        :param a_type:
+        :param value:
+        :return:
+        """
+        # ConverterType.operation_to_convert_value() returns an
+        # method to convert values to 'a_type'. Example: if 'a_type'
+        # is str, ConverterType.operation_to_convert_value() will
+        # return a method to convert values to string
         object_method = self.operation_to_convert_value(a_type)
+        # return the received 'value' converted to the same type of 'a_type'
         return object_method(value)
 
     def convert_parameters(self, a_type, attribute_or_function_name, parameters):
+        """
+        If 'a_type' is a key of the dict of all operation (spatials or primitives)
+        and 'attribute_or_function_name' represents a operation of 'a_type', this
+        method convert 'parameters' to match with the types of the Type_Called.parameters
+        (the parameters of the operation itself) references to this 'attribute_or_function_name'
+        Example: 'parameters' = ['1.2', '5', 'test'] - Type_Called.parameters = [float, int, str] - return = [1.2, 5, 'test']
+        If 'a_type' isn't a key of the dict of all operation, just return 'parameters' intact
+        :param a_type:
+        :param attribute_or_function_name:
+        :param parameters:
+        :return:
+        """
         if a_type in OperationController().dict_all_operation_dict():
+            # if 'a_type' represent a index of the dict with all aperations (spacials or primitives)
+            # we retrieve only the dict references to the received type (a_type)
             operation_dict = OperationController().dict_all_operation_dict()[a_type]
+
             if attribute_or_function_name in operation_dict:
+                # if 'attribute_or_function_name' represents a operation
+                # references to the 'a_type' operations dict, we retureve
+                # this specific operation (the Type_Called references to it)
                 type_called = operation_dict[attribute_or_function_name]
+
+                # - type_called.parameters will return the list of types required by this operation
+                # - ConverterType.value_converted() return the value (second argument)
+                # converted to the same type of the specified type (first argument)
+                # - i.e. the received 'parameters' will be converted to match with this operation Type_Called.parameters
+                # - Example: 'parameters' = ['1.2', '5', 'test'] - Type_Called.parameters = [float, int, str]
+                # return = [1.2, 5, 'test']
                 return [ConverterType().value_converted(param, parameters[i]) for i, param in enumerate(type_called.parameters) ]
 
+        # if 'a_type' doesn't represent a index of the dict with all aperations (spacials or primitives)
+        # we return 'parameters' intact
         return parameters
 
 class QObjectFactory:
@@ -259,6 +345,10 @@ class FactoryComplexQuery:
         '*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','isnotnull','*like','*notlike','*in','*notin']
 
     def logical_operators(self):
+        """
+        Return a list with logical operator (or, and, *or, *and)
+        :return:
+        """
         return ['or', 'and', '*or', '*and']
 
     def is_attribute(self, att_name, model_class):
@@ -330,9 +420,34 @@ class OperationController:
         return cls._instance
 
     def geometry_operations_dict(self):
+        """
+        Returns a dict with all geospecials operations.
+        His keys are reference to a Type_Called object
+
+        # 'dic' structure exemple
+             {
+               'area': Type_Called(
+                                   {
+                                    'name': 'area',
+                                    'parameters': [],
+                                    'return_type': float
+                                   }
+                               ),
+               'boundary': Type_Called(
+                                   {
+                                    'name': 'boundary',
+                                    'parameters': [],
+                                    'return_type': float
+                                   }
+                               ),
+             ...
+             }
+        :return:
+        """
         dic = {}
         if len(dic) == 0:
             dic['area'] = Type_Called('area', [], float)
+
             dic['boundary'] = Type_Called('boundary', [], float)
             dic['buffer'] = Type_Called('buffer', [float], GEOSGeometry)
             dic['centroid'] = Type_Called('centroid', [], Point)
@@ -511,7 +626,34 @@ class OperationController:
         return dict(self.collection_operations_dict(), **self.spatial_collection_operations_dict())
 
     def dict_by_type_geometry_operations_dict(self):
+        """
+        Returns a dict. His key is a geometry type that
+        references a dict with geometry operations corresponding
+        at this geometric type
+
+        # dicti structure example
+         dicti{
+            GEOSGeometry: {
+                 # dict returned by self.geometry_operations_dict()
+                'area' :       Type_Called('area', [], float),
+                'boundary' :   Type_Called('boundary', [], float),
+                'buffer' :     Type_Called('buffer', [float], GEOSGeometry),
+                ...
+            },
+
+            Point: {
+                'area':        Type_Called('area', [], float),
+                'boundary':    Type_Called('boundary', [], float),
+                'buffer':      Type_Called('buffer', [float], GEOSGeometry),
+                ...
+            }
+            ...
+         }
+        :return:
+        """
         dicti = {}
+        # self.geometry_operation_dict() returns a dict with all geospatial operations
+        # the index GEOSGeometry of 'dicti' contains another dict of geospetial operations
         dicti[GEOSGeometry] = self.geometry_operations_dict()
         dicti[Point] = self.point_operations_dict()
         dicti[Polygon] = self.polygon_operations_dict()
@@ -520,10 +662,33 @@ class OperationController:
         dicti[MultiPolygon] = self.polygon_operations_dict()
         dicti[MultiLineString] = self.line_operations_dict()
         dicti[GeometryCollection] = self.geometry_operations_dict()
-
+        # all indexes above point to a dict returned by geometry_operations_dict(), direct or indirectly
         return dicti
 
     def dict_by_type_primitive_operations_dict(self):
+        """
+        Return a dict with operations for simple types.
+        Example:
+
+        d = {
+            str: {
+               'capitalize': Type_Called({
+                                            'name': 'capitalize',
+                                            'parameters': [],
+                                            'return_type': str
+                                        }),
+                'center': Type_Called({
+                                        'name': 'center',
+                                        'parameters': [int, str],
+                                        'return_type': str
+                                    }),
+                ...
+            }
+            int: { ... },
+            ...
+        }
+        :return:
+        """
         d = {}
         d[int]= self.int_operations_dict()
         d[float]= self.float_operations_dict()
@@ -533,49 +698,126 @@ class OperationController:
         return d
 
     def dict_all_operation_dict(self):
+        """
+        Return a dict with all the operations (for geometric and primitive types)
+        :return:
+        """
+        # OperationController.dict_by_type_geometry_operations_dict()
+        # returns a dict with geometric types as keys and a dict of geometric operations
+        # as his value
         d =  self.dict_by_type_geometry_operations_dict()
+        # join the geometric operations dict with primitive operations dict
         d.update(self.dict_by_type_primitive_operations_dict())
         return d
 
     def is_operation(self, an_object, name):
+        """
+        Return True if 'name' represents a operation of 'an_object'
+        :param an_object:
+        :param name:
+        :return:
+        """
+        # Verify if the received object is a BusinessModel instance
         if isinstance(an_object, BusinessModel):
+            # if 'name' represents any operation name of 'an_object' (BusinessModel instance, in this case)
             return an_object.is_operation(name)#return hasattr(an_object, name) and callable(getattr(an_object, name))
+
+        # if 'an_object' isn't a BusinessModel instance, get the object type
         a_type=type(an_object)
         if a_type not in self.dict_all_operation_dict():
+            # if the 'an_object' type isn't a key of the dict with all operations, this object hasn't a available operation
             return False
+
+        # if 'an_object' type is one of the all operations dict keys
+        # we get the operations dict references to this type
         operation_dict = self.dict_all_operation_dict()[a_type]
+        # return True if 'name' is one of the operations dict keys for this type
         return name in operation_dict
 
     def operation_has_parameters(self, an_object, att_or_method_name):
+        """
+        Return True if 'attr_of_method_name' represents 'an_object' operation
+        and if this operation has parameters
+        possui parâmetros
+        :param an_object:
+        :param att_or_method_name:
+        :return:
+        """
         if isinstance(an_object, BusinessModel):
-           return an_object.operation_has_parameters(att_or_method_name)
+            # if 'an_object' is a BusinessModel instance, call BusinessModel.operation_has_parameters()
+            # retorna True se a operação/método possuir algum parâmetro além de 'self'
+            return an_object.operation_has_parameters(att_or_method_name)
         a_type=type(an_object)
+        # if 'an_object' type isn't a index of dict of all operations (geometrics and alphanumerics)
+        # this is not a available operation
         if a_type not in self.dict_all_operation_dict():
             return False
+
+        # if the previous 'if' is False this means that a_type represents a index o of dict of all operations
+        # in this case, we get the operations dict that this type is related
         operation_dict = self.dict_all_operation_dict()[a_type]
         if att_or_method_name in operation_dict:
+            # if 'attr_of_method_name' is a index of 'an_object' type operations dict,
+            # this means that 'attr_of_method_name' is a operation for 'an_object' type
+            # the operation itself is represented by an Type_Called object
             type_called = operation_dict[att_or_method_name]
+            # if the list of parameters of this Type_Called has langth bigger than 0, this operations has parameters
             return len(type_called.parameters) > 0
+        # if 'attr_of_method_name' doesn't represent a operations of 'an_object' type, return False
         return False
 
 class BusinessModel(models.Model):
 
     def id(self):
+        """
+        Retorna o valor da primary key
+        do objeto BusinessModel
+        :return:
+        """
         return self.pk
 
     def name_string(self):
+        """
+        Retorna a representação de string
+        do objeto BusinessModel
+        :return:
+        """
         return self.__str__()
 
     def attribute_primary_ley(self):
+        """
+        Retorna o nome do identificador do
+        objeto BusinessModel através de seu
+        serializer
+        :return:
+        """
         return self.serializer_class.Meta.identifier
 
     def model_class(self):
+        """
+        Returns the model object type
+        :return:
+        """
         return type(self)
 
     def _key_is_identifier(self, key):
+        """
+        Retorna True se 'key' estiver na
+        lista de identificadores do modelo
+        :param key:
+        :return:
+        """
         return key in self.serializer_class.Meta.identifiers
 
     def dic_with_only_identitier_field(self, dict_params):
+        """
+        'dict_params' é um dicionário com todos os atributos
+        do modelo. O retorno é um dicionário oriundo deste
+        apenas com os atributos identificadores e seus
+        respectivos valores
+        :param dict_params:
+        :return:
+        """
         dic = dict_params.copy()
         a_dict = {}
         for key, value in dic.items():
@@ -584,47 +826,122 @@ class BusinessModel(models.Model):
         return a_dict
 
     def all_operation_name_and_value(self):
+        """
+        Return a list of tuples. Each tuple has the method name of object model as first element
+        and the value of the method (the method itself) as second element
+        :return:
+        """
         return inspect.getmembers(self, inspect.ismethod)
 
     def all_operation_name_and_args_length(self):
+        """
+        Return a list af tuples with informations of all methods for this object model (self).
+        Each tuple has the name of object model method as first element
+        and the number of arguments for this method as second element
+        :return:
+        """
+        # - BusinessModel.all_operation_name_and_value() returns a tuple with all methods of BusinessModel instance (self)
+        # the first element of each tuple is the method name, the second element is the method itself
+        # - inspect.getargspec(method).args receives a method (the method itself and not his name)
+        # and return a list with the name of all arguments for this methos
         return [(name, len( inspect.getargspec(method).args)) for name, method in self.all_operation_name_and_value()]
 
     def public_operations_name_and_value(self):
         return [(name, value) for name, value in self.all_operation_name_and_value() if not name.startwith('_')]
 
     def operation_names(self):
+        """
+        Returns a list with the name of all object model methods
+        :return:
+        """
         return [ name for name, value in self.all_operation_name_and_value() ]
 
     def public_operation_names(self):
         return [ name for name, value in self.public_operations_name_and_value() ]
 
     def operation_has_parameters(self, att_or_method_name):
-         return next((True for name, len_args in self.all_operation_name_and_args_length() if name == att_or_method_name and len_args > 1), False)
+        """
+        Return True if 'att_or_method_name' corresponds to a method name of BusinessModel instance
+        and it method has more than 1 argument (the first argument is 'self' for every method
+        and for this reason we con't consider him)
+        :param att_or_method_name:
+        :return:
+        """
+        # - BusinessModel.all_operation_name_and_args_length() returns a list
+        # of tuple in this format (method_name, number_of_arguments) for all methods
+        # of this BusinessModel instance (self)
+        # - next() just iterates through the elements (name and len_args) of the tuple
+        # - next() return False if the iterations ends and no 'True' value was founded
+        # (i.e. 'att_or_method_name' don't corresponds to a method name of BussinesModel instance).
+        # Even if 'att_or_method_name' corresponds to a method name of BussinesModel instance, and
+        # this method hasn't more than 1 argument, the return is 'False'
+        return next((True for name, len_args in self.all_operation_name_and_args_length() if name == att_or_method_name and len_args > 1), False)
 
     def attribute_names(self):
+        """
+        Returns a list of all public attributes of the object model
+        :return:
+        """
+        # - dir() returns a list with all object model members (attributes and methods)
+        # - getattr() returns the value of member whose name is specified as a string, if this member is a attribute
+        # if this member is a method, (i.e. a callable) returns it (not his return value)
+        # - if getattr return() a callable, this is not a attribute and must be cutted of the list
+        # - if getattr return() a attribute value, the attribute must be public (verified by BusinessModel.is_not_private())
         return [ attribute for attribute in dir(self) if not callable(getattr(self, attribute)) and self.is_not_private(attribute)]
 
     def fields(self):
+        """
+        Returns a list of model class (subclass of BusinessModel)
+        fields using the _meta attribute provided by Django database API
+        :return:
+        """
+        # model_class() return the model object type
+        # _meta.fields returns a list of model class fields
         return self.model_class()._meta.fields
 
     def field_names(self):
+        """
+        Returns a list of model field names (subclass of BusinessModel)
+        :return:
+        """
         return [field.name for field in self.fields()]
 
     def is_private(self, attribute_or_method_name):
+        """
+        Return True if 'attribute_or_method_name' starts and ends
+        with '__' (private)
+        :param attribute_or_method_name:
+        :return:
+        """
         return attribute_or_method_name.startswith('__') and attribute_or_method_name.endswith('__')
 
     def is_not_private(self, attribute_or_method_name):
+        """
+        Simply inverts the BusinessModel.is_private() logic
+        :param attribute_or_method_name:
+        :return:
+        """
         return not self.is_private(attribute_or_method_name)
 
     def is_operation(self, operation_name):
+        """
+        Return True if 'operation_name' is a name of BusinessModel instance method
+        :param operation_name:
+        :return:
+        """
         return operation_name in self.operation_names()
 
     def is_public_operations(self, operation_name):
         return operation_name in self.public_operation_names()
 
     def is_attribute(self, attribute_name):
-        #return attribute_name in self.field_names()
-
+        """
+        Returns True if 'attribute_name' is between the object model attribute names list
+        :param attribute_name:
+        :return:
+        """
+        # - if 'attribute_name' represents a method of 'self' getattr() returns it, so returns a callable
+        # - if 'attribute_name' represents a attribute return his value, so returns a not callable
         return (attribute_name in dir(self) and not callable(getattr(self, attribute_name)))
 
     def operations_with_parameters_type(self):
@@ -645,35 +962,94 @@ class BusinessModel(models.Model):
         abstract = True
 
 class FeatureModel(BusinessModel):
-
+    # geometry_object is a GEOSGeometry instance
     geometry_object = None
 
     class Meta:
         abstract = True
 
     def geo_field(self):
+        """
+        Returns the geometric field of FeatureModel (or his subclass) instance
+        :return:
+        """
+        # FearureModel.fields() returns a list of fields of a FeatureModel subclass
+        # the filter below gets only the GeometryField instance of this set of fields
+        # in this case we only get the first one (each geometry resource have just one GeometryField)
         return [field for field in self.fields() if isinstance(field, GeometryField)][0]
 
     def geo_field_name(self):
+        """
+        Returns the FeatureModel (or his subclass)
+        geometric field name (instance of GeometricField)
+        :return:
+        """
         return self.geo_field().name
 
     def get_geometry_object(self):
+        """
+        Returns FeatureModel.geometry_object. If this is None
+        returns the value of GeometryField of the FeatureModel
+        (or sublclass) instance. OBS: the value of
+        FeatureModel.geometry_object and the GeometryField of
+        FeatureModel instance is the same value
+        :return:
+        """
         if self.geometry_object == None:
+            # FeatureModel.geo_field_name() returns the name of geometric field of FeatureModel instance
+            # getattr() gets the value of this geometric field (that is a geometric object containing geometric coordinates)
             self.geometry_object = getattr(self, self.geo_field_name(), None)
         return self.geometry_object
 
     def _get_type_geometry_object(self):
+        """
+        Returns the type of geometric field of the FeatureModel
+        instance
+        :return:
+        """
+        # FeatureModel.get_geometry_object() returns a
+        # geometric object references to the FeatureModel instance
         geo_object = self.get_geometry_object()
         if geo_object is None:
             return None
         return type(geo_object)
 
     def get_geometry_type(self):
+        """
+        Returns a geometric type (the type of geometric field of FeatureModel instance)
+        or a geometric model if this not exists
+        :return:
+        """
+
+        # todo check this affirmative late
+        # OBS: FeatureModel._get_type_geometry_object() indirectly calls FeatureModel.geofield()
+        # and we call FeatureModel.geo_field() bellow again. This is posibly a redundance
+
+        # FeatureModel._get_type_geometry_object() returns the type of  geometric field of the FeatureModel instace
         geoType = self._get_type_geometry_object()
+
+        # dict_map_geo_field_geometry() returns a dict of geometric models indexed by geometric types
+        # FeatureModel.geo_field() returns the geometric field of the FeatureModel instace
+        # so, we'll use this geometric field to get the geometric model if 'geoType' is None
         return geoType if geoType is not None else dict_map_geo_field_geometry()[type(self.geo_field())]
 
     def operations_with_parameters_type(self):
+        """
+        Returns a dict with geometric operations
+        references to geometric types.
+        Below you'll see a dialog that can better explain the funcyionality of this method:
+        A: What is the geometric type of the geometric field of the FearureModel instance?
+        B: Oh, is MultiPolygon.
+        A: So, the possible operations for this resource is: 'boundary', 'buffer', 'centroid', 'contains', ...
+        :return:
+        """
         oc = OperationController()
+
+        # OperationController.dict_by_type_geometry_operations_dict()
+        # returns a dict whose his keys are geometric types that references
+        # another dict with operations linked to this geometric type
+        # OperationController.get_gometry_type() returns a geometric type
+        # (or a geometric model) that will be de index of the geometric operations dict
         return oc.dict_by_type_geometry_operations_dict()[self.get_geometry_type()]
 
     def centroid(self):
