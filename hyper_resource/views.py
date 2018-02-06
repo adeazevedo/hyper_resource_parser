@@ -1850,6 +1850,11 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = attributes_functions_str.split('/')
         return len(att_funcs) > 1 and  (att_funcs[0].lower() == 'filter')
 
+    def path_has_count_operation(self, attributes_functions_str):
+        att_funcs = attributes_functions_str.split('/')
+        att_funcs = [ele for ele in att_funcs if ele !='']
+        return len(att_funcs) == 1 and  (att_funcs[0].lower() == '*count')
+
     def path_has_map_operation(self, attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
         return len(att_funcs) > 1 and (att_funcs[0].lower() == 'map')
@@ -1982,6 +1987,10 @@ class CollectionResource(AbstractCollectionResource):
             self.add_key_value_in_header(resp, ETAG, str(hash(query_set)))
             return resp
 
+        elif self.path_has_count_operation(attributes_functions_str):
+            resp =  Response(data={"count": self.model_class().objects.count()},status=200, content_type=CONTENT_TYPE_JSON)
+            return resp
+
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
             objects = self.get_objects_by_functions(attributes_functions_str)
             serialized_data = self.serializer_class(objects, many=True, context={'request': request} ).data
@@ -2093,7 +2102,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def get_objects_by_functions(self, attributes_functions_str):
 
         objects = []
-        if self.path_has_filter_operation(attributes_functions_str) or self.path_has_spatial_operation(attributes_functions_str) or  self.is_filter_with_spatial_operation(attributes_functions_str):
+        #if self.path_has_filter_operation(attributes_functions_str) or self.path_has_spatial_operation(attributes_functions_str) or  self.is_filter_with_spatial_operation(attributes_functions_str):
+        if self.path_has_filter_operation(attributes_functions_str) or self.is_filter_with_spatial_operation(attributes_functions_str):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
         elif self.path_has_map_operation(attributes_functions_str):
             objects = self.get_objects_from_map_operation(attributes_functions_str)
@@ -2139,6 +2149,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass
+        elif self.path_has_count_operation(attributes_functions_str):
+            return RequiredObject({"count": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
+
         elif self.path_has_only_spatial_operation(attributes_functions_str):
             objects = self.get_objects_with_spatial_operation(attributes_functions_str)
             return self.required_object(request, objects, self.content_type_or_default_content_type(request), objects, 200)

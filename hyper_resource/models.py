@@ -579,11 +579,12 @@ class OperationController:
         return d
 
     def collection_operations_dict(self):
-        dic = {}
-        dic['filter'] = Type_Called('filter', [Q], object)
-        dic['map'] = Type_Called('map', [Q], object)
-        dic['annotate'] = Type_Called('annotate', [Q], object)
-        return dic
+        dict = {}
+        dict['filter'] = Type_Called('filter', [Q], object)
+        dict['map'] = Type_Called('map', [Q], object)
+        dict['annotate'] = Type_Called('annotate', [Q], object)
+        dict['*count'] = Type_Called('*count', [], int)
+        return dict
 
     def spatial_collection_operations_dict(self):
         d = self.collection_operations_dict()
