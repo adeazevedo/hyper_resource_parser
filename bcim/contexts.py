@@ -14,6 +14,8 @@ class UnidadeFederacaoContext(FeatureContext):
                        }
 
         return dic_context
+    def representation_name(self):
+        return "sigla"
 
     #def  supportedProperties(self):
     #dic = {"hydra:supportedProperties": [
@@ -23,7 +25,8 @@ class UnidadeFederacaoContext(FeatureContext):
     #]}
     #return dic
 
-
+class TrechoDrenagemListContext(FeatureContext):
+    pass
 class UnidadeFederacaoListContext(FeatureContext):
     pass
 

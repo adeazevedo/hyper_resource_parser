@@ -1850,10 +1850,10 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = attributes_functions_str.split('/')
         return len(att_funcs) > 1 and  (att_funcs[0].lower() == 'filter')
 
-    def path_has_count_operation(self, attributes_functions_str):
+    def path_has_count_elements_operation(self, attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
         att_funcs = [ele for ele in att_funcs if ele !='']
-        return len(att_funcs) == 1 and  (att_funcs[0].lower() == '*count')
+        return len(att_funcs) == 1 and  (att_funcs[0].lower() == 'count_elements')
 
     def path_has_map_operation(self, attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
@@ -1988,7 +1988,7 @@ class CollectionResource(AbstractCollectionResource):
             return resp
 
         elif self.path_has_count_operation(attributes_functions_str):
-            resp =  Response(data={"count": self.model_class().objects.count()},status=200, content_type=CONTENT_TYPE_JSON)
+            resp =  Response(data={"count_elements": self.model_class().objects.count()},status=200, content_type=CONTENT_TYPE_JSON)
             return resp
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
@@ -2149,8 +2149,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass
-        elif self.path_has_count_operation(attributes_functions_str):
-            return RequiredObject({"count": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
+        elif self.path_has_count_elements_operation(attributes_functions_str):
+            return RequiredObject({"count_elements": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
 
         elif self.path_has_only_spatial_operation(attributes_functions_str):
             objects = self.get_objects_with_spatial_operation(attributes_functions_str)

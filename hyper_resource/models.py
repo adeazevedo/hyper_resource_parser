@@ -275,7 +275,8 @@ class QObjectFactory:
             return None
         if isinstance(a_value, bool):
             return a_value
-        if (a_value.lower() == 'false' or a_value.lower() == 'true') and self.operation_or_operator == 'isnull':
+        #if (a_value.lower() == 'false' or a_value.lower() == 'true') and self.operation_or_operator == 'isnull':
+        if (a_value.lower() == 'false' or a_value.lower() == 'true'):
             return  False if a_value.lower() == 'false' else True
 
         return converter.value_converted(self.field_type(), a_value)
@@ -581,9 +582,10 @@ class OperationController:
     def collection_operations_dict(self):
         dict = {}
         dict['filter'] = Type_Called('filter', [Q], object)
-        dict['map'] = Type_Called('map', [Q], object)
-        dict['annotate'] = Type_Called('annotate', [Q], object)
-        dict['*count'] = Type_Called('*count', [], int)
+        #dict['map'] = Type_Called('map', [Q], object)
+        #dict['annotate'] = Type_Called('annotate', [Q], object)
+        dict['count_elements'] = Type_Called('count_elements', [], int)
+        dict['offset_limit'] = Type_Called('offset_limit', [int, int], object)
         return dict
 
     def spatial_collection_operations_dict(self):
@@ -785,7 +787,7 @@ class BusinessModel(models.Model):
         """
         return self.__str__()
 
-    def attribute_primary_ley(self):
+    def attribute_primary_key(self):
         """
         Retorna o nome do identificador do
         objeto BusinessModel através de seu

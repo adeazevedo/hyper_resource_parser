@@ -63,146 +63,148 @@ def vocabularyDict():
     that explains what this type is
     :return:
     """
-    dic = {}
+    dict = {}
 
-    dic[BooleanField] = 'http://schema.org/Boolean'
-    dic[bool] = 'http://schema.org/Boolean'
-    dic[True] = 'http://schema.org/Boolean'
-    dic[False] = 'http://schema.org/Boolean'
-    dic[FloatField] = 'http://schema.org/Float'
-    dic[float] = 'http://schema.org/Float'
-    dic[ForeignKey] = 'http://schema.org/Integer'
-    dic[IntegerField] = 'http://schema.org/Integer'
-    dic[AutoField]= 'http://schema.org/Integer'
-    dic[int] = 'http://schema.org/Integer'
-    dic[CharField] = 'http://schema.org/Text'
-    dic[TextField] = 'http://schema.org/Text'
-    dic[str] = 'http://schema.org/Text'
-    dic[DateField] = 'http://schema.org/Date'
-    dic[date] = 'http://schema.org/Date'
-    dic[DateTimeField] = 'http://schema.org/DateTime'
-    dic[datetime] = 'http://schema.org/DateTime'
-    dic[TimeField] = 'http://schema.org/Time'
-    dic[Model] = 'http://geojson.org/geojson-ld/vocab.html#Feature'
-    dic[tuple]= 'http://schema.org/ListItem'
+    dict[BooleanField] = 'http://schema.org/Boolean'
+    dict[bool] = 'http://schema.org/Boolean'
+    dict[True] = 'http://schema.org/Boolean'
+    dict[False] = 'http://schema.org/Boolean'
+    dict[FloatField] = 'http://schema.org/Float'
+    dict[float] = 'http://schema.org/Float'
+    dict[ForeignKey] = 'http://schema.org/Integer'
+    dict[IntegerField] = 'http://schema.org/Integer'
+    dict[AutoField]= 'http://schema.org/Integer'
+    dict[int] = 'http://schema.org/Integer'
+    dict[CharField] = 'http://schema.org/Text'
+    dict[TextField] = 'http://schema.org/Text'
+    dict[str] = 'http://schema.org/Text'
+    dict[DateField] = 'http://schema.org/Date'
+    dict[date] = 'http://schema.org/Date'
+    dict[DateTimeField] = 'http://schema.org/DateTime'
+    dict[datetime] = 'http://schema.org/DateTime'
+    dict[TimeField] = 'http://schema.org/Time'
+    dict[Model] = 'http://geojson.org/geojson-ld/vocab.html#Feature'
+    dict[tuple]= 'http://schema.org/ListItem'
 
-    dic[Q] = 'http://extension.schema.org/expression'
-    dic[object] = 'http://schema.org/Thing'
+    dict[Q] = 'http://extension.schema.org/expression'
+    dict[object] = 'http://schema.org/Thing'
 
-    dic['nome'] = 'http://schema.org/name'
-    dic['name'] = 'http://schema.org/name'
-    dic['nomeAbrev'] = 'https://schema.org/alternateName'
-    dic['responsible'] = 'http://schema.org/accountablePerson'
-    dic['usuario'] = 'http://schema.org/Person'
-    dic['user'] = 'http://schema.org/Person'
+    dict['nome'] = 'http://schema.org/name'
+    dict['name'] = 'http://schema.org/name'
+    dict['nomeAbrev'] = 'https://schema.org/alternateName'
+    dict['responsible'] = 'http://schema.org/accountablePerson'
+    dict['usuario'] = 'http://schema.org/Person'
+    dict['user'] = 'http://schema.org/Person'
 
-    dic['FeatureCollection'] = 'http://geojson.org/geojson-ld/vocab.html#FeatureCollection'
-    dic[GeometryField] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
-    dic[PointField] = 'http://geojson.org/geojson-ld/vocab.html#Point'
-    dic[LineStringField] = 'http://geojson.org/geojson-ld/vocab.html#LineString'
-    dic[PolygonField] = 'http://geojson.org/geojson-ld/vocab.html#Polygon'
-    dic[MultiPolygonField] = 'http://geojson.org/geojson-ld/vocab.html#MultiPolygon'
-    dic[MultiLineStringField] = 'http://geojson.org/geojson-ld/vocab.html#MultiLineString'
-    dic[MultiPointField] = 'http://geojson.org/geojson-ld/vocab.html#MultiPoint'
+    dict['FeatureCollection'] = 'http://geojson.org/geojson-ld/vocab.html#FeatureCollection'
+    dict[GeometryField] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
+    dict[PointField] = 'http://geojson.org/geojson-ld/vocab.html#Point'
+    dict[LineStringField] = 'http://geojson.org/geojson-ld/vocab.html#LineString'
+    dict[PolygonField] = 'http://geojson.org/geojson-ld/vocab.html#Polygon'
+    dict[MultiPolygonField] = 'http://geojson.org/geojson-ld/vocab.html#MultiPolygon'
+    dict[MultiLineStringField] = 'http://geojson.org/geojson-ld/vocab.html#MultiLineString'
+    dict[MultiPointField] = 'http://geojson.org/geojson-ld/vocab.html#MultiPoint'
 
-    dic[MultiPolygon] = 'http://geojson.org/geojson-ld/vocab.html#MultiPolygon'
-    dic[Polygon] = 'http://geojson.org/geojson-ld/vocab.html#Polygon'
-    dic[LineString] = 'http://geojson.org/geojson-ld/vocab.html#LineString'
-    dic[Point] = 'http://geojson.org/geojson-ld/vocab.html#Point'
-    dic[GEOSGeometry] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
-    dic[OGRGeometry] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
-    dic[MultiLineString] = 'http://geojson.org/geojson-ld/vocab.html#MultiLineString'
-    dic[MultiPoint] = 'http://geojson.org/geojson-ld/vocab.html#MultiPoint'
-    dic[GeometryCollection] = 'http://geojson.org/geojson-ld/vocab.html#GeometryCollection'
-    dic[SpatialReference] = 'http://geojson.org/geojson-ld/vocab.html#SpatialReference'
+    dict[MultiPolygon] = 'http://geojson.org/geojson-ld/vocab.html#MultiPolygon'
+    dict[Polygon] = 'http://geojson.org/geojson-ld/vocab.html#Polygon'
+    dict[LineString] = 'http://geojson.org/geojson-ld/vocab.html#LineString'
+    dict[Point] = 'http://geojson.org/geojson-ld/vocab.html#Point'
+    dict[GEOSGeometry] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
+    dict[OGRGeometry] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
+    dict[MultiLineString] = 'http://geojson.org/geojson-ld/vocab.html#MultiLineString'
+    dict[MultiPoint] = 'http://geojson.org/geojson-ld/vocab.html#MultiPoint'
+    dict[GeometryCollection] = 'http://geojson.org/geojson-ld/vocab.html#GeometryCollection'
+    dict[SpatialReference] = 'http://geojson.org/geojson-ld/vocab.html#SpatialReference'
 
 
 
     #collection
-    dic['filter'] = 'http://opengis.org/operations/filter'
-    dic['map'] = 'http://opengis.org/operations/map'
-    dic['annotate'] = 'http://opengis.org/operations/annotate'
+    dict['filter'] = 'http://opengis.org/operations/filter'
+    dict['map'] = 'http://opengis.org/operations/map'
+    dict['annotate'] = 'http://opengis.org/operations/annotate'
+    dict['count_elements'] = 'http://opengis.org/operations/count_elements'
+    dict['offset_limit'] = 'http://opengis.org/operations/offset_limit'
+    dict['distance_lte'] = 'http://opengis.org/operations/distance_lte'
+    dict['area'] = 'http://opengis.org/operations/area'
+    dict['boundary'] = 'http://opengis.org/operations/boundary'
+    dict['buffer'] = 'http://opengis.org/operations/buffer'
+    dict['centroid'] = 'http://opengis.org/operations/centroid'
+    dict['contains'] = 'http://opengis.org/operations/contains'
+    dict['convex_hull'] = 'http://opengis.org/operations/convex_hull'
+    dict['coord_seq'] = 'http://opengis.org/operations/coord_seq'
+    dict['coords'] = 'http://opengis.org/operations/coords'
+    dict['count'] = 'http://opengis.org/operations/count'
+    dict['crosses'] = 'http://opengis.org/operations/crosses'
+    dict['crs'] = 'http://opengis.org/operations/crs'
+    dict['difference'] = 'http://opengis.org/operations/difference'
+    dict['dims'] = 'http://opengis.org/operations/dims'
+    dict['disjoint'] = 'http://opengis.org/operations/disjoint'
+    dict['distance'] = 'http://opengis.org/operations/distance'
+    dict['empty'] = 'http://opengis.org/operations/empty'
+    dict['envelope'] = 'http://opengis.org/operations/envelope'
+    dict['equals'] = 'http://opengis.org/operations/equals'
+    dict['equals_exact'] = 'http://opengis.org/operations/equals_exact'
+    dict['ewkb'] = 'http://opengis.org/operations/ewkb'
+    dict['ewkt'] = 'http://opengis.org/operations/ewkt'
+    dict['extend'] = 'http://opengis.org/operations/extend'
+    dict['extent'] = 'http://opengis.org/operations/extent'
+    dict['geojson'] = 'http://opengis.org/operations/geojson'
+    dict['geom_type'] = 'http://opengis.org/operations/geom_type'
+    dict['geom_typeid'] = 'http://opengis.org/operations/geom_typeid'
+    dict['get_coords'] = 'http://opengis.org/operations/get_coords'
+    dict['get_srid'] = 'http://opengis.org/operations/get_srid'
+    dict['get_x'] = 'http://opengis.org/operations/get_x'
+    dict['get_y'] = 'http://opengis.org/operations/get_y'
+    dict['get_z'] = 'http://opengis.org/operations/get_z'
+    dict['has_cs'] = 'http://opengis.org/operations/has_cs'
+    dict['hasz'] = 'http://opengis.org/operations/hasz'
+    dict['hex'] = 'http://opengis.org/operations/hex'
+    dict['hexewkb'] = 'http://opengis.org/operations/hexewkb'
+    dict['index'] = 'http://opengis.org/operations/index'
+    dict['intersection'] = 'http://opengis.org/operations/intersection'
+    dict['intersects'] = 'http://opengis.org/operations/intersects'
+    dict['interpolate'] = 'http://opengis.org/operations/interpolate'
+    dict['json'] = 'http://opengis.org/operations/json'
+    dict['kml'] = 'http://opengis.org/operations/kml'
+    dict['length'] = 'http://opengis.org/operations/length'
+    dict['normalize'] = 'http://opengis.org/operations/normalize'
+    dict['num_coords'] = 'http://opengis.org/operations/num_coords'
+    dict['num_geom'] = 'http://opengis.org/operations/num_geom'
+    dict['num_s'] = 'http://opengis.org/operations/num_s'
+    dict['num_points']  = 'http://opengis.org/operations/num_points'
+    dict['point_on_surface'] = 'http://opengis.org/operations/point_on_surface'
+    dict['ogr'] = 'http://opengis.org/operations/ogr'
+    dict['overlaps'] = 'http://opengis.org/operations/overlaps'
+    dict['_on_surface'] = 'http://opengis.org/operations/_on_surface'
+    dict['pop'] = 'http://opengis.org/operations/pop'
+    dict['prepared'] = 'http://opengis.org/operations/prepared'
+    dict['relate'] = 'http://opengis.org/operations/relate'
+    dict['relate_pattern'] = 'http://opengis.org/operations/relate_pattern'
+    dict['ring'] = 'http://opengis.org/operations/ring'
+    dict['set_coords'] = 'http://opengis.org/operations/set_coords'
+    dict['set_srid'] = 'http://opengis.org/operations/set_srid'
+    dict['set_x'] = 'http://opengis.org/operations/set_x'
+    dict['set_y'] = 'http://opengis.org/operations/set_y'
+    dict['set_z'] = 'http://opengis.org/operations/set_z'
+    dict['simple'] = 'http://opengis.org/operations/simple'
+    dict['simplify'] = 'http://opengis.org/operations/simplify'
+    dict['srid'] = 'http://opengis.org/operations/srid'
+    dict['srs'] = 'http://opengis.org/operations/srs'
+    dict['sym_difference'] = 'http://opengis.org/operations/sym_difference'
+    dict['touches'] = 'http://opengis.org/operations/touches'
+    dict['transform'] = 'http://opengis.org/operations/transform'
+    dict['tuple'] = 'http://opengis.org/operations/tuple'
+    dict['union'] = 'http://opengis.org/operations/union'
+    dict['valid'] = 'http://opengis.org/operations/valid'
+    dict['valid_reason'] = 'http://opengis.org/operations/valid_reason'
+    dict['within'] = 'http://opengis.org/operations/within'
+    dict['wkb'] = 'http://opengis.org/operations/wkb'
+    dict['wkt'] = 'http://opengis.org/operations/wkt'
+    dict['x'] = 'http://opengis.org/operations/x'
+    dict['y'] = 'http://opengis.org/operations/y'
+    dict['z'] = 'http://opengis.org/operations/z'
 
-    dic['area'] = 'http://opengis.org/operations/area'
-    dic['boundary'] = 'http://opengis.org/operations/boundary'
-    dic['buffer'] = 'http://opengis.org/operations/buffer'
-    dic['centroid'] = 'http://opengis.org/operations/centroid'
-    dic['contains'] = 'http://opengis.org/operations/contains'
-    dic['convex_hull'] = 'http://opengis.org/operations/convex_hull'
-    dic['coord_seq'] = 'http://opengis.org/operations/coord_seq'
-    dic['coords'] = 'http://opengis.org/operations/coords'
-    dic['count'] = 'http://opengis.org/operations/count'
-    dic['crosses'] = 'http://opengis.org/operations/crosses'
-    dic['crs'] = 'http://opengis.org/operations/crs'
-    dic['difference'] = 'http://opengis.org/operations/difference'
-    dic['dims'] = 'http://opengis.org/operations/dims'
-    dic['disjoint'] = 'http://opengis.org/operations/disjoint'
-    dic['distance'] = 'http://opengis.org/operations/distance'
-    dic['empty'] = 'http://opengis.org/operations/empty'
-    dic['envelope'] = 'http://opengis.org/operations/envelope'
-    dic['equals'] = 'http://opengis.org/operations/equals'
-    dic['equals_exact'] = 'http://opengis.org/operations/equals_exact'
-    dic['ewkb'] = 'http://opengis.org/operations/ewkb'
-    dic['ewkt'] = 'http://opengis.org/operations/ewkt'
-    dic['extend'] = 'http://opengis.org/operations/extend'
-    dic['extent'] = 'http://opengis.org/operations/extent'
-    dic['geojson'] = 'http://opengis.org/operations/geojson'
-    dic['geom_type'] = 'http://opengis.org/operations/geom_type'
-    dic['geom_typeid'] = 'http://opengis.org/operations/geom_typeid'
-    dic['get_coords'] = 'http://opengis.org/operations/get_coords'
-    dic['get_srid'] = 'http://opengis.org/operations/get_srid'
-    dic['get_x'] = 'http://opengis.org/operations/get_x'
-    dic['get_y'] = 'http://opengis.org/operations/get_y'
-    dic['get_z'] = 'http://opengis.org/operations/get_z'
-    dic['has_cs'] = 'http://opengis.org/operations/has_cs'
-    dic['hasz'] = 'http://opengis.org/operations/hasz'
-    dic['hex'] = 'http://opengis.org/operations/hex'
-    dic['hexewkb'] = 'http://opengis.org/operations/hexewkb'
-    dic['index'] = 'http://opengis.org/operations/index'
-    dic['intersection'] = 'http://opengis.org/operations/intersection'
-    dic['intersects'] = 'http://opengis.org/operations/intersects'
-    dic['interpolate'] = 'http://opengis.org/operations/interpolate'
-    dic['json'] = 'http://opengis.org/operations/json'
-    dic['kml'] = 'http://opengis.org/operations/kml'
-    dic['length'] = 'http://opengis.org/operations/length'
-    dic['normalize'] = 'http://opengis.org/operations/normalize'
-    dic['num_coords'] = 'http://opengis.org/operations/num_coords'
-    dic['num_geom'] = 'http://opengis.org/operations/num_geom'
-    dic['num_s'] = 'http://opengis.org/operations/num_s'
-    dic['num_points']  = 'http://opengis.org/operations/num_points'
-    dic['point_on_surface'] = 'http://opengis.org/operations/point_on_surface'
-    dic['ogr'] = 'http://opengis.org/operations/ogr'
-    dic['overlaps'] = 'http://opengis.org/operations/overlaps'
-    dic['_on_surface'] = 'http://opengis.org/operations/_on_surface'
-    dic['pop'] = 'http://opengis.org/operations/pop'
-    dic['prepared'] = 'http://opengis.org/operations/prepared'
-    dic['relate'] = 'http://opengis.org/operations/relate'
-    dic['relate_pattern'] = 'http://opengis.org/operations/relate_pattern'
-    dic['ring'] = 'http://opengis.org/operations/ring'
-    dic['set_coords'] = 'http://opengis.org/operations/set_coords'
-    dic['set_srid'] = 'http://opengis.org/operations/set_srid'
-    dic['set_x'] = 'http://opengis.org/operations/set_x'
-    dic['set_y'] = 'http://opengis.org/operations/set_y'
-    dic['set_z'] = 'http://opengis.org/operations/set_z'
-    dic['simple'] = 'http://opengis.org/operations/simple'
-    dic['simplify'] = 'http://opengis.org/operations/simplify'
-    dic['srid'] = 'http://opengis.org/operations/srid'
-    dic['srs'] = 'http://opengis.org/operations/srs'
-    dic['sym_difference'] = 'http://opengis.org/operations/sym_difference'
-    dic['touches'] = 'http://opengis.org/operations/touches'
-    dic['transform'] = 'http://opengis.org/operations/transform'
-    dic['tuple'] = 'http://opengis.org/operations/tuple'
-    dic['union'] = 'http://opengis.org/operations/union'
-    dic['valid'] = 'http://opengis.org/operations/valid'
-    dic['valid_reason'] = 'http://opengis.org/operations/valid_reason'
-    dic['within'] = 'http://opengis.org/operations/within'
-    dic['wkb'] = 'http://opengis.org/operations/wkb'
-    dic['wkt'] = 'http://opengis.org/operations/wkt'
-    dic['x'] = 'http://opengis.org/operations/x'
-    dic['y'] = 'http://opengis.org/operations/y'
-    dic['z'] = 'http://opengis.org/operations/z'
-
-    return dic
+    return dict
 
 def vocabulary(a_key):
     """
@@ -382,6 +384,21 @@ class ContextResource:
         res_voc = voc if voc is not None else vocabulary(type(field))
         return { "@id": res_voc, "@type": "@id"}
 
+    def identifier_field_or_None(self):
+        fields = self.resource.fields_to_web()
+        for field in fields:
+             if field.primary_key is True:
+                 return field
+        return None
+
+    def representationName(self):
+        ide_field = self.identifier_field_or_None()
+        if ide_field is not None:
+            return  {"hydra:property":ide_field.name , "@type": "SupportedProperty"}
+        return {}
+
+
+
 
     def supportedProperties(self):
         arr_dict = []
@@ -445,7 +462,10 @@ class ContextResource:
             return []
         for k, v_typed_called in self.resource.operations_with_parameters_type().items():
             exps = [] if v_typed_called.parameters is None else [vocabulary(param) for param in v_typed_called.parameters]
-            rets = (vocabulary(v_typed_called.return_type) if v_typed_called.return_type in vocabularyDict()  else ("NOT FOUND"))
+            if v_typed_called.return_type in vocabularyDict():
+                rets = vocabulary(v_typed_called.return_type)
+            else:
+                rets = "NOT FOUND"
             link_id = vocabulary(v_typed_called.name)
             arr.append( SupportedOperation(operation=v_typed_called.name, title=v_typed_called.name, method='GET', expects=exps, returns=rets, type='', link=link_id))
 
@@ -553,6 +573,7 @@ class ContextResource:
         self.dict_context["@context"] = self.attributes_contextualized_dict()
         self.dict_context["hydra:supportedProperties"] = self.supportedProperties()
         self.dict_context["hydra:supportedOperations"] = self.supportedOperations()
+        self.dict_context["hydra:representationName"] = self.representationName()
         self.dict_context["hydra:iriTemplate"] = self.iriTemplates()
 
         return self.dict_context
