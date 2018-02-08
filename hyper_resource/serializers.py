@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from rest_framework.serializers import ModelSerializer
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 

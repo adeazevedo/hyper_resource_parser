@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.contrib.gis.db import models
 from django.contrib.gis.db.models import GeometryField
 from django.contrib.gis.db.models import LineStringField
