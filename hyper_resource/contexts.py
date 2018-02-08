@@ -204,6 +204,30 @@ def vocabularyDict():
     dict['y'] = 'http://opengis.org/operations/y'
     dict['z'] = 'http://opengis.org/operations/z'
 
+    dict['distance_gt'] = 'http://opengis.org/operations/distance_gt'
+    dict['overlaps_right'] = 'http://opengis.org/operations/overlaps_right'
+    dict['contained'] = 'http://opengis.org/operations/contained'
+    dict['distance_lt'] = 'http://opengis.org/operations/distance_lt'
+    dict['dwithin'] = 'http://opengis.org/operations/dwithin'
+    dict['bboverlaps'] = 'http://opengis.org/operations/bboverlaps'
+    dict['bbcontains'] = 'http://opengis.org/operations/bbcontains'
+    dict['distance_gte'] = 'http://opengis.org/operations/distance_gte'
+    dict['overlaps_below'] = 'http://opengis.org/operations/overlaps_below'
+    dict['overlaps_above'] = 'http://opengis.org/operations/overlaps_above'
+    dict['overlaps_left'] = 'http://opengis.org/operations/overlaps_left'
+    dict['contains_properly'] = 'http://opengis.org/operations/contains_properly'
+    dict['isvalid'] = 'http://opengis.org/operations/isvalid'
+    dict['right'] = 'http://opengis.org/operations/right'
+    dict['exact'] = 'http://opengis.org/operations/exact'
+    dict['covers'] = 'http://opengis.org/operations/covers'
+    dict['strictly_below'] = 'http://opengis.org/operations/strictly_below'
+    dict['left'] = 'http://opengis.org/operations/left'
+    dict['same_as'] = 'http://opengis.org/operations/same_as'
+    dict['coveredby'] = 'http://opengis.org/operations/coveredby'
+    dict['strictly_above'] = 'http://opengis.org/operations/strictly_above'
+
+
+
     return dict
 
 def vocabulary(a_key):
