@@ -1859,6 +1859,10 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = attributes_functions_str.split('/')
         return len(att_funcs) > 1 and (att_funcs[0].lower() == 'map')
 
+    def path_has_offset_limit_operation(self, attributes_functions_str):
+        att_funcs = attributes_functions_str.split('/')
+        att_funcs = [ele for ele in att_funcs if ele != '']
+        return len(att_funcs) == 3 and  (att_funcs[0].lower() == 'offset_limit')
 
     def q_object_for_filter_array_of_terms(self, array_of_terms):
         return FactoryComplexQuery().q_object_for_filter_expression(None, self.model_class(), array_of_terms)
@@ -1878,6 +1882,40 @@ class AbstractCollectionResource(AbstractResource):
     def get_objects_from_map_operation(self, attributes_functions_str):
         q_object = self.q_object_for_filter_expression(attributes_functions_str)
         return self.model_class().objects.filter(q_object)
+
+    def get_objects_from_offset_limit_operation(self, attributes_functions_str):
+        attributes_functions_list = attributes_functions_str.split('/')
+        attributes_functions_list = [attr_func for attr_func in attributes_functions_list if attr_func != '']
+
+        converted_params = self.converter_collection_operation_parameters(attributes_functions_list[0], attributes_functions_list[1:])
+        offset = converted_params[0]
+        limit = converted_params[1]
+
+        objects = self.model_class().objects.all()[offset:offset + limit]
+        return objects
+
+    def converter_collection_operation_parameters(self, operation_name, parameters):
+        """
+        Receive a operation name for a collection resource and a list of parameters
+        for this operation. If this operation name corresponds to an collection operations
+        dict key, convert each element into the parameters list to the expected type for
+        the respective collection operation. Return the parameters intact if the operation
+        name isn't in the collection operations dict.
+        :param operation_name:
+        :param parameters:
+        :return:
+        """
+        # gets the dict whit all operations for collections
+        collection_operations_dict = OperationController().collection_operations_dict()
+        if operation_name in collection_operations_dict:
+            # if operation_name is a collection operations dict key, return the related Type_Called
+            type_called = collection_operations_dict[operation_name]
+            # convert each element in 'parameter' to the respective parameter type in Type_Called.parameters
+            converted_parameters = [ConverterType().value_converted(param, parameters[i]) for i, param in enumerate(type_called.parameters)]
+            return converted_parameters
+
+        # returning the parameters without convertion
+        return parameters
 
     def operation_names_model(self):
         return self.operation_controller.collection_operations_dict()
@@ -1987,8 +2025,14 @@ class CollectionResource(AbstractCollectionResource):
             self.add_key_value_in_header(resp, ETAG, str(hash(query_set)))
             return resp
 
-        elif self.path_has_count_operation(attributes_functions_str):
+        elif self.path_has_count_elements_operation(attributes_functions_str):
             resp =  Response(data={"count_elements": self.model_class().objects.count()},status=200, content_type=CONTENT_TYPE_JSON)
+            return resp
+
+        elif self.path_has_offset_limit_operation(attributes_functions_str):
+            query_set = self.get_objects_from_offset_limit_operation(attributes_functions_str)
+            serialized_data = self.serializer_class(query_set, many=True, context={'request': request}).data
+            resp = Response(data=serialized_data, status=200, content_type=self.content_type_or_default_content_type(request))
             return resp
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
@@ -2130,6 +2174,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
         serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
         required_obj =  RequiredObject(serialized_data,self.content_type_or_default_content_type(request), objects, 200)
         return required_obj
+
     def basic_get(self, request, *args, **kwargs):
 
         self.object_model = self.model_class()()
@@ -2142,7 +2187,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
             required_object = RequiredObject(serializer.data, self.content_type_or_default_content_type(request), objects, 200)
 
         elif self.path_has_only_attributes(attributes_functions_str):
-
             objects = self.get_objects_by_only_attributes(attributes_functions_str)
             serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
             return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), objects, 200)
@@ -2152,13 +2196,18 @@ class FeatureCollectionResource(SpatialCollectionResource):
         elif self.path_has_count_elements_operation(attributes_functions_str):
             return RequiredObject({"count_elements": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
 
+        elif self.path_has_offset_limit_operation(attributes_functions_str):
+            objects = self.get_objects_from_offset_limit_operation(attributes_functions_str)
+            return self.required_object(request, objects)
+
         elif self.path_has_only_spatial_operation(attributes_functions_str):
             objects = self.get_objects_with_spatial_operation(attributes_functions_str)
-            return self.required_object(request, objects, self.content_type_or_default_content_type(request), objects, 200)
+            #return self.required_object(request, objects, self.content_type_or_default_content_type(request), objects, 200)
+            return self.required_object(request, objects)
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
             objects = self.get_objects_by_functions(attributes_functions_str)
-            return self.required_object(request, objects, self.content_type_or_default_content_type(request), objects, 200)
+            return self.required_object(request, objects)
 
         else:
             return RequiredObject({"This request has invalid attribute or operation"}, status=400, content_type=CONTENT_TYPE_JSON)
