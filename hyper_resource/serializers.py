@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from rest_framework.serializers import ModelSerializer
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
-
 
 class BusinessSerializer(ModelSerializer):
     def get_id_relationship_from_request(self, field_name_relationship):

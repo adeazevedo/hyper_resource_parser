@@ -585,8 +585,8 @@ class OperationController:
         dict['filter'] = Type_Called('filter', [Q], object)
         #dict['map'] = Type_Called('map', [Q], object)
         #dict['annotate'] = Type_Called('annotate', [Q], object)
-        dict['count_elements'] = Type_Called('count_elements', [], int)
-        dict['offset_limit'] = Type_Called('offset_limit', [int, int], object)
+        dict['countResource'] = Type_Called('countResource', [], int)
+        dict['offsetLimit'] = Type_Called('offsetLimit', [int, int], object)
         return dict
 
     def spatial_collection_operations_dict(self):
