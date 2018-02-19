@@ -107,24 +107,24 @@ WSGI_APPLICATION = 'hyper_resource_py.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 if not 'IP_SGBD' in os.environ:
-    os.environ['IP_SGBD'] = '127.0.0.1'
-    #os.environ['IP_SGBD'] = '172.30.10.86'
+    #os.environ['IP_SGBD'] = '127.0.0.1'
+    os.environ['IP_SGBD'] = '172.30.10.86'
 
 if not 'PORT_SGBD' in os.environ:
     #os.environ['PORT_SGBD'] = '2345'
-    os.environ['PORT_SGBD'] = '5432'
+    os.environ['PORT_SGBD'] = '54322'
 
 if not 'DB_NAME' in os.environ:
-    os.environ['DB_NAME'] = 'postgres'
-    #os.environ['DB_NAME'] = 'gis'
+    #os.environ['DB_NAME'] = 'postgres'
+    os.environ['DB_NAME'] = 'gis'
 
 if not 'DB_USERNAME' in os.environ:
-    os.environ['DB_USERNAME'] = 'postgres'
-    #os.environ['DB_USERNAME'] = 'ccar_prod'
+    #os.environ['DB_USERNAME'] = 'postgres'
+    os.environ['DB_USERNAME'] = 'ccar_prod'
 
 if not 'DB_PASSWORD' in os.environ:
-    os.environ['DB_PASSWORD'] = 'desenv'
-    #os.environ['DB_PASSWORD'] = 'ccar_prod'
+    #os.environ['DB_PASSWORD'] = 'desenv'
+    os.environ['DB_PASSWORD'] = 'ccar_prod'
 
 ip_sgbd = os.environ['IP_SGBD']
 port_sgbd = os.environ['PORT_SGBD']
