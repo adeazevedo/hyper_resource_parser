@@ -2229,8 +2229,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         elif self.path_has_only_attributes(attributes_functions_str):
             objects = self.get_objects_by_only_attributes(attributes_functions_str)
-            serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
-            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), objects, 200)
+            #serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
+            return RequiredObject(objects, self.content_type_or_default_content_type(request), objects, 200)
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass
