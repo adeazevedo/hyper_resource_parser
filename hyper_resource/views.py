@@ -752,16 +752,21 @@ class AbstractResource(APIView):
         # 'key' will be absolute uri + application/octet-stream
         key = self.get_key_cache(request, CONTENT_TYPE_OCTET_STREAM)
         import geobuf
-        if isinstance(required_object.representation_object, str):
-            # if representation object is a str instance the result will be a geobuf
+        if isinstance(required_object.representation_object, dict) and 'type' in required_object.representation_object:
+            # if representation object is a dict is an GeoJson
             # geobuf minimize the response size
             result = geobuf.encode(required_object.representation_object) # GeoJSON or TopoJSON -> Geobuf string
         else:
             result = required_object.representation_object
+
+        if isinstance(result, dict):
+            value_to_e_tag = json.dumps(result)
+        else:
+            value_to_e_tag =  result
         # e_tag is a hash of the result
-        e_tag = self.generate_e_tag(result)
+        e_tag = self.generate_e_tag(value_to_e_tag)
         # sets the e_tag and the result in cache binded to a key
-        self.set_key_with_data_in_cache(key, e_tag, result )
+        self.set_key_with_data_in_cache(key, e_tag, result)
         # mounts the HttpResponse with result as data and application/octet-stream as Content-Type
         resp = HttpResponse(result, content_type=CONTENT_TYPE_OCTET_STREAM)
         # set Etag as a Response header

@@ -24,7 +24,8 @@ from django.test import SimpleTestCase
 
 class APIAbstractResourceCacheTestCase(SimpleTestCase):
     def setUp(self):
-        self.host = 'luc00557347.ibge.gov.br'
+        #self.host = 'luc00557347.ibge.gov.br'
+        self.host = 'luc00557196.ibge.gov.br:8001'
         self.url_feature_resource_collection = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
         self.url_feature_resource = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
         self.headers = {'accept': 'application/octet-stream', 'If-None-Match': '48200128876656848'}
@@ -33,7 +34,7 @@ class APIAbstractResourceCacheTestCase(SimpleTestCase):
     def test_headers_for_lists(self):
         self.url_feature_resource_collection = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
         res = requests.get(self.url_feature_resource_collection, headers=self.headers)
-        self.assertTrue(res.headers['content-type'] == 'application/octet-stream')
+        self.assertEquals(res.headers['content-type'], 'application/octet-stream')
         res = requests.get(self.url_feature_resource_collection, headers=self.headers)
         self.assertTrue(res.status_code == 200)
         self.headers = {'accept': 'application/octet-stream', 'If-None-Match': res.headers['etag']}
@@ -68,7 +69,7 @@ class APIAbstractResourceCacheTestCase(SimpleTestCase):
 
         self.headers = {'accept': 'application/octet-stream'}
         res = requests.get(self.url_feature_resource, headers=self.headers)
-        self.assertTrue(res.headers['content-type'] == 'application/octet-stream')
+        self.assertEquals(res.headers['content-type'], 'application/octet-stream')
         self.assertTrue(res.status_code == 200)
 
     def test_headers_feature_resource_operation_area(self):
@@ -84,7 +85,7 @@ class APIAbstractResourceCacheTestCase(SimpleTestCase):
         self.assertTrue(res.status_code == 304)
         self.url_feature_resource = 'http://' + self.host + '/ibge/bcim/unidades-federativas/ES/transform/3005&True/area'
         res = requests.get(self.url_feature_resource)
-        self.assertTrue(res.headers['content-type'] == ct)
+        self.assertEquals(res.headers['content-type'], ct)
         self.assertTrue(res.status_code == 200)
         self.headers = {'If-None-Match': res.headers['etag']}
         res = requests.get(self.url_feature_resource, headers=self.headers)
