@@ -587,9 +587,9 @@ class OperationController:
         #dict['annotate'] = Type_Called('annotate', [Q], object)
         dict['countResource'] = Type_Called('countResource', [], int)
         dict['offsetLimit'] = Type_Called('offsetLimit', [int, int], object)
-        dict['distinct'] = Type_Called('distinct', [[]], object)
-        dict['groupBy'] = Type_Called('groupBy', [[]], object)
-        dict['groupByCount'] = Type_Called('groupByCount', [[]], object)
+        dict['distinct'] = Type_Called('distinct', [list], object)
+        dict['groupBy'] = Type_Called('groupBy', [list], object)
+        dict['groupByCount'] = Type_Called('groupByCount', [list], object)
         return dict
 
     def spatial_collection_operations_dict(self):

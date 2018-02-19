@@ -85,7 +85,9 @@ def vocabularyDict():
     dict[datetime] = 'http://schema.org/DateTime'
     dict[TimeField] = 'http://schema.org/Time'
     dict[Model] = 'http://geojson.org/geojson-ld/vocab.html#Feature'
-    dict[tuple]= 'http://schema.org/ListItem'
+    dict[tuple]= 'http://schema.org/ItemList'
+    dict[list]= 'http://schema.org/ItemList'
+
 
     dict[Q] = 'http://extension.schema.org/expression'
     dict[object] = 'http://schema.org/Thing'
