@@ -587,6 +587,7 @@ class OperationController:
         #dict['annotate'] = Type_Called('annotate', [Q], object)
         dict['countResource'] = Type_Called('countResource', [], int)
         dict['offsetLimit'] = Type_Called('offsetLimit', [int, int], object)
+        dict['distinct'] = Type_Called('distinct', [[]], object)
         return dict
 
     def spatial_collection_operations_dict(self):

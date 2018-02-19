@@ -1851,6 +1851,11 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = attributes_functions_str.split('/')
         return len(att_funcs) > 1 and  (att_funcs[0].lower() == 'filter')
 
+    def path_has_distinct_operation(self, attributes_functions_str):
+        att_funcs = attributes_functions_str.split('/')
+        att_funcs = [ele for ele in att_funcs if ele != '']
+        return len(att_funcs) == 2 and (att_funcs[0].lower() == 'distinct')
+
     def path_has_countResource_operation(self, attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
         att_funcs = [ele for ele in att_funcs if ele !='']
@@ -1883,6 +1888,12 @@ class AbstractCollectionResource(AbstractResource):
     def get_objects_from_map_operation(self, attributes_functions_str):
         q_object = self.q_object_for_filter_expression(attributes_functions_str)
         return self.model_class().objects.filter(q_object)
+
+    def get_objects_from_distinct_operation(self, attributes_functions_str):
+        attributes_functions_list = attributes_functions_str.split('/')
+        attributes_functions_list = [attr_func for attr_func in attributes_functions_list if attr_func != '']
+        parameters = attributes_functions_list[1:]
+        return self.model_class().objects.distinct(*parameters)
 
     def get_objects_from_offsetLimit_operation(self, attributes_functions_str):
         attributes_functions_list = attributes_functions_str.split('/')
@@ -2026,6 +2037,9 @@ class CollectionResource(AbstractCollectionResource):
             self.add_key_value_in_header(resp, ETAG, str(hash(query_set)))
             return resp
 
+        elif self.path_has_distinct_operation(attributes_functions_str):
+            resp =  self.get_objects_from_distinct_operation(attributes_functions_str)
+            return resp
         elif self.path_has_countResource_operation(attributes_functions_str):
             resp =  Response(data={"countResource": self.model_class().objects.count()},status=200, content_type=CONTENT_TYPE_JSON)
             return resp
@@ -2199,6 +2213,10 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         elif self.path_has_offsetLimit_operation(attributes_functions_str):
             objects = self.get_objects_from_offsetLimit_operation(attributes_functions_str)
+            return self.required_object(request, objects)
+
+        elif self.path_has_distinct_operation(attributes_functions_str):
+            objects =  self.get_objects_from_distinct_operation(attributes_functions_str)
             return self.required_object(request, objects)
 
         elif self.path_has_only_spatial_operation(attributes_functions_str):
