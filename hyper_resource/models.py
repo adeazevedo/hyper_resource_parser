@@ -195,6 +195,7 @@ class ConverterType():
         d[PointField] = self.convert_to_geometry
         d[MultiPolygonField] = self.convert_to_geometry
         d[MultiLineString] = self.convert_to_geometry
+        d[MultiLineStringField]= self.convert_to_geometry
         d[MultiPointField] = self.convert_to_geometry
         d[ForeignKey] = self.convert_to_int
 

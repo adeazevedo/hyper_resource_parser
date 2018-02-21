@@ -2125,7 +2125,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
         if (len(att_funcs) > 1 and (att_funcs[0].lower() in spatial_operation_names)):
            return True
 
-        return  (att_funcs[1].lower() in spatial_operation_names)
+        return  (att_funcs[0].lower() in spatial_operation_names)
 
     def is_filter_with_spatial_operation(self, attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')

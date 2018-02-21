@@ -46,7 +46,8 @@ urlpatterns = [
 
     #Trecho_ferroviario
     url(r'^trechos-ferroviarios/?$', views.TrechoFerroviarioList.as_view(), name='trecho_ferroviario_list'),
-    url(r'^trechos-ferroviarios/(?P<attributes_functions>[A-Za-z]+)/(?P<geom>.*)/?$', views.TrechoFerroviarioList.as_view(), name='trecho_ferroviario_list_fn'),
+    url(r'^trechos-ferroviarios/(?P<attributes_functions>.*)/?$', views.TrechoFerroviarioList.as_view(), name='trecho_ferroviario_list_fn'),
+
     url(r'^trechos-ferroviarios/(?P<id_objeto>[0-9]*)/?$', views.TrechoFerroviarioDetail.as_view(), name='tf_detail_id_objeto'),
     url(r'^trechos-ferroviarios/(?P<id_objeto>[0-9]*)/(?P<attributes_functions>.*)/?$', views.TrechoFerroviarioDetail.as_view(), name='tf_detail_si'),
 
