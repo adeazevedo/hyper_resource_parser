@@ -1,10 +1,10 @@
-from hyper_resource.contexts import FeatureContext, FeatureCollectionContext
-class BusinessModelContext(FeatureContext):
+from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext
+class BusinessModelContext(FeatureResouceContext):
     pass
-class BusinessModelCollectionContext(FeatureCollectionContext):
+class BusinessModelCollectionContext(FeatureCollectionResourceContext):
     pass
 
-class GastoContext(FeatureContext):
+class GastoContext(FeatureResouceContext):
      def attributes_contextualized_dict(self):
 
         dic_context =  {
@@ -40,7 +40,7 @@ class GastoContext(FeatureContext):
 
         return dic_context
 
-class GastoCollectionContext(FeatureCollectionContext):
+class GastoCollectionContext(FeatureCollectionResourceContext):
     def attributes_contextualized_dict(self):
 
         dic_context =  {
@@ -77,13 +77,13 @@ class GastoCollectionContext(FeatureCollectionContext):
         return dic_context
 
 
-class TipoGastoContext(FeatureContext):
+class TipoGastoContext(FeatureResouceContext):
     pass
-class TipoGastoCollectionContext(FeatureCollectionContext):
+class TipoGastoCollectionContext(FeatureCollectionResourceContext):
     pass
 
-class UsuarioContext(FeatureContext):
+class UsuarioContext(FeatureResouceContext):
     pass
-class UsuarioCollectionContext(FeatureCollectionContext):
+class UsuarioCollectionContext(FeatureCollectionResourceContext):
     pass
 

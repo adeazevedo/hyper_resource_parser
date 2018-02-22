@@ -613,7 +613,7 @@ class ContextResource:
     def set_context_(self, dictionary):
         self.dict_context = dictionary
 
-class FeatureContext(ContextResource):
+class FeatureResouceContext(ContextResource):
 
 
     def iri_template_contextualized_dict(self):
@@ -621,5 +621,5 @@ class FeatureContext(ContextResource):
 
 
 
-class FeatureCollectionContext(FeatureContext):
+class FeatureCollectionResourceContext(FeatureResouceContext):
     pass

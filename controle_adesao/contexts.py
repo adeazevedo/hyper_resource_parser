@@ -1,16 +1,16 @@
-from hyper_resource.contexts import FeatureContext, FeatureCollectionContext
-class AtorContext(FeatureContext):
+from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext
+class AtorContext(FeatureResouceContext):
     pass
-class AtorCollectionContext(FeatureCollectionContext):
-    pass
-
-class PublicacaoinformacaogeoespacialContext(FeatureContext):
-    pass
-class PublicacaoinformacaogeoespacialCollectionContext(FeatureCollectionContext):
+class AtorCollectionContext(FeatureCollectionResourceContext):
     pass
 
-class RepresentanteContext(FeatureContext):
+class PublicacaoinformacaogeoespacialContext(FeatureResouceContext):
     pass
-class RepresentanteCollectionContext(FeatureCollectionContext):
+class PublicacaoinformacaogeoespacialCollectionContext(FeatureCollectionResourceContext):
+    pass
+
+class RepresentanteContext(FeatureResouceContext):
+    pass
+class RepresentanteCollectionContext(FeatureCollectionResourceContext):
     pass
 

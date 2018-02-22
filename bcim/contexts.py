@@ -1,6 +1,6 @@
-from hyper_resource.contexts import ContextResource, FeatureContext, FeatureCollectionContext
+from hyper_resource.contexts import ContextResource, FeatureResouceContext, FeatureCollectionResourceContext
 
-class UnidadeFederacaoContext(FeatureContext):
+class UnidadeFederacaoContext(FeatureResouceContext):
 
     def attributes_contextualized_dict(self):
 
@@ -25,21 +25,21 @@ class UnidadeFederacaoContext(FeatureContext):
     #]}
     #return dic
 
-class TrechoDrenagemListContext(FeatureContext):
+class TrechoDrenagemListContext(FeatureResouceContext):
     pass
-class UnidadeFederacaoListContext(FeatureContext):
-    pass
-
-class MunicipioListContext(FeatureContext):
+class UnidadeFederacaoListContext(FeatureResouceContext):
     pass
 
-class MunicipioDetailContext(FeatureContext):
+class MunicipioListContext(FeatureResouceContext):
     pass
 
-class AldeiaIndigenaDetailContext(FeatureContext):
+class MunicipioDetailContext(FeatureResouceContext):
     pass
 
-class AldeiaIndigenaListContext(FeatureContext):
+class AldeiaIndigenaDetailContext(FeatureResouceContext):
+    pass
+
+class AldeiaIndigenaListContext(FeatureResouceContext):
     pass
 
 class SprintContext(ContextResource):
@@ -47,24 +47,24 @@ class SprintContext(ContextResource):
 class TaskContext(ContextResource):
     pass
 
-class SprintListContext(FeatureContext):
+class SprintListContext(FeatureResouceContext):
     pass
-class SprintDetailContext(FeatureContext):
+class SprintDetailContext(FeatureResouceContext):
     pass
-class TaskListContext(FeatureContext):
+class TaskListContext(FeatureResouceContext):
     pass
-class TaskDetailContext(FeatureContext):
-    pass
-
-class OutrasUnidProtegidasContext(FeatureContext):
-    pass
-class AglomeradoRuralDeExtensaoUrbanaContext(FeatureContext):
-    pass
-class AglomeradoRuralIsoladoContext(FeatureContext):
+class TaskDetailContext(FeatureResouceContext):
     pass
 
-class TrechoFerroviarioListContext(FeatureCollectionContext):
+class OutrasUnidProtegidasContext(FeatureResouceContext):
+    pass
+class AglomeradoRuralDeExtensaoUrbanaContext(FeatureResouceContext):
+    pass
+class AglomeradoRuralIsoladoContext(FeatureResouceContext):
     pass
 
-class TrechoFerroviarioDetailContext(FeatureContext):
+class TrechoFerroviarioListContext(FeatureCollectionResourceContext):
+    pass
+
+class TrechoFerroviarioDetailContext(FeatureResouceContext):
     pass

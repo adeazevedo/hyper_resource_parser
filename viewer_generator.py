@@ -43,13 +43,10 @@ def generate_snippets_to_view(model_class_name, is_spatial):
 
     return arr
 
-# TODO develop is_spatial
 def is_spatial(model_class):
-    if isinstance(model_class, models.Model) or isinstance(model_class, FeatureModel):
-        for field in model_class._meta.get_fields():
-            if isinstance(field, GeometryField):
-                return True
-
+    for field in model_class._meta.get_fields():
+      if isinstance(field, GeometryField):
+         return True
     return False
 
 def imports_str_as_array(a_name):

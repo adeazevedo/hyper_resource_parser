@@ -17,15 +17,15 @@ def generate_snippets_to_url(model_class_name, model_class):
     #   pass
 
     arr = []
-    arr.append('class ' + model_class_name + 'DetailContext(FeatureContext):' + '\n')
+    arr.append('class ' + model_class_name + 'DetailContext(FeatureResouceContext):' + '\n')
     arr.append((' ' * 4) + 'pass\n')
-    arr.append('class ' + model_class_name + 'ListContext(FeatureCollectionContext):' + '\n')
+    arr.append('class ' + model_class_name + 'ListContext(FeatureCollectionResourceContext):' + '\n')
     arr.append((' ' * 4) + 'pass\n')
     return arr
 
 def imports_str_as_array():
     arr = []
-    arr.append("from hyper_resource.contexts import FeatureContext, FeatureCollectionContext\n")
+    arr.append("from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext\n")
     return arr
 
 def generate_file(package_name, default_name='contexts.py'):

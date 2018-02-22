@@ -4,6 +4,13 @@ import sys, inspect, importlib
 import ast
 ALLOWED_DATABASES = ['postgres', 'postgresql', 'sqlite', '']
 
+
+def rawInput(str):
+    inputOperation = None
+    try: inputOperation = raw_input
+    except NameError: inputOperation = input
+    return inputOperation(str)
+
 def main(argv):
     has_to_generate_models  = False
     has_to_generate_views  = True
@@ -43,7 +50,7 @@ def main(argv):
 
     if has_to_generate_settings:
 
-        generate_db = raw_input('What database do i have to generate? (Leave blank to keep the databases original settings): ')
+        generate_db = rawInput('What database do i have to generate? (Leave blank to keep the databases original settings): ')
 
         if generate_db.lower() not in ALLOWED_DATABASES:
             print('Database option not allowed, keeping the original database configuration')
@@ -60,13 +67,16 @@ def main(argv):
     from serializer_generator import generate_file as gf_serializer
     from contexter_generator import generate_file as gf_contexter
     from modeler_generator import generate_file as gf_modeler
-    from django.contrib.gis.db.models.fields import GeometryField
     from django.conf import settings
 
     file_model_app = app_name + '/models.py'
     sys.modules[app_name + '.models'] = importlib.import_module(app_name + '.models')
+
     if has_to_generate_models:
         os.system("python manage.py inspectdb > "+file_model_app)
+
+    sys.modules[app_name + '.models'] = importlib.import_module(app_name + '.models')
+    classes_from = inspect.getmembers(sys.modules[app_name + '.models'], inspect.isclass)
 
     gf_modeler(app_name, default_name=file_model_app)
 

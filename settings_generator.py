@@ -5,6 +5,11 @@ import re
 import importlib
 from generator_files import ALLOWED_DATABASES
 
+def rawInput(str):
+    #inputOperation = None
+    try: inputOperation = raw_input
+    except NameError: inputOperation = input
+    return inputOperation(str)
 
 def marge_list_elements(default_installed_apps, template_instaled_apps, app_name):
     all_apps = []
@@ -210,20 +215,20 @@ def generate_file(package_name, app_name, generate_db='sqlite'):
                     new_settings_data += sqlite_database()
 
             elif generate_db == 'postgres' or generate_db == 'postgresql':
-                sgbd_ip = input("Database IP (leave blank to 'localhost'): ")
+                sgbd_ip = rawInput("Database IP (leave blank to 'localhost'): ")
                 sgbd_ip = 'localhost' if sgbd_ip == None or sgbd_ip == '' else sgbd_ip
     
-                sgbd_port = input("Database PORT (leave blank to '5432'): ")
+                sgbd_port = rawInput("Database PORT (leave blank to '5432'): ")
                 sgbd_port = '5432' if sgbd_port == None or sgbd_port == '' else sgbd_port
     
-                db_name = input("Database NAME: ")
+                db_name = rawInput("Database NAME: ")
                 db_name = 'REPLACE-TO-DATABASE-NAME' if db_name == None or db_name == '' else db_name
     
-                db_username = input("Database USERNAME (leave blank to 'postgres'): ")
+                db_username = rawInput("Database USERNAME (leave blank to 'postgres'): ")
                 db_username = 'postgres' if db_username == None or db_username == '' else db_username
     
-                db_password = input("Database PASSWORD: ")
-                schemas = input("Type all schema database names separated by space or leave blank to public: ")
+                db_password = rawInput("Database PASSWORD: ")
+                schemas = rawInput("Type all schema database names separated by space or leave blank to public: ")
                 schemas = 'public' if schemas == None or schemas == '' else schemas.split(' ')
 
                 new_settings_data += postgres_database(sgbd_ip, sgbd_port, db_name, db_username, db_password, schemas)

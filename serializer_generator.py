@@ -11,12 +11,11 @@ from hyper_resource.models import FeatureModel
 
 
 def is_spatial(model_class):
-    if isinstance(model_class, models.Model) or isinstance(model_class, FeatureModel):
-        for field in model_class._meta.get_fields():
-            if isinstance(field, GeometryField):
-                return True
-
+    for field in model_class._meta.get_fields():
+      if isinstance(field, GeometryField):
+         return True
     return False
+
 def generate_snippet_field_relationship_to_validate_dict(field_names):
     new_str = ''
     new_str = (" " * 4) + "def field_relationship_to_validate_dict(self):\n"

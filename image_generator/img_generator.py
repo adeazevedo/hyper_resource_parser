@@ -1,6 +1,5 @@
 import sys
 import random
-from hyper_resource_py import settings
 import os
 
 try:
