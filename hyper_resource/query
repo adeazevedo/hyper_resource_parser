@@ -1,11 +1,13 @@
 AbstractCollectionResource
 filter
-map
 annotate
 by attributes
 
-map
-
+collect
+http://172.30.10.86:8000/instituicoes/ibge/bcim/unidades-federativas/collect/geom/buffer/0.2
+http://172.30.10.86:8000/instituicoes/ibge/bcim/unidades-federativas/offsetLimit/1&10/collect/geom/buffer/0.2
+http://172.30.10.86:8000/instituicoes/ibge/bcim/aldeias-indigenas/within/{"type":"Polygon","coordinates":[[[-48.759514611370854,-28.3426735036349],[-48.631647133384185,-28.3426735036349],[-48.631647133384185,-28.082673631081306],[-48.759514611370854,-28.082673631081306],[-48.759514611370854,-28.3426735036349]]]}/collect/geom/buffer/0.2
+http://172.30.10.86:8000/instituicoes/ibge/bcim/aldeias-indigenas/within/http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159407/*collect/geom/buffer/0.2/
 by attributes(projeção)
 http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/geocodigo,nome/
 
@@ -15,3 +17,7 @@ http://172.30.10.86:8000/instituicoes/ibge/bcim/unidades-federativas/filter/sigl
 http://luc00557347.ibge.gov.br/controle-list/gasto-list/filter/usuario/eq/http://luc00557347.ibge.gov.br/controle-list/usuario-list/1/*and/valor/gt/19
 /eq/eq/http://luc00557347.ibge.gov.br/controle-list/usuario-list/1/*and/valor/gt/19/or/data/eq/2017-01-01
 http://127.0.0.1:8000/ibge/bcim/unidades-federativas/filter/geom/num_coords/gt/1000
+
+filter and collect
+http://127.0.0.1:8000/ibge/bcim/unidades-federativas/filter/geom/num_coords/gt/1000/collect/geom/buffer/0.2
+collect and filter

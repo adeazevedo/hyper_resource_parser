@@ -12,12 +12,10 @@ def rawInput(str):
     return inputOperation(str)
 
 def main(argv):
-    has_to_generate_models  = False
     has_to_generate_views  = True
     has_to_generate_urls  = True
     has_to_generate_serializers  = True
     has_to_generate_contexters  = True
-
     has_to_generate_settings = True
 
     size_of_arguments = len(argv)
@@ -26,25 +24,22 @@ def main(argv):
         exit()
     else:
         print('-------------------------------------------------------------------------------------------------------')
-        print('Generating files: urls.py,views.py, serializaers.py e contexts.py')
+        print('Changing models.py and generating files: urls.py,views.py, serializers.py e contexts.py')
         print('-------------------------------------------------------------------------------------------------------')
 
     prj_name = argv[1]
     app_name = argv[2]
 
     if size_of_arguments > 3:
-        has_to_generate_models = ast.literal_eval(argv[3])
+        has_to_generate_views = ast.literal_eval(argv[3])
     if size_of_arguments > 4:
-        has_to_generate_views = ast.literal_eval(argv[4])
+        has_to_generate_urls = ast.literal_eval(argv[4])
     if size_of_arguments > 5:
-        has_to_generate_urls = ast.literal_eval(argv[5])
+        has_to_generate_serializers = ast.literal_eval(argv[5])
     if size_of_arguments > 6:
-        has_to_generate_serializers = ast.literal_eval(argv[6])
+        has_to_generate_contexters = ast.literal_eval(argv[6])
     if size_of_arguments > 7:
-        has_to_generate_contexters = ast.literal_eval(argv[7])
-
-    if size_of_arguments > 8:
-        has_to_generate_settings = ast.literal_eval(argv[8])
+        has_to_generate_settings = ast.literal_eval(argv[7])
 
     from settings_generator import generate_file as gf_settings
 
@@ -70,15 +65,7 @@ def main(argv):
     from django.conf import settings
 
     file_model_app = app_name + '/models.py'
-    sys.modules[app_name + '.models'] = importlib.import_module(app_name + '.models')
-
-    if has_to_generate_models:
-        os.system("python manage.py inspectdb > "+file_model_app)
-
-    sys.modules[app_name + '.models'] = importlib.import_module(app_name + '.models')
-    classes_from = inspect.getmembers(sys.modules[app_name + '.models'], inspect.isclass)
-
-    gf_modeler(app_name, default_name=file_model_app)
+    gf_modeler(app_name, file_model_app)
 
     if has_to_generate_views:
         file_view = app_name + '/views.py'

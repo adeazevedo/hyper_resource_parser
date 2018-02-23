@@ -15,16 +15,8 @@ def is_spatial(model_class):
     return False
 
 def generate_file(package_name, default_name='models.py'):
-
     classes_from = inspect.getmembers(sys.modules[package_name + '.models'], inspect.isclass)
-    classes_from = inspect.getmembers(sys.modules[package_name + '.models'], inspect.isclass)
-    #geo_classes = map(lambda x: x[0], filter(lambda x: is_spatial(x[1]), geo_classes )
-
-    #for ele in classes_from:
-    #    print(ele[0])
-    #    print(is_spatial(ele[1]))
-    geo_classes = [ele[0] for ele in classes_from if is_spatial( ele[1])]
-    #print(geo_classes)
+    geo_classe_names = [ele[0] for ele in classes_from if is_spatial( ele[1])]
     old_model = default_name
     new_model = default_name+'.new'
     with open(old_model, 'r') as sr:
@@ -36,8 +28,10 @@ def generate_file(package_name, default_name='models.py'):
                     continue
                 regex_obj = re.search(r'class\s*(?P<class_model>.*)\(', line)
                 class_name_in_line = regex_obj if regex_obj is None else regex_obj.group(1)
-                if class_name_in_line in geo_classes:
-                    line = line.replace('models.Model', 'FeatureModel')
+
+                if class_name_in_line in geo_classe_names:
+                   line = line.replace('models.Model', 'FeatureModel')
+
                 elif class_name_in_line is not None:
                     line = line.replace('models.Model', 'BusinessModel')
                 elif 'models.IntegerField(primary_key=True)' in line:
@@ -47,7 +41,6 @@ def generate_file(package_name, default_name='models.py'):
         sr.close()
     os.remove(old_model)
     os.rename(new_model, old_model)
-
 
 if __name__ == "__main__":
     if (len( sys.argv))!= 3:
