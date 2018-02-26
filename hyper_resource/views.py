@@ -2006,6 +2006,11 @@ class AbstractCollectionResource(AbstractResource):
             return self.basic_post(request)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def hashed_value(self, object):
+        dt = datetime.now()
+        local_hash = self.__class__.__name__ + str(dt.microsecond)
+        return local_hash
+
 class CollectionResource(AbstractCollectionResource):
 
     def operations_with_parameters_type(self):
@@ -2038,55 +2043,45 @@ class CollectionResource(AbstractCollectionResource):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
         return objects
 
-
-    def get(self, request, *args, **kwargs):
-
-        response = self.basic_get(request, *args, **kwargs)
-        self.add_base_headers(request, response)
-        return response
-
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
         self.set_basic_context_resource(request)
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
-
+        self.inject_e_tag()
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
-            objects = self.model_class().objects.all()
-            serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
-            resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
-            self.add_key_value_in_header(resp, ETAG, str(hash(objects)))
-            return resp
+            query_set = self.model_class().objects.all()
+            serializer = self.serializer_class(query_set, many=True, context={"request" : request})
+            required_object = RequiredObject(serializer.data, self.content_type_or_default_content_type(request), query_set, 200)
+            return required_object
 
         elif self.path_has_only_attributes(attributes_functions_str):
             query_set = self.get_objects_by_only_attributes(attributes_functions_str)
             serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, query_set)
-            resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
-            self.add_key_value_in_header(resp, ETAG, str(hash(query_set)))
-            return resp
+            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), query_set, 200)
 
         elif self.path_has_distinct_operation(attributes_functions_str):
-            resp =  self.get_objects_from_distinct_operation(attributes_functions_str)
-            return resp
+            query_set =  self.get_objects_from_distinct_operation(attributes_functions_str)
+            serializer = self.serializer_class(query_set, many=True, context={"request": request})
+            return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), query_set, 200)
+
         elif self.path_has_countResource_operation(attributes_functions_str):
-            resp =  Response(data={"countResource": self.model_class().objects.count()},status=200, content_type=CONTENT_TYPE_JSON)
-            return resp
+            return RequiredObject({"countResource": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
 
         elif self.path_has_offsetLimit_operation(attributes_functions_str):
             query_set = self.get_objects_from_offsetLimit_operation(attributes_functions_str)
-            serialized_data = self.serializer_class(query_set, many=True, context={'request': request}).data
-            resp = Response(data=serialized_data, status=200, content_type=self.content_type_or_default_content_type(request))
-            return resp
+            serializer = self.serializer_class(query_set, many=True, context={'request': request})
+            return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), query_set, 200)
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
-            objects = self.get_objects_by_functions(attributes_functions_str)
-            serialized_data = self.serializer_class(objects, many=True, context={'request': request} ).data
-            resp =  Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
-            self.add_key_value_in_header(resp, ETAG, str(hash(objects)))
-            return resp
+            query_set = self.get_objects_by_functions(attributes_functions_str)
+            serialized_data = self.serializer_class(query_set, many=True, context={'request': request})
+            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), query_set, 200)
 
         else:
-
-            return Response(data="This request has invalid attribute or operation", status=400, content_type=CONTENT_TYPE_JSON)
+            return RequiredObject(representation_object={"This request has invalid attribute or operation"},
+                                  content_type=CONTENT_TYPE_JSON,
+                                  origin_object=self,
+                                  status_code=400)
 
 class SpatialCollectionResource(AbstractCollectionResource):
 
@@ -2196,11 +2191,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return objects
 
-    def hashed_value(self, object):
-        dt = datetime.now()
-        local_hash = self.__class__.__name__ + str(dt.microsecond)
-        return local_hash
-
     def basic_response(self, request, objects):
 
         serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
@@ -2231,6 +2221,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
             objects = self.model_class().objects.all()
             serializer = self.serializer_class(objects, many=True)
             required_object = RequiredObject(serializer.data, self.content_type_or_default_content_type(request), objects, 200)
+            self.temporary_content_type= required_object.content_type
+            return required_object
 
         elif self.path_has_only_attributes(attributes_functions_str):
             objects = self.get_objects_by_only_attributes(attributes_functions_str)
@@ -2268,10 +2260,10 @@ class FeatureCollectionResource(SpatialCollectionResource):
             return self.required_object(request, objects)
 
         else:
-            return RequiredObject({"This request has invalid attribute or operation"}, status=400, content_type=CONTENT_TYPE_JSON)
-
-        self.temporary_content_type= required_object.content_type
-        return required_object
+            return RequiredObject(representation_object={"This request has invalid attribute or operation"},
+                                  content_type=CONTENT_TYPE_JSON,
+                                  origin_object=self,
+                                  status_code=400)
 
     def basic_options(self, request, *args, **kwargs):
         self.object_model = self.model_class()()

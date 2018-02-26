@@ -219,3 +219,35 @@ class FeatureCollectionResourceTest(SimpleTestCase):
         arr1 = ['geom', 'contains', 'http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159407/', '*or', 'geom', 'contains', 'http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159406/']
 
         self.assertEquals(len(self.fc.transform_path_with_url_as_array(arr)), len(arr1))
+
+class CollectionResourceTest(SimpleTestCase):
+    def setUp(self):
+        self.host = 'luc00557196.ibge.gov.br:8000/'
+        self.base_uri = "http://" + self.host + "controle-list/"
+
+    def test_simple_collection_request(self):
+        # requests.get(uri, headers={key: value, key: value})
+        res = requests.get(self.base_uri + "gasto-list/")
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.headers['content-type'], 'application/json')
+
+    def test_collection_request_by_attributes(self):
+        res = requests.get(self.base_uri + "gasto-list/id,data,valor")
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.headers['content-type'], 'application/json')
+
+    def test_distinct_operation_for_collection_resource(self):
+        res = requests.get(self.base_uri + "gasto-list/distinct/data")
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.headers['content-type'], 'application/json')
+
+    def test_offset_limit_operation_for_collection_resource(self):
+        res = requests.get(self.base_uri + "gasto-list/offsetLimit/2&3")
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.headers['content-type'], 'application/json')
+    """
+    def test_groupBy_operation_for_collection_resource(self):
+        res = requests.get(self.base_uri + "gasto-list/groupBy/data,valor")
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.headers['content-type'], 'application/json')
+    """
