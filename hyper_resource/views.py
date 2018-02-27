@@ -1164,6 +1164,29 @@ class AbstractResource(APIView):
         return (attributes_functions_str_url.find('http:') > -1) or (attributes_functions_str_url.find('https:') > -1)\
                or (attributes_functions_str_url.find('www.') > -1)
 
+    def remove_last_slash(self, url_as_str):
+        return url_as_str.strip()[:-1] if url_as_str.strip()[-1] == '/' else url_as_str.strip()
+
+    def attribute_functions_str_with_url_splitted_by_slash(self, attributes_functions_str_url):
+        att_functions_str_url = attributes_functions_str_url
+        exp = r"(?=https{0,1}:.+?\*)https{0,1}:.+?\*"
+        url_as_arr = re.findall(exp, att_functions_str_url, re.IGNORECASE)
+        token = '_*+_token__$url-#_num:'
+        for index, url_str in enumerate(url_as_arr):
+            att_functions_str_url = att_functions_str_url.replace(url_str, token + str(index))
+        att_functions_str_url_as_array = att_functions_str_url.split('/')
+        for index, url_str in enumerate(url_as_arr):
+            att_functions_str_url_as_array[att_functions_str_url_as_array.index(token + str(index))] = url_str[:-1]
+        return att_functions_str_url_as_array
+
+    def attribute_functions_str_splitted_by_slash(self, attributes_functions_str_url):
+
+        att_functions_str_url = att_functions_str_url = self.remove_last_slash(attributes_functions_str_url)
+        if self.path_has_url(att_functions_str_url):
+             return self.attribute_functions_str_with_url_splitted_by_slash(att_functions_str_url)
+        else:
+           return att_functions_str_url.split('/')
+
     def _execute_attribute_or_method(self, object, attribute_or_method_name, array_of_attribute_or_method_name):
         """
         Return the value of 'object' attribute represented for

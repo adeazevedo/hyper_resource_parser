@@ -98,15 +98,33 @@ class FeatureModelTestCase(SimpleTestCase):
 
     def test_fields(self):
         self.assertEquals(self.ponto.fields()[0].name, 'id_objeto')
+
 class AbstractResourceTestCase(SimpleTestCase):
 
     def setUp(self):
         self.tr = TesteResource('name', 'parameters', 'answer')
+        self.ar = AbstractCollectionResource()
 
     def test_attributes(self):
         pass
     def test_operations(self):
         pass
+    def test_remove_last_slash(self):
+
+        self.assertEquals(self.ar.remove_last_slash('within/__tokenurl__1/collect/geom/buffer/0.2/'), 'within/__tokenurl__1/collect/geom/buffer/0.2')
+        self.assertEquals(self.ar.remove_last_slash('within/__tokenurl__1/collect/geom/buffer/0.2'), 'within/__tokenurl__1/collect/geom/buffer/0.2')
+        self.assertEquals(self.ar.remove_last_slash('within/__tokenurl__1/collect/geom/buffer/0.2 '), 'within/__tokenurl__1/collect/geom/buffer/0.2')
+
+    def test_attribute_functions_str_splitted_by_slash(self):
+        res = self.ar.attribute_functions_str_splitted_by_slash('within/http://172.30.10.86:8000/ibge/bcim/municipios/3159407*/collect/geom/buffer/0.2/intersects/https://172.30.10.86:8000/instituicoes/bcim/estado/rj*')
+        self.assertEquals(res[0], 'within')
+        self.assertEquals(res[1], 'http://172.30.10.86:8000/ibge/bcim/municipios/3159407')
+        self.assertEquals(res[2], 'collect')
+        self.assertEquals(res[3], 'geom')
+        self.assertEquals(res[4], 'buffer')
+        self.assertEquals(res[5], '0.2')
+        self.assertEquals(res[6], 'intersects')
+        self.assertEquals(res[7], 'https://172.30.10.86:8000/instituicoes/bcim/estado/rj')
 
 
 class SpatialResourceTest(SimpleTestCase):

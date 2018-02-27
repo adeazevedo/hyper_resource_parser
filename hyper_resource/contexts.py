@@ -623,3 +623,7 @@ class FeatureResouceContext(ContextResource):
 
 class FeatureCollectionResourceContext(FeatureResouceContext):
     pass
+
+
+class AbstractCollectionResourceContext(ContextResource):
+    pass
