@@ -218,39 +218,16 @@ class ConverterType():
         return object_method(value)
 
     def convert_parameters(self, a_type, attribute_or_function_name, parameters):
-        """
-        If 'a_type' is a key of the dict of all operation (spatials or primitives)
-        and 'attribute_or_function_name' represents a operation of 'a_type', this
-        method convert 'parameters' to match with the types of the Type_Called.parameters
-        (the parameters of the operation itself) references to this 'attribute_or_function_name'
-        Example: 'parameters' = ['1.2', '5', 'test'] - Type_Called.parameters = [float, int, str] - return = [1.2, 5, 'test']
-        If 'a_type' isn't a key of the dict of all operation, just return 'parameters' intact
-        :param a_type:
-        :param attribute_or_function_name:
-        :param parameters:
-        :return:
-        """
+
         if a_type in OperationController().dict_all_operation_dict():
-            # if 'a_type' represent a index of the dict with all aperations (spacials or primitives)
-            # we retrieve only the dict references to the received type (a_type)
             operation_dict = OperationController().dict_all_operation_dict()[a_type]
 
             if attribute_or_function_name in operation_dict:
-                # if 'attribute_or_function_name' represents a operation
-                # references to the 'a_type' operations dict, we retureve
-                # this specific operation (the Type_Called references to it)
                 type_called = operation_dict[attribute_or_function_name]
 
-                # - type_called.parameters will return the list of types required by this operation
-                # - ConverterType.value_converted() return the value (second argument)
-                # converted to the same type of the specified type (first argument)
-                # - i.e. the received 'parameters' will be converted to match with this operation Type_Called.parameters
-                # - Example: 'parameters' = ['1.2', '5', 'test'] - Type_Called.parameters = [float, int, str]
-                # return = [1.2, 5, 'test']
                 return [ConverterType().value_converted(param, parameters[i]) for i, param in enumerate(type_called.parameters) ]
 
-        # if 'a_type' doesn't represent a index of the dict with all aperations (spacials or primitives)
-        # we return 'parameters' intact
+
         return parameters
 
 class QObjectFactory:
@@ -585,12 +562,16 @@ class OperationController:
         dict = {}
         dict['filter'] = Type_Called('filter', [Q], object)
         #dict['map'] = Type_Called('map', [Q], object)
-        #dict['annotate'] = Type_Called('annotate', [Q], object)
-        dict['countResource'] = Type_Called('countResource', [], int)
-        dict['offsetLimit'] = Type_Called('offsetLimit', [int, int], object)
+        dict['annotate'] = Type_Called('annotate', [object], object)
+        dict['collect'] = Type_Called('collect',[object] , object)
+        dict['filter_and_collect'] = Type_Called('filter_collect',[Q, object] , object)
+        dict['collect_and_filter'] = Type_Called('collect_filter',[object, Q] , object)
+        dict['countresource'] = Type_Called('countResource', [], int)
+        dict['offsetlimit'] = Type_Called('offsetLimit', [int, int], object)
         dict['distinct'] = Type_Called('distinct', [list], object)
-        dict['groupBy'] = Type_Called('groupBy', [list], object)
-        dict['groupByCount'] = Type_Called('groupByCount', [list], object)
+        dict['groupby'] = Type_Called('groupBy', [list], object)
+        dict['groupbycount'] = Type_Called('groupByCount', [list], object)
+
         return dict
 
     def spatial_collection_operations_dict(self):

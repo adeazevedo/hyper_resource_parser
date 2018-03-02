@@ -620,10 +620,8 @@ class FeatureResouceContext(ContextResource):
         pass
 
 
-
 class FeatureCollectionResourceContext(FeatureResouceContext):
     pass
-
 
 class AbstractCollectionResourceContext(ContextResource):
     pass

@@ -12,6 +12,7 @@ from django.test import TestCase
 from django.contrib.gis.db import models
 
 from hyper_resource.models import FeatureModel, FactoryComplexQuery
+from hyper_resource.contexts import *
 from hyper_resource.views import AbstractResource, FeatureCollectionResource, AbstractCollectionResource
 from django.contrib.gis.geos import GEOSGeometry
 from django.test import SimpleTestCase
@@ -82,7 +83,6 @@ class TesteResource(AbstractResource):
         self.parameters = params
         self.return_type = answer
 
-
 class FeatureModelTestCase(SimpleTestCase):
     def setUp(self):
         self.ponto = Ponto()
@@ -116,16 +116,15 @@ class AbstractResourceTestCase(SimpleTestCase):
         self.assertEquals(self.ar.remove_last_slash('within/__tokenurl__1/collect/geom/buffer/0.2 '), 'within/__tokenurl__1/collect/geom/buffer/0.2')
 
     def test_attribute_functions_str_splitted_by_slash(self):
-        res = self.ar.attribute_functions_str_splitted_by_slash('within/http://172.30.10.86:8000/ibge/bcim/municipios/3159407*/collect/geom/buffer/0.2/intersects/https://172.30.10.86:8000/instituicoes/bcim/estado/rj*')
+        res = self.ar.attribute_functions_str_splitted_by_slash('within/http://172.30.10.86:8000/ibge/bcim/municipios/3159407/*collect/geom/buffer/0.2/intersects/https://172.30.10.86:8000/instituicoes/bcim/estado/rj/*')
         self.assertEquals(res[0], 'within')
-        self.assertEquals(res[1], 'http://172.30.10.86:8000/ibge/bcim/municipios/3159407')
-        self.assertEquals(res[2], 'collect')
+        self.assertEquals(res[1], 'http://172.30.10.86:8000/ibge/bcim/municipios/3159407/')
+        self.assertEquals(res[2], '*collect')
         self.assertEquals(res[3], 'geom')
         self.assertEquals(res[4], 'buffer')
         self.assertEquals(res[5], '0.2')
         self.assertEquals(res[6], 'intersects')
-        self.assertEquals(res[7], 'https://172.30.10.86:8000/instituicoes/bcim/estado/rj')
-
+        self.assertEquals(res[7], 'https://172.30.10.86:8000/instituicoes/bcim/estado/rj/')
 
 class SpatialResourceTest(SimpleTestCase):
 
@@ -144,8 +143,6 @@ class FeatureResourceTest(SimpleTestCase):
         pass
     def test_options_url_with_spatia_functions(self):
         pass
-
-
 
 class FactoryComplexQueryTest(SimpleTestCase):
     def setUp(self):
@@ -174,12 +171,14 @@ class FactoryComplexQueryTest(SimpleTestCase):
         model_class = ModeloTeste
         self.fcq.q_object_serialized_by_filter_operation(attribute_operation_str, model_class)
 
-class AbstractCollectionResourceTest(SimpleTestCase):
+class AbstractCollectionResourceTestCase(SimpleTestCase):
     def setUp(self):
         self.attributes_functions = ['filter/sigla/in/rj,es,go/', 'filter/sigla/uppercase/in/rj,es,go/and/data/between/2017-02-01,2017-06-30/', 'filter/sigla/in/rj,es,go/and/geom/within/{"type":"Polygon","coordinates":[[[-41.881710164667396,-21.297482165015307],[-28.840495695785098,-21.297482165015307],[-28.840495695785098,-17.886950999070834],[-41.881710164667396,-17.886950999070834],[-41.881710164667396,-21.297482165015307]]]}']
         self.acr = AbstractCollectionResource()
 
     def test_attributes_functions_str_is_filter_with_spatial_operation(self):
+        pass
+        """
         self.assertTrue(self.acr.attributes_functions_str_is_filter_with_spatial_operation('filter/sigla/in/rj,es,go/and/geom/within/Point(1,2)'))
         self.assertFalse(self.acr.attributes_functions_str_is_filter_with_spatial_operation('/filter'))
         self.assertFalse(self.acr.attributes_functions_str_is_filter_with_spatial_operation('/filter/filter'))
@@ -191,7 +190,63 @@ class AbstractCollectionResourceTest(SimpleTestCase):
         self.assertFalse(self.acr.attributes_functions_str_is_filter_with_spatial_operation('/filter/within/eq/abxx'))
         self.assertFalse(self.acr.attributes_functions_str_is_filter_with_spatial_operation('/within/geom'))
         self.assertFalse(self.acr.attributes_functions_str_is_filter_with_spatial_operation('/within/filter'))
+        """
+    def test_attributes_functions_str_splitted_by_slash(self):
+        self.acr.attribute_functions_str_splitted_by_slash('collect/geom/buffer/0.2') == ['collect','geom', 'buffer', '0.2']
+        self.acr.attribute_functions_str_splitted_by_slash('collect/geom/buffer/0.2/') == ['collect','geom', 'buffer', '0.2']
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('collect/geom/buffer/0.2'), ['collect','geom', 'buffer', '0.2'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('collect/geom/buffer/0.2/transform/3005&True/area'), ['collect', 'geom', 'buffer', '0.2', 'transform', '3005&True', 'area'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('offsetLimit/1&10/collect/geom/buffer/0.2'), ['offsetLimit', '1&10', 'collect', 'geom', 'buffer', '0.2'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('within/{"type":"Polygon","coordinates":[[[-48.759514611370854,-28.3426735036349],[-48.631647133384185,-28.3426735036349],[-48.631647133384185,-28.082673631081306],[-48.759514611370854,-28.082673631081306],[-48.759514611370854,-28.3426735036349]]]}/collect/geom/buffer/0.2'), ['within', '{"type":"Polygon","coordinates":[[[-48.759514611370854,-28.3426735036349],[-48.631647133384185,-28.3426735036349],[-48.631647133384185,-28.082673631081306],[-48.759514611370854,-28.082673631081306],[-48.759514611370854,-28.3426735036349]]]}', 'collect', 'geom', 'buffer', '0.2'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('within/http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159407/*collect/geom/buffer/0.2/'), ['within', 'http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159407/', '*collect', 'geom', 'buffer', '0.2'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('within/https://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159407/*collect/geom/buffer/0.2'), ['within', 'https://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159407/', '*collect', 'geom', 'buffer', '0.2'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('within/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/*collect/geom/buffer/0.2/within/http://ibge/unidades-federativas/RJ/*'), ['within', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/', '*collect', 'geom', 'buffer', '0.2', 'within','http://ibge/unidades-federativas/RJ/'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('filter/geom/within/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/*'), ['filter', 'geom', 'within', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('filter/geom/within/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom/*and/sigla/eq/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo/*'), ['filter', 'geom', 'within', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom/', '*and', 'sigla', 'eq', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo/'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('filter/geom/within/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom/*collect/collect/eq/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo/*'), ['filter', 'geom', 'within', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom/', '*collect', 'collect', 'eq', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo/'])
+ #       self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('filter/geom/within/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom*/and/geocodigo/eq/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo/*/collect/collect/eq/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo*'),
+#['filter', 'geom', 'within', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom','and','geocodigo','eq','http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom/and/geocodigo', 'collect', 'collect', 'eq', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo'])
+        #self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('within/WWw.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407*/collect/geom/buffer/0.2'), ['filter', 'geom', 'within', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geom', 'and', 'sigla', 'eq', 'http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/geocodigo'])
+        self.assertEquals(self.acr.attribute_functions_str_splitted_by_slash('filter/collect/within/http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/*collect/collect/transform/3005&True/area'),[
+            'filter','collect','within','http://www.ibge.gov.br:8080/instituicoes/ibge/bcim/municipios/3159407/','*collect','collect','transform', '3005&True','area'] )
 
+    def test_get_generic_operation_name(self):
+
+        prefix = 'get_objects_from_'
+        suffix = '_operation'
+
+        operation_name = self.acr.get_generic_operation_name('filter/geom/within/http://luc00557347.ibge.gov.br/ibge/bcim/unidades-federativas/ES/geom/buffer/0.2*/and/fclass/eq/school/*collect/geom/buffer/0.2')
+        self.assertEquals(operation_name, prefix + 'filter_and_collect' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('filter/sigla/in/RJ,ES/*collect/geom/transform/3005&True/area')
+        self.assertEquals(operation_name, prefix + 'filter_and_collect' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('collect/geom/buffer/0.2/*filter/geom/within/http://luc00557347.ibge.gov.br/ibge/bcim/unidades-federativas/ES/geom/buffer/0.2/and/fclass/eq/school*/')
+        self.assertEquals(operation_name, prefix + 'collect_and_filter' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('filter/geom/within/http://luc00557347.ibge.gov.br/ibge/bcim/unidades-federativas/ES/geom/buffer/0.2')
+        self.assertEquals(operation_name, prefix + 'filter' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('collect/geom/buffer/0.2')
+        self.assertEquals(operation_name, prefix + 'collect' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('groupby/geom/')
+        self.assertEquals(operation_name, prefix + 'groupby' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('groupbycount/geom/')
+        self.assertEquals(operation_name, prefix + 'groupbycount' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('offsetlimit/1:10/')
+        self.assertEquals(operation_name, prefix + 'offsetlimit' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('distinct')
+        self.assertEquals(operation_name, prefix + 'distinct' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('countresource')
+        self.assertEquals(operation_name, prefix + 'countresource' + suffix)
+
+        operation_name = self.acr.get_generic_operation_name('annotate/')
+        self.assertEquals(operation_name, prefix + 'annotate' + suffix)
 
 class FeatureCollectionResourceTest(SimpleTestCase):
     def setUp(self):
@@ -222,14 +277,6 @@ class FeatureCollectionResourceTest(SimpleTestCase):
         self.assertEquals(result1, Q(sigla__in=['ES,RJ']))
         self.assertEquals(result2, Q(data='ES,RJ'))
 
-    def test_token_in_url_array(self):
-        self.maxDiff = None
-        arr = ['geom', 'contains', 'http:','172.30.10.86:8000','instituicoes','ibge','bcim','municipios','3159407', '*or', 'geom', 'contains', 'http:','172.30.10.86:8000','instituicoes','ibge','bcim','municipios','3159406', '*and', 'contains', 'Point(23,23)']
-        self.assertTrue(self.fc.token_in_url_array('http:',2, arr ))
-        self.assertFalse(self.fc.token_in_url_array('*or',9 ,arr))
-        self.assertTrue(self.fc.token_in_url_array('172.30.10.86:8000',13, arr ))
-        self.assertFalse(self.fc.token_in_url_array('Point(23,23)',19 ,arr))
-
     def test_transform_path_with_spatial_operation_str_and_url_as_array(self):
         self.maxDiff = None
         s = 'geom/contains/http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159407/*or/geom/contains/http://172.30.10.86:8000/instituicoes/ibge/bcim/municipios/3159406'
@@ -240,7 +287,7 @@ class FeatureCollectionResourceTest(SimpleTestCase):
 
 class CollectionResourceTest(SimpleTestCase):
     def setUp(self):
-        self.host = 'luc00557196.ibge.gov.br:8000/'
+        self.host = 'luc00557196.ibge.gov.br:8080/'
         self.base_uri = "http://" + self.host + "controle-list/"
 
     def test_simple_collection_request(self):
