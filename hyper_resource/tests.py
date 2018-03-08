@@ -287,7 +287,7 @@ class FeatureCollectionResourceTest(SimpleTestCase):
 
 class CollectionResourceTest(SimpleTestCase):
     def setUp(self):
-        self.host = 'luc00557196.ibge.gov.br:8080/'
+        self.host = 'luc00557196.ibge.gov.br:8000/'
         self.base_uri = "http://" + self.host + "controle-list/"
 
     def test_simple_collection_request(self):

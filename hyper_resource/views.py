@@ -1911,11 +1911,21 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = [ele for ele in att_funcs if ele != '']
         return len(att_funcs) == 2 and  (att_funcs[0].lower() == 'offsetlimit')
 
+    """
     def path_has_collect_operation(self, attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
         att_funcs = [ele for ele in att_funcs if ele != '']
         return len(att_funcs) >= 3 and  (att_funcs[0].lower() == 'collect')
-
+    """
+    def path_has_collect_operation(self, attributes_functions_str):
+        collect_operation_index = attributes_functions_str.find("collect")
+        if collect_operation_index != -1:
+            collect_operation = attributes_functions_str[collect_operation_index:]
+            att_funcs = collect_operation.split('/')
+            att_funcs = [ele for ele in att_funcs if ele != '']
+            return len(att_funcs) >= 3 and  (att_funcs[0].lower() == 'collect')
+        return False
+    
     def generics_collection_operation_name(self):
        return ('filter','collect', 'filter_and_collect','collect_and_filter', 'annotate' ,'groupby', 'groupbycount', 'distinct', 'countresource', 'offsetlimit' )
 
@@ -2164,34 +2174,99 @@ class AbstractCollectionResource(AbstractResource):
         self.set_basic_context_resource(request)
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
 
+        # IMPLEMENTAR UM 'IF' PARA CADA OPERAÇÃO DE COLEÇÃO
+
         if self.is_simple_path(attributes_functions_str):  # to get query parameters
-            return {"data": {},"status": 200, "content_type": CONTENT_TYPE_JSON}
+            return Response( data=self.context_resource.context(), content_type='application/ld+json' )
 
         elif self.path_has_only_attributes(attributes_functions_str):
-            output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
-            dict_attribute = output[0]
-            if len(attributes_functions_str.split(',')) > 1:
-                self._set_context_to_attributes(dict_attribute.keys())
+            attrs_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
+            attrs_list = attrs_str.split(",")
+            if len(attrs_list) > 1:
+                self._set_context_to_attributes(attrs_list)
             else:
-                self._set_context_to_only_one_attribute(attributes_functions_str)
-            return {"data": {},"status": 200, "content_type": CONTENT_TYPE_JSON}
+                self._set_context_to_only_one_attribute(attrs_list[0])
+
+            context = self.context_resource.dict_context
+            return Response(data=context, content_type='application/ld+json')
+
+        #if self.path_has_collect_operation(attributes_functions_str):
+        #    pass
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass
         #elif self.path_has_only_spatial_operation(attributes_functions_str):
         #    return {"data": self.get_objects_with_spatial_operation_serialized(attributes_functions_str), "status": 200,"content_type": CONTENT_TYPE_JSON}
 
+        # http://192.168.0.10:8001/ibge/bcim/unidades-federativas/filter/sigla/in/RJ/*collect/geom/transform/3005&True/area
+
+        #elif attributes_functions_str.find("collect") != -1:
+        elif self.path_has_collect_operation(attributes_functions_str):
+            collect_operation_index = attributes_functions_str.find("collect")
+            collect_operation = attributes_functions_str[collect_operation_index:]
+            collect_att_funcs = collect_operation.split('/')
+            collect_att_funcs = [ele for ele in collect_att_funcs if ele != '']
+            attrs = collect_att_funcs[1].split(",")
+            terms_after_collect = collect_att_funcs[2:]
+
+            all_object_operations_dict = self.operation_controller.string_operations_dict()
+            all_object_operations_dict.update(self.operation_controller.geometry_operations_dict())
+
+            last_operation_name = "collect"
+            pen_operation_name = ""
+            for term in terms_after_collect:
+                if term in all_object_operations_dict.keys():
+                    pen_operation_name = last_operation_name
+                    last_operation_name = term
+
+            self.context_resource.set_context_to_operation(self.object_model, last_operation_name)
+            if pen_operation_name == 'collect':
+                operation_context = self.context_resource.dict_context
+                if len(attrs) > 1:
+                    self._set_context_to_attributes(attrs)
+                else:
+                    self._set_context_to_only_one_attribute(attrs[0])
+                current_context = self.context_resource.dict_context
+                previous_context = operation_context["@context"]
+
+                self.context_resource.dict_context["@context"].update(previous_context)
+
+            last_operation_ret_type = all_object_operations_dict[last_operation_name].return_type
+            supported_operations = self.context_resource.supportedOperationsFor(self.object_model, last_operation_ret_type)
+
+            data = {"hydra:supportedOperations": supported_operations}
+            data.update(self.context_resource.dict_context)
+            return Response(data=data, content_type="application/ld+json")
+
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
-            return self.required_object_by_operations(request, {})
-            #return {"data": self.get_objects_serialized_by_functions(attributes_functions_str),"status": 200, "content_type": CONTENT_TYPE_JSON}
+            operations_for_collection = self.operation_controller.collection_operations_dict()
+            last_operation_name = ""
+            attributes_functions_list = attributes_functions_str.split("/")
+            for attr_func in attributes_functions_list:
+                if attr_func in operations_for_collection.keys():
+                    last_operation_name = attr_func
+
+            operation_ret_type = operations_for_collection[last_operation_name].return_type
+
+            supported_operations = []
+            if operation_ret_type == object:
+                for k, type_called in self.operation_controller.collection_operations_dict().items():
+                    supp_oper = SupportedOperation(operation=type_called.name,
+                                                             title=type_called.name,
+                                                             method="GET",
+                                                             expects=[vocabulary(param) for param in type_called.parameters],
+                                                             returns=vocabulary(type_called.return_type),
+                                                             link=vocabulary(type_called.name))
+                    supported_operations.append(supp_oper.context())
+
+            return Response(data={"hydra:supportedOperations": supported_operations}, content_type="application/ld+json")
 
         else:
-            return {"data": "This request has invalid attribute or operation","status": 400, "content_type": CONTENT_TYPE_JSON}
+            data = {"data": "This request has invalid attribute or operation","status": 400, "content_type": CONTENT_TYPE_JSON}
+            return Response(data=data, content_type="application/ld+json")
 
     def options(self, request, *args, **kwargs):
-        self.basic_options(request, *args, **kwargs)
-        #return self.context_resource.context()
-        return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
+        return self.basic_options(request, *args, **kwargs)
 
     def basic_post(self, request):
         response =  Response(status=status.HTTP_201_CREATED, content_type=CONTENT_TYPE_JSON)

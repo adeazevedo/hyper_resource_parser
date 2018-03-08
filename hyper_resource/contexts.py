@@ -447,7 +447,7 @@ class ContextResource:
         # initialize_dict() gets a dict with geometric types as keys and dict of geometric operations as values
         dict = initialize_dict()
         # 'a_type' is the type of the field ('object_type') or the type of his value (type(object))
-        a_type = type(object_type) if object_type is not None else type(object)
+        a_type = object_type if object_type is not None else type(object)
         # if 'a_type' correspond to a operations dict key, gets the dict correnponding to this key
         # remember: 'dict' is a dict of geometric operations dict
         dict_operations = dict[a_type] if a_type in dict else {}
