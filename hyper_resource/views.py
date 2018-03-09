@@ -1083,7 +1083,8 @@ class AbstractResource(APIView):
         operations = self.operation_names_model()
 
         for att_func in attrs_functs:
-            if  att_func in operations:
+            oper_name = att_func[1:] if '*' in att_func else att_func
+            if  oper_name in operations:
                 return True
         return False
 
@@ -1216,7 +1217,7 @@ class AbstractResource(APIView):
         url_as_arr = re.findall(exp, att_functions_str_url, re.IGNORECASE)
         token = '_*+_TOKEN__$URL-#_Num:'
         for index, url_str in enumerate(url_as_arr):
-            att_functions_str_url = att_functions_str_url.replace(url_str, token + str(index) + '/*')
+            att_functions_str_url = att_functions_str_url.replace(url_str, token + str(index) + '/*', 1)
         att_functions_str_url_as_array = att_functions_str_url.split('/')
         for idx, url_str in enumerate(url_as_arr):
             att_functions_str_url_as_array[att_functions_str_url_as_array.index(token + str(idx))] = url_str[:-1]
@@ -2157,7 +2158,7 @@ class AbstractCollectionResource(AbstractResource):
 
             objects = self.get_objects_by_operations(attributes_functions_str)
             #self._set_context_to_attributes(objects.keys())
-            if len(objects) > 1 and isinstance(objects[0], BusinessModel):
+            if len(objects) > 0 and isinstance(objects[0], BusinessModel):
                 serializer = self.serializer_class(objects, many=True,  context={'request': request})
             else:
                 return RequiredObject(objects, self.content_type_or_default_content_type(request), objects, 200)
@@ -2429,13 +2430,17 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return term_of_path.lower() == self.geometry_field_name()
 
     def get_objects_from_specialized_operation(self, attributes_functions_str):
-        att_func_arr = attributes_functions_str.split('/')
-        arr = att_func_arr
-        if self.is_spatial_operation(att_func_arr[0]) and not self.path_has_geometry_attribute(att_func_arr[0]):
-            if self.path_has_url(attributes_functions_str):
-                #arr = self.transform_path_with_url_as_array(att_func_arr)
-                arr = self.attribute_functions_str_with_url_splitted_by_slash(attributes_functions_str)
-            arr = self.inject_geometry_attribute_in_spatial_operation_for_path(arr)
+
+        if self.path_has_url(attributes_functions_str):
+            #arr = self.transform_path_with_url_as_array(att_func_arr)
+            arr = self.attribute_functions_str_with_url_splitted_by_slash(attributes_functions_str)
+
+        else:
+
+            arr = attributes_functions_str.split('/')
+        if self.is_spatial_operation(arr[0]) and not self.path_has_geometry_attribute(arr[0]):
+            arr = self.inject_geometry_attribute_in_spatial_operation_for_path(arr) #ex.: within/... => geom/within/...
+
         return self.get_objects_from_spatial_operation(arr)
 
     def get_objects_by_only_attributes(self, attribute_names_str):
