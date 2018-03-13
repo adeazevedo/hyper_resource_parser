@@ -2,7 +2,8 @@ from django.conf.urls import include, url
 from rest_framework.urlpatterns import format_suffix_patterns
 from controle import views 
 
-urlpatterns = format_suffix_patterns([
+app_name = "controle"
+urlpatterns = format_suffix_patterns((
     url(r'^$', views.APIRoot.as_view(), name='api_root'),
 
     url(r'^gasto-list/(?P<pk>[0-9]+)/?$', views.GastoDetail.as_view(), name='Gasto_detail'),
@@ -24,4 +25,4 @@ urlpatterns = format_suffix_patterns([
     url(r'^usuario-list(?P<attributes_functions>.*)/?$', views.UsuarioList.as_view(), name='Usuario_list_af'),
 
 
-])
+))

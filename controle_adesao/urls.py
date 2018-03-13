@@ -2,7 +2,9 @@ from django.conf.urls import include, url
 from rest_framework.urlpatterns import format_suffix_patterns
 from controle_adesao import views 
 
-urlpatterns = format_suffix_patterns([
+app_name = "controle_adesao"
+
+urlpatterns = format_suffix_patterns((
     url(r'^$', views.APIRoot.as_view(), name='api_root'),
 
     url(r'^ator-list/(?P<pk>[0-9]+)/$', views.AtorDetail.as_view(), name='Ator_detail'),
@@ -21,4 +23,4 @@ urlpatterns = format_suffix_patterns([
     url(r'^representante-list/(?P<attributes_functions>.*)/?$', views.RepresentanteList.as_view(), name='Representante_list_af'),
 
 
-])
+))

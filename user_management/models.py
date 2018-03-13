@@ -18,7 +18,7 @@ class HyperUser(BusinessModel):
     description = models.TextField(blank=True, null=True, default='')
     avatar = models.CharField(max_length=200, blank=True, default='', null=True)
     active   = models.NullBooleanField()
-    boss = models.ForeignKey('self', db_column='id_boss',related_name='subordinates', blank=True, null=True)
+    boss = models.ForeignKey('self', db_column='id_boss',on_delete=models.SET_NULL, related_name='subordinates', blank=True, null=True)
 
     @classmethod
     def jwt_algorithm(cls):
@@ -90,5 +90,5 @@ class APIResource(BusinessModel):
 
 class HyperUserGroupAPIResource(BusinessModel):
     active   = models.NullBooleanField()
-    user_group = models.ForeignKey(HyperUserGroup, db_column='id_user_group',related_name='col_of_user_group_api', blank=True, null=True)
-    api_resource = models.ForeignKey(HyperUserGroup, db_column='id_api_resource', blank=True, null=True)
+    user_group = models.ForeignKey(HyperUserGroup, db_column='id_user_group', on_delete=models.SET_NULL, related_name='col_of_user_group_api', blank=True, null=True)
+    api_resource = models.ForeignKey(HyperUserGroup, db_column='id_api_resource', on_delete=models.SET_NULL, blank=True, null=True)

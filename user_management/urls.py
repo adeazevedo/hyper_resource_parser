@@ -2,7 +2,9 @@ from django.conf.urls import include, url
 from rest_framework.urlpatterns import format_suffix_patterns
 from user_management import views 
 
-urlpatterns = format_suffix_patterns([
+app_name = "user_management"
+
+urlpatterns = format_suffix_patterns((
     url(r'^$', views.APIRoot.as_view(), name='api_root'),
 
     url(r'^api-resource-list/(?P<pk>[0-9]+)/$', views.APIResourceDetail.as_view(), name='APIResource_detail'),
@@ -26,4 +28,4 @@ urlpatterns = format_suffix_patterns([
     url(r'^hyper-user-group-api-resource-list/(?P<attributes_functions>.*)/?$', views.HyperUserGroupAPIResourceList.as_view(), name='HyperUserGroupAPIResource_list_af'),
 
 
-])
+))

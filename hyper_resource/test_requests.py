@@ -1,7 +1,8 @@
 import requests
 from time import sleep
 #servidor = ''
-servidor = 'http://LUC00557347.ibge.gov.br/'
+#servidor = 'http://LUC00557347.ibge.gov.br/'
+servidor = 'http://LUC00557196.ibge.gov.br:8000/'
 arr_get_for_collection = [
 'controle-list/gasto-list/countresource',
 'controle-list/gasto-list/offsetlimit/1&10',
@@ -26,7 +27,9 @@ arr_get_for_collection = [
 'ibge/bcim/aldeias-indigenas/filter/id_objeto/eq/841/*or/geom/within/' + servidor + 'ibge/bcim/unidades-federativas/ES/geom/*or/' + servidor + 'ibge/bcim/unidades-federativas/PR/*',
 'ibge/bcim/municipios/within/{"type":"Polygon","coordinates":[[[-48.759514611370854,-28.3426735036349],[-48.631647133384185,-28.3426735036349],[-48.631647133384185,-28.082673631081306],[-48.759514611370854,-28.082673631081306],[-48.759514611370854,-28.3426735036349]]]}',
 'ibge/bcim/municipios/within/'+ servidor + 'ibge/bcim/unidades-federativas/ES/*',
-'ibge/bcim/municipios/filter/geom/overlaps/' + servidor +'ibge/bcim/unidades-federativas/ES/*or/geom/within/' + servidor +'ibge/bcim/unidades-federativas/ES/*and/geocodigo/startswith/32/'
+'ibge/bcim/municipios/filter/geom/overlaps/' + servidor +'ibge/bcim/unidades-federativas/ES/*or/geom/within/' + servidor +'ibge/bcim/unidades-federativas/ES/*and/geocodigo/startswith/32/',
+'ibge/bcim/aldeias-indigenas/within/' + servidor + 'ibge/bcim/unidades-federativas/PA/',
+'ibge/bcim/aldeias-indigenas/within/' + servidor + 'ibge/bcim/unidades-federativas/PA',
 ]
 requests_with_error = []
 

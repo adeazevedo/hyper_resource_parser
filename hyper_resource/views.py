@@ -1213,14 +1213,25 @@ class AbstractResource(APIView):
 
     def attribute_functions_str_with_url_splitted_by_slash(self, attributes_functions_str_url):
         att_functions_str_url = attributes_functions_str_url
-        exp = r"(?=https{0,1}:.+?\*)https{0,1}:.+?\*"
+        #exp = r"(?=https{0,1}:.+?\*)https{0,1}:.+?\*"
+        exp = r'(?=https{0,1}:.+?\*)(https{0,1}:.+?\*)|(https{0,1}:.+?\/?$)'
+        #exp = r'(?=https{0,1}:.+?\*)https{0,1}:.+?[*]|[/]$'
         url_as_arr = re.findall(exp, att_functions_str_url, re.IGNORECASE)
+
+        if type(url_as_arr[0]) is tuple:
+            url_without_tuple = []
+            for url_tuple in url_as_arr:
+                url_list = list(url_tuple)
+                url_list = [ele for ele in url_list if ele != ""]
+                url_without_tuple.append(url_list[0])
+            url_as_arr = url_without_tuple
+
         token = '_*+_TOKEN__$URL-#_Num:'
         for index, url_str in enumerate(url_as_arr):
             att_functions_str_url = att_functions_str_url.replace(url_str, token + str(index) + '/*', 1)
         att_functions_str_url_as_array = att_functions_str_url.split('/')
         for idx, url_str in enumerate(url_as_arr):
-            att_functions_str_url_as_array[att_functions_str_url_as_array.index(token + str(idx))] = url_str[:-1]
+            att_functions_str_url_as_array[att_functions_str_url_as_array.index(token + str(idx))] = url_str if url_str[-1] not in ['*', '/'] else url_str[:-1]
 
         return att_functions_str_url_as_array if att_functions_str_url_as_array[-1] != '*' else att_functions_str_url_as_array[:-1]
 
@@ -2098,7 +2109,11 @@ class AbstractCollectionResource(AbstractResource):
         return self.operation_controller.collection_operations_dict()
 
     def get_generic_operation_name(self, attributes_functions_str):
-        att_func_str = attributes_functions_str + '/'
+        if attributes_functions_str[-1] != '/':
+            att_func_str = attributes_functions_str + '/'
+        else:
+            att_func_str = attributes_functions_str
+
         first_op_name = att_func_str[:att_func_str.find('/')]
         if first_op_name not in self.generics_collection_operation_name():
             return None

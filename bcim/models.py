@@ -1464,7 +1464,6 @@ class PontosExibicaoWgs84(BusinessModel):
     lat_decimal = models.FloatField(blank=True, null=True)
     sistema_geodesico = models.TextField(blank=True, null=True)
     geom = models.PointField(blank=True, null=True)
-    objects = models.GeoManager()
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
     iri_style = models.CharField(max_length=1000, blank=True, null=True)
@@ -1482,7 +1481,6 @@ class BlocoR9(BusinessModel):
     id4 = models.IntegerField(blank=True, null=True)
     area_bloco = models.FloatField(blank=True, null=True)
     geom = models.MultiPolygonField(blank=True, null=True)
-    objects = models.GeoManager()
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
     iri_style = models.CharField(max_length=1000, blank=True, null=True)
@@ -1503,48 +1501,3 @@ class ModeloTeste(FeatureModel):
     class Meta:
         managed = False
         db_table = 'modelo_teste'
-
-class Sprint(BusinessModel):
-    contextclassname = 'sprints'
-    id = models.AutoField(primary_key=True, db_column='id_sprint')
-    name = models.CharField(max_length=100, blank=True, default='')
-    description = models.TextField(blank=True, default='')
-    end = models.DateField(unique=True, blank=True,default=datetime.date.today)
-
-    class Meta:
-        managed = False
-        db_table = 'sprint'
-
-    def __str__(self):
-        return self.name or _('Sprint ending %s') % self.end
-
-class Task(BusinessModel):
-    contextclassname = 'tasks'
-    #Unit of work to be done for the sprint
-    STATUS_TODO = 1
-    STATUS_IN_PROGRESS = 2
-    STATUS_TESTING = 3
-    STATUS_DONE = 4
-    STATUS_CHOICES = (
-        (STATUS_TODO, _('Not Started')),
-        (STATUS_IN_PROGRESS, _('In Progress')),
-        (STATUS_TESTING, _('Testing')),
-        (STATUS_DONE, _('Done')),
-    )
-    id= models.AutoField(primary_key=True, db_column='id_task' )
-    name = models.CharField(max_length=300, blank=True, null=True)
-    description = models.CharField(max_length=1000, blank=True, null=True)
-    status = models.CharField(max_length=20, blank=True, null=True)
-    order = models.IntegerField(blank=True, null=True)
-    started = models.DateField(blank=True, null=True,)
-    due = models.DateField(blank=True, null=True)
-    completed = models.DateField(blank=True, null=True)
-    sprint = models.ForeignKey(Sprint,  db_column='id_sprint',related_name='tasks' ,blank=True, null=True)
-
-
-    class Meta:
-        managed = False
-        db_table = 'task'
-
-    def __str__(self):
-        return self.name

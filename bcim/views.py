@@ -81,8 +81,6 @@ def get_root_response(request):
         'trechos de massa dagua': reverse('bcim_v1:trecho_massa_dagua_list', request=request, format=format),
         'areas de desenvolvimento de controle': reverse('bcim_v1:area_desenvolvimento_controle_list', request=request, format=format),
         'marcos de limite': reverse('bcim_v1:marco_de_limite_list', request=request, format=format),
-        'sprints': reverse('bcim_v1:sprint_list', request=request, format=format),
-        'tasks': reverse('bcim_v1:task_list', request=request, format=format),
         #'pontos geodesicos': reverse('bcim_v1:ponto_exibicao_wgs84_list', request=request, format=format),
     }
 
@@ -952,43 +950,3 @@ class MarcoDeLimiteDetail(FeatureResource):
 
     serializer_class = MarcoDeLimiteSerializer
     contextclassname = 'marcos-de-limite'
-
-
-class SprintList(CollectionResource):
-    queryset = Sprint.objects.all()
-    contextclassname = Sprint.contextclassname
-    serializer_class = SprintSerializer
-
-    def initialize_context(self):
-        self.context_resource = SprintListContext()
-        self.context_resource.resource = self
-
-
-class SprintDetail(NonSpatialResource):
-
-    queryset = Sprint.objects.all()
-    serializer_class = SprintSerializer
-    contextclassname = Sprint.contextclassname
-
-    def initialize_context(self):
-        self.context_resource = SprintContext()
-        self.context_resource.resource = self
-
-class TaskList(CollectionResource):
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
-    contextclassname = Task.contextclassname
-
-    def initialize_context(self):
-        self.context_resource = TaskListContext()
-        self.context_resource.resource = self
-
-class TaskDetail(NonSpatialResource):
-
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
-    contextclassname = Task.contextclassname
-
-    def initialize_context(self):
-        self.context_resource = TaskContext()
-        self.context_resource.resource = self

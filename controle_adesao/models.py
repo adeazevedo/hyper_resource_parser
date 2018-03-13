@@ -39,7 +39,7 @@ class Publicacaoinformacaogeoespacial(BusinessModel):
     tem_download = models.CharField(max_length=20, blank=True, null=True)
     tem_vinde = models.CharField(max_length=20, blank=True, null=True)
     id_publicacao_informacao_geoespacial = models.AutoField(primary_key=True)
-    ator = models.ForeignKey(Ator,  db_column='id_ator')
+    ator = models.ForeignKey(Ator,  db_column='id_ator', on_delete=models.PROTECT)
 
     class Meta:
         managed = True
@@ -55,7 +55,7 @@ class Representante(BusinessModel):
     telefone1 = models.CharField(max_length=25, blank=True, null=True)
     telefone2 = models.CharField(max_length=25, blank=True, null=True)
     celular_telefone3 = models.CharField(max_length=25, blank=True, null=True)
-    ator = models.ForeignKey(Ator, db_column='id_ator', related_name="representantes")
+    ator = models.ForeignKey(Ator, db_column='id_ator', on_delete=models.PROTECT, related_name="representantes")
 
     class Meta:
         managed = True

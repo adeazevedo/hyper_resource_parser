@@ -68,13 +68,13 @@ class Usuario(BusinessModel):
 class TipoGasto(BusinessModel):
     id= models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100)
-    tipo_gasto_generico = models.ForeignKey('self', db_column='id_tipogasto_generico', null=True)
+    tipo_gasto_generico = models.ForeignKey('self', db_column='id_tipogasto_generico', on_delete=models.PROTECT, null=True)
 
 class Gasto(BusinessModel):
     id= models.AutoField(primary_key=True)
     data = models.DateField(null=True)
-    tipo_gasto = models.ForeignKey(TipoGasto, db_column='tipo_gasto_id')
-    usuario = models.ForeignKey(Usuario, related_name='gastos')
+    tipo_gasto = models.ForeignKey(TipoGasto, db_column='tipo_gasto_id', on_delete=models.PROTECT)
+    usuario = models.ForeignKey(Usuario, related_name='gastos', on_delete=models.PROTECT)
     valor = models.FloatField()
     detalhe = models.CharField(max_length=100, null=True)
 

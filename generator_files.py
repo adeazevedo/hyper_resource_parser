@@ -73,7 +73,7 @@ def main(argv):
 
     if has_to_generate_urls:
         file_url_prj = prj_name + '/urls.py'
-        gf_prj_urler(app_name, default_name=file_url_prj)
+        gf_prj_urler(prj_name, app_name, default_name=file_url_prj)
         file_url_app = app_name + '/urls.py'
         gf_urler(app_name, default_name=file_url_app)
 

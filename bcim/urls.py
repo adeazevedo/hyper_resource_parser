@@ -4,8 +4,8 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from bcim import views
 
 
-
-urlpatterns = [
+app_name = "bcim"
+urlpatterns = (
     url(r'^$', views.APIRoot.as_view(), name='api_root'),
 
     #unidades federativas
@@ -353,22 +353,8 @@ urlpatterns = [
     url(r'^marcos-de-limite/(?P<attributes_functions>[A-Za-z]+)/(?P<geom>.*)/?$', views.MarcoDeLimiteList.as_view(), name='marco_de_limite_list'),
     url(r'^marcos-de-limite/(?P<id_objeto>[0-9]*)/?$', views.MarcoDeLimiteDetail.as_view(), name='marco_de_limite_detail_id_objeto'),
     url(r'^marcos-de-limite/(?P<id_objeto>[0-9]*)/(?P<attributes_functions>.*)/?$', views.MarcoDeLimiteDetail.as_view(), name='marco_de_limite_detail_af'),
-
-    #sprint
-    url(r'^' + views.SprintDetail.contextclassname +'/(?P<pk>[0-9]+)/?$', views.SprintDetail.as_view(), name='sprint_detail'),
-    url(r'^' + views.SprintDetail.contextclassname + '/(?P<pk>[0-9]+)/(?P<attributes_functions>.*)/?$', views.SprintDetail.as_view(), name='sprint_detail_function'),
-    #sprint collection
-    url(r'^' + views.SprintList.contextclassname +'/?$', views.SprintList.as_view(), name='sprint_list'),
-    url(r'^' + views.SprintList.contextclassname +'/(?P<attributes_functions>.*)/?$', views.SprintList.as_view(), name='sprint_list'),
-    #tasks
-    url(r'^' + views.TaskDetail.contextclassname + '/(?P<pk>[0-9]+)/?$', views.TaskDetail.as_view(), name='task_detail'),
-    url(r'^' + views.TaskDetail.contextclassname + '/(?P<pk>[0-9]+)/(?P<attributes_functions>.*)/?$', views.TaskDetail.as_view(), name='task_detail_function'),
-    #collection
-    url(r'^' + views.TaskList.contextclassname + '/?$', views.TaskList.as_view(), name='task_list'),
-    url(r'^' + views.TaskList.contextclassname +'/(?P<attributes_functions>.*)/?$', views.TaskList.as_view(), name='task_list'),
-
     # urls generalized
 
-]
+)
 
 urlpatterns = format_suffix_patterns(urlpatterns, allowed=['json', 'png', 'jsonld'])

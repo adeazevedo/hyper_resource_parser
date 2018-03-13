@@ -42,20 +42,6 @@ class AldeiaIndigenaDetailContext(FeatureResouceContext):
 class AldeiaIndigenaListContext(FeatureResouceContext):
     pass
 
-class SprintContext(ContextResource):
-    pass
-class TaskContext(ContextResource):
-    pass
-
-class SprintListContext(FeatureResouceContext):
-    pass
-class SprintDetailContext(FeatureResouceContext):
-    pass
-class TaskListContext(FeatureResouceContext):
-    pass
-class TaskDetailContext(FeatureResouceContext):
-    pass
-
 class OutrasUnidProtegidasContext(FeatureResouceContext):
     pass
 class AglomeradoRuralDeExtensaoUrbanaContext(FeatureResouceContext):

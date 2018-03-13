@@ -24,18 +24,19 @@ def imports_str_as_array(a_name):
     return arr
 
 
-def generate_file(package_name, default_name='urls.py'):
+def generate_file(prj_name, app_name, default_name='urls.py'):
     with open(default_name, 'w+') as sr:
-        for import_str in imports_str_as_array(package_name):
+        for import_str in imports_str_as_array(app_name):
             sr.write(import_str)
-        sr.write( 'urlpatterns = [\n\n')
-        for str in generate_snippets_to_url(package_name):
+        sr.write('\napp_name="' + prj_name + '"\n\n')
+        sr.write( 'urlpatterns = (\n\n')
+        for str in generate_snippets_to_url(app_name):
             sr.write(str)
         sr.write('\n')
-        sr.write('\n]\n')
-        sr.write('urlpatterns += [\n\n')
-        sr.write((' ' * 4) + 'url(r' + "'" +'^api-auth/'+"'"+ ', include('+"'"+'rest_framework.urls'+"'"+ ',namespace='+"'"+'rest_framework'+"'"+')),\n')
-        sr.write('\n]\n')
+        sr.write('\n)\n')
+        #sr.write('urlpatterns += (\n\n')
+        #sr.write((' ' * 4) + 'url(r' + "'" +'^api-auth/'+"'"+ ', include('+"'"+'rest_framework.urls'+"'"+ ',namespace='+"'"+'rest_framework'+"'"+')),\n')
+        #sr.write('\n)\n')
         sr.write('\n\n')
         sr.close()
 
