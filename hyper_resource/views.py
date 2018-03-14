@@ -368,6 +368,7 @@ class AbstractResource(APIView):
         # the second url appended to 'Link' header is the absolute url minus the bar
         # with '.jsonld', the 'rel' is the relationship represented by w3.org url
         self.add_url_in_header(iri_base[:-1] + '.jsonld',response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
+        response['access-control-allow-origin'] = '*'
 
     def dispatch(self, request, *args, **kwargs):
         """
@@ -2145,8 +2146,8 @@ class AbstractCollectionResource(AbstractResource):
 
         elif self.path_has_only_attributes(attributes_functions_str):
             objects = self.get_objects_by_only_attributes(attributes_functions_str)
-            #serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
-            return RequiredObject(objects, self.content_type_or_default_content_type(request), objects, 200)
+            serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
+            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), objects, 200)
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass
@@ -2466,11 +2467,21 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def get_objects_serialized_by_only_attributes(self, attribute_names_str, objects):
         arr = []
         attribute_names_str_as_array = attribute_names_str.split(',')
+        has_geo_field = self.geometry_field_name() in attribute_names_str_as_array
+
         for dic in objects:
             a_dic = {}
             for att_name in attribute_names_str_as_array:
-                a_dic[att_name] = dic[att_name] if not isinstance(dic[att_name], GEOSGeometry) else json.loads(dic[att_name].json)
-                arr.append(a_dic)
+                #a_dic[att_name] = dic[att_name] if not isinstance(dic[att_name], GEOSGeometry) else json.loads(dic[att_name].json)
+                if has_geo_field and att_name == self.geometry_field_name():
+                    a_dic[att_name] = json.loads(dic[att_name].json)
+                else:
+                    a_dic[att_name] = dic[att_name]
+
+            if has_geo_field:
+                a_dic = self.dict_as_geojson(a_dic)
+
+            arr.append(a_dic)
         return arr
 
     def get_objects_from_within_operation(self, attributes_functions_str):
@@ -2513,8 +2524,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         elif self.path_has_only_attributes(attributes_functions_str):
             objects = self.get_objects_by_only_attributes(attributes_functions_str)
-            #serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
-            return RequiredObject(objects, self.content_type_or_default_content_type(request), objects, 200)
+            serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
+            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), objects, 200)
 
         #elif self.path_has_url(attributes_functions_str.lower()):
         #    pass

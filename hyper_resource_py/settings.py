@@ -82,6 +82,7 @@ CORS_EXPOSE_HEADERS = ['accept',
                        'x-csrftoken',
                        'x-requested-with',
                        'x-access-token',
+                       'access-control-allow-origin',
                        ]
 
 TEMPLATES = [
