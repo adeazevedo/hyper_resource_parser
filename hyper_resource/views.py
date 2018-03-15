@@ -1011,6 +1011,11 @@ class AbstractResource(APIView):
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def options(self, request, *args, **kwargs):
+        response = super(AbstractResource, self).options( request, *args, **kwargs)
+        self.add_base_headers(request, response)
+        return response
+
     def operation_names_model(self):
         """
         Returns a list with the name of all object model methods
@@ -1610,13 +1615,17 @@ class NonSpatialResource(AbstractResource):
 
         accept = request.META['HTTP_ACCEPT']
 
-
-        return Response(data=dict_for_response[0], content_type=dict_for_response[1])
+        response = Response(data=dict_for_response[0], content_type=dict_for_response[1])
+        self.add_base_headers(request, response)
+        return response
 
     def options(self, request, *args, **kwargs):
+        response = super(NonSpatialResource, self).options( request, *args, **kwargs)
         self.basic_get(request, *args, **kwargs)
+        response.data = self.context_resource.context()
+        response['content-type'] = 'application/ld+json'
+        return response
         #return self.context_resource.context()
-        return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
 
 class StyleResource(AbstractResource):
     pass
@@ -1864,7 +1873,9 @@ class FeatureResource(SpatialResource):
     def options(self, request, *args, **kwargs):
         self.basic_get(request, *args, **kwargs)
         #return self.context_resource.context()
-        return Response ( data=self.context_resource.context(), content_type='application/ld+json' )
+        resp = Response ( data=self.context_resource.context(), content_type='application/ld+json' )
+        self.add_base_headers(request, resp)
+        return resp
 
 class AbstractCollectionResource(AbstractResource):
 
@@ -2283,7 +2294,9 @@ class AbstractCollectionResource(AbstractResource):
             return Response(data=data, content_type="application/ld+json")
 
     def options(self, request, *args, **kwargs):
-        return self.basic_options(request, *args, **kwargs)
+        response = self.basic_options(request, *args, **kwargs)
+        self.add_base_headers(request, response)
+        return response
 
     def basic_post(self, request):
         response =  Response(status=status.HTTP_201_CREATED, content_type=CONTENT_TYPE_JSON)
