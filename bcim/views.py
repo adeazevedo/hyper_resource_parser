@@ -126,7 +126,7 @@ class UnidadeFederacaoDetail(FeatureResource):
     contextclassname = 'unidades-federativas'
 
     def initialize_context(self):
-        self.context_resource = UnidadeFederacaoContext()
+        self.context_resource = UnidadeFederacaoDetailContext()
         self.context_resource.resource= self
 
     def get(self, request, *args, **kwargs):
@@ -168,6 +168,7 @@ class UnidadeFederacaoList(FeatureCollectionResource):
         self.context_resource = UnidadeFederacaoListContext()
         self.context_resource.resource = self
 
+
 class MunicipioList(FeatureCollectionResource):
 
     queryset = Municipio.objects.all()
@@ -195,6 +196,24 @@ class MunicipioDetail(FeatureResource):
         self.context_resource = MunicipioDetailContext()
         self.context_resource.resource = self
 
+class BrejoPantanoList(FeatureCollectionResource):
+
+    queryset = BrejoPantano.objects.all()
+    serializer_class = BrejoPantanoSerializer
+    contextclassname = 'brejos-e-pantanos'
+
+    def initialize_context(self):
+        self.context_resource = BrejoPantanoListContext()
+        self.context_resource.resource= self
+
+class BrejoPantanoDetail(FeatureResource):
+
+    serializer_class = BrejoPantanoSerializer
+    contextclassname = 'brejos-e-pantanos'
+
+    def initialize_context(self):
+        self.context_resource = BrejoPantanoListContext()
+        self.context_resource.resource= self
 
 
 class OutrasUnidProtegidasList(FeatureCollectionResource):
@@ -365,16 +384,27 @@ class AreaEdificadaList(FeatureCollectionResource):
     serializer_class = AreaEdificadaSerializer
     contextclassname = 'areas-edificadas'
 
+    def initialize_context(self):
+        self.context_resource = AreaEdificadaListContext()
+        self.context_resource.resource = self
+
 class AreaEdificadaDetail(FeatureResource):
 
     serializer_class = AreaEdificadaSerializer
     contextclassname = 'areas-edificadas'
+
+    def initialize_context(self):
+        self.context_resource = AreaEdificadaDetailContext()
+        self.context_resource.resource = self
 
 class CapitalList(FeatureCollectionResource):
 
     queryset = Capital.objects.all()
     serializer_class = CapitalSerializer
     contextclassname = 'capitais'
+    def initialize_context(self):
+        self.context_resource = CapitalListContext()
+        self.context_resource.resource = self
 
 
 class CapitalDetail(FeatureResource):
@@ -383,16 +413,27 @@ class CapitalDetail(FeatureResource):
     serializer_class = CapitalSerializer
     contextclassname = 'capitais'
 
+    def initialize_context(self):
+        self.context_resource = CapitalListContext()
+        self.context_resource.resource = self
+
 class CidadeList(FeatureCollectionResource):
 
     queryset = Cidade.objects.all()
     serializer_class = CidadeSerializer
     contextclassname = 'cidades'
 
+    def initialize_context(self):
+        self.context_resource = CidadeListContext()
+        self.context_resource.resource = self
+
 class CidadeDetail(FeatureResource):
 
     serializer_class = CidadeSerializer
     contextclassname = 'cidades'
+    def initialize_context(self):
+        self.context_resource = CidadeListContext()
+        self.context_resource.resource = self
 
 class VilaList(FeatureCollectionResource):
 
@@ -410,187 +451,292 @@ class CurvaBatimetricaList(FeatureCollectionResource):
     queryset = CurvaBatimetrica.objects.all()
     serializer_class = CurvaBatimetricaSerializer
     contextclassname = 'curvas-batimetricas'
+    def initialize_context(self):
+        self.context_resource = CurvaBatimetricaListContext()
+        self.context_resource.resource = self
 
 class CurvaBatimetricaDetail(FeatureResource):
 
     serializer_class = CurvaBatimetricaSerializer
     contextclassname = 'curvas-batimetricas'
+    def initialize_context(self):
+        self.context_resource = CurvaBatimetricaListContext()
+        self.context_resource.resource = self
 
 class CurvaNivelList(FeatureCollectionResource):
 
     queryset = CurvaNivel.objects.all()
     serializer_class = CurvaNivelSerializer
     contextclassname ='curvas-de-nivel'
+    def initialize_context(self):
+        self.context_resource = CurvaNivelListContext()
+        self.context_resource.resource = self
 
 class CurvaNivelDetail(FeatureResource):
 
     serializer_class = CurvaNivelSerializer
     contextclassname = 'curvas-de-nivel'
+    def initialize_context(self):
+        self.context_resource = CurvaNivelListContext()
+        self.context_resource.resource = self
 
 class DunaList(FeatureCollectionResource):
 
     queryset = Duna.objects.all()
     serializer_class = DunaSerializer
     contextclassname = 'dunas'
+    def initialize_context(self):
+        self.context_resource = DunaListContext()
+        self.context_resource.resource = self
+
 
 class DunaDetail(FeatureResource):
 
     serializer_class = DunaSerializer
     contextclassname = 'dunas'
+    def initialize_context(self):
+        self.context_resource = DunaListContext()
+        self.context_resource.resource = self
 
 class ElementoFisiograficoNaturalList(FeatureCollectionResource):
 
     queryset = ElementoFisiograficoNatural.objects.all()
     serializer_class = ElementoFisiograficoNaturalSerializer
     contextclassname = 'elementos-fisiografico-natural'
+    def initialize_context(self):
+        self.context_resource = ElementoFisiograficoNaturalListContext()
+        self.context_resource.resource = self
 
 class ElementoFisiograficoNaturalDetail(FeatureResource):
 
     serializer_class = ElementoFisiograficoNaturalSerializer
     contextclassname = 'elementos-fisiografico-natural'
+    def initialize_context(self):
+        self.context_resource = ElementoFisiograficoNaturalListContext()
+        self.context_resource.resource = self
 
 class PicoList(FeatureCollectionResource):
 
     queryset = Pico.objects.all()
     serializer_class = PicoSerializer
     contextclassname = 'picos'
+    def initialize_context(self):
+        self.context_resource = PicoListContext()
+        self.context_resource.resource = self
 
 class PicoDetail(FeatureResource):
 
     serializer_class = PicoSerializer
     contextclassname = 'picos'
+    def initialize_context(self):
+        self.context_resource = PicoListContext()
+        self.context_resource.resource = self
 
 class PontoCotadoAltimetricoList(FeatureCollectionResource):
 
     queryset = PontoCotadoAltimetrico.objects.all()
     serializer_class = PontoCotadoAltimetricoSerializer
     contextclassname = 'pontos-cotados-altimetricos'
+    def initialize_context(self):
+        self.context_resource = PontoCotadoAltimetricoListContext()
+        self.context_resource.resource = self
 
 class PontoCotadoAltimetricoDetail(FeatureResource):
 
     serializer_class = PontoCotadoAltimetricoSerializer
     contextclassname = 'pontos-cotados-altimetricos'
+    def initialize_context(self):
+        self.context_resource = PontoCotadoAltimetricoListContext()
+        self.context_resource.resource = self
 
 class PontoCotadoBatimetricoList(FeatureCollectionResource):
 
     queryset = PontoCotadoBatimetrico.objects.all()
     serializer_class = PontoCotadoBatimetricoSerializer
     contextclassname = 'pontos-cotados-batimetricos'
+    def initialize_context(self):
+        self.context_resource = PontoCotadoBatimetricoListContext()
+        self.context_resource.resource = self
 
 class PontoCotadoBatimetricoDetail(FeatureResource):
 
     serializer_class = PontoCotadoBatimetricoSerializer
     contextclassname = 'pontos-cotados-batimetricos'
+    def initialize_context(self):
+        self.context_resource = PontoCotadoBatimetricoListContext()
+        self.context_resource.resource = self
 
 class EclusaList(FeatureCollectionResource):
 
     queryset = Eclusa.objects.all()
     serializer_class = EclusaSerializer
     contextclassname = 'eclusas'
+    def initialize_context(self):
+        self.context_resource = EclusaListContext()
+        self.context_resource.resource = self
 
 class EclusaDetail(FeatureResource):
 
     serializer_class = EclusaSerializer
     contextclassname = 'eclusas'
+    def initialize_context(self):
+        self.context_resource = EclusaListContext()
+        self.context_resource.resource = self
 
 class EdifConstPortuariaList(FeatureCollectionResource):
 
     queryset = EdifConstPortuaria.objects.all()
     serializer_class = EdifConstPortuariaSerializer
     contextclassname = 'edificacoes-de-construcao-portuaria'
+    def initialize_context(self):
+        self.context_resource = EdifConstPortuariaListContext()
+        self.context_resource.resource = self
 
 class EdifConstPortuariaDetail(FeatureResource):
 
     serializer_class = EdifConstPortuariaSerializer
     contextclassname = 'edificacoes-de-construcao-portuaria'
+    def initialize_context(self):
+        self.context_resource = EdifConstPortuariaListContext()
+        self.context_resource.resource = self
 
 class EdifConstrAeroportuariaList(FeatureCollectionResource):
 
     queryset = EdifConstrAeroportuaria.objects.all()
     serializer_class = EdifConstrAeroportuariaSerializer
     contextclassname = 'edificacoes-de-construcao-aeroportuaria'
+    def initialize_context(self):
+        self.context_resource = EdifConstrAeroportuariaListContext()
+        self.context_resource.resource = self
 
 class EdifConstrAeroportuariaDetail(FeatureResource):
 
-    serializer_class = EdifConstPortuariaSerializer
+    serializer_class = EdifConstrAeroportuariaSerializer
     contextclassname = 'edificacoes-de-construcao-aeroportuaria'
+    def initialize_context(self):
+        self.context_resource = EdifConstrAeroportuariaListContext()
+        self.context_resource.resource = self
 
 class EdifMetroFerroviariaList(FeatureCollectionResource):
 
     queryset = EdifMetroFerroviaria.objects.all()
     serializer_class = EdifMetroFerroviariaSerializer
     contextclassname = 'edificacoes-metro-ferroviaria'
+    def initialize_context(self):
+        self.context_resource = EdifMetroFerroviariaListContext()
+        self.context_resource.resource = self
 
 class EdifMetroFerroviariaDetail(FeatureResource):
 
     serializer_class = EdifMetroFerroviariaSerializer
     contextclassname = 'edificacoes-metro-ferroviaria'
+    def initialize_context(self):
+        self.context_resource = EdifMetroFerroviariaListContext()
+        self.context_resource.resource = self
+
 
 class FundeadouroList(FeatureCollectionResource):
 
     queryset = Fundeadouro.objects.all()
     serializer_class = FundeadouroSerializer
     contextclassname = 'fundeadouros'
+    def initialize_context(self):
+        self.context_resource = FundeadouroListContext()
+        self.context_resource.resource = self
+
 
 class FundeadouroDetail(FeatureResource):
 
     serializer_class = FundeadouroSerializer
     contextclassname = 'fundeadouros'
+    def initialize_context(self):
+        self.context_resource = FundeadouroListContext()
+        self.context_resource.resource = self
 
 class PistaPontoPousoList(FeatureCollectionResource):
 
     queryset = PistaPontoPouso.objects.all()
     serializer_class = PistaPontoPousoSerializer
     contextclassname = 'pistas-de-ponto-pouso'
+    def initialize_context(self):
+        self.context_resource = PistaPontoPousoListContext()
+        self.context_resource.resource = self
 
 class PistaPontoPousoDetail(FeatureResource):
 
     serializer_class = PistaPontoPousoSerializer
     contextclassname = 'pistas-de-ponto-pouso'
+    def initialize_context(self):
+        self.context_resource = PistaPontoPousoListContext()
+        self.context_resource.resource = self
 
 class PonteList(FeatureCollectionResource):
 
     queryset = Ponte.objects.all()
     serializer_class = PonteSerializer
     contextclassname = 'pontes'
+    def initialize_context(self):
+        self.context_resource = PonteListContext()
+        self.context_resource.resource = self
 
 class PonteDetail(FeatureResource):
 
     serializer_class = PonteSerializer
     contextclassname = 'pontes'
+    def initialize_context(self):
+        self.context_resource = PonteListContext()
+        self.context_resource.resource = self
 
 class SinalizacaoList(FeatureCollectionResource):
 
     queryset = Sinalizacao.objects.all()
     serializer_class = SinalizacaoSerializer
     contextclassname = 'sinalizacaoes'
+    def initialize_context(self):
+        self.context_resource = SinalizacaoListContext()
+        self.context_resource.resource = self
 
 class SinalizacaoDetail(FeatureResource):
 
     serializer_class = SinalizacaoSerializer
     contextclassname = 'sinalizacaoes'
+    def initialize_context(self):
+        self.context_resource = SinalizacaoListContext()
+        self.context_resource.resource = self
 
 class TravessiaList(FeatureCollectionResource):
 
     queryset = Travessia.objects.all()
     serializer_class = TravessiaSerializer
     contextclassname = 'travessias'
+    def initialize_context(self):
+        self.context_resource = TravessiaListContext()
+        self.context_resource.resource = self
 
 class TravessiaDetail(FeatureResource):
 
     serializer_class = TravessiaSerializer
     contextclassname = 'travessias'
+    def initialize_context(self):
+        self.context_resource = TravessiaListContext()
+        self.context_resource.resource = self
 
 class TrechoDutoList(FeatureCollectionResource):
 
     queryset = TrechoDuto.objects.all()
     serializer_class = TrechoDutoSerializer
     contextclassname = 'trechos-dutos'
+    def initialize_context(self):
+        self.context_resource = TrechoDutoListContext()
+        self.context_resource.resource = self
 
 class TrechoDutoDetail(FeatureResource):
 
     serializer_class = TrechoDutoSerializer
     contextclassname = 'trechos-dutos'
+    def initialize_context(self):
+        self.context_resource = TrechoDutoListContext()
+        self.context_resource.resource = self
 
 class TrechoFerroviarioList(FeatureCollectionResource):
 
@@ -614,44 +760,52 @@ class TrechoHidroviarioList(FeatureCollectionResource):
     queryset = TrechoHidroviario.objects.all()
     serializer_class = TrechoHidroviarioSerializer
     contextclassname = 'trechos-hidroviarios'
+    def initialize_context(self):
+        self.context_resource = TrechoHidroviarioListContext()
+        self.context_resource.resource = self
 
 class TrechoHidroviarioDetail(FeatureResource):
 
     serializer_class = TrechoHidroviarioSerializer
     contextclassname = 'trechos-hidroviarios'
+    def initialize_context(self):
+        self.context_resource = TrechoHidroviarioListContext()
+        self.context_resource.resource = self
 
 class TrechoRodoviarioList(FeatureCollectionResource):
 
     queryset = TrechoRodoviario.objects.all()
     serializer_class = TrechoRodoviarioSerializer
     contextclassname = 'trechos-rodoviarios'
+    def initialize_context(self):
+        self.context_resource = TrechoRodoviarioListContext()
+        self.context_resource.resource = self
 
 class TrechoRodoviarioDetail(FeatureResource):
 
     serializer_class = TrechoRodoviarioSerializer
     contextclassname = 'trechos-rodoviarios'
+    def initialize_context(self):
+        self.context_resource = TrechoRodoviarioListContext()
+        self.context_resource.resource = self
 
 class TunelList(FeatureCollectionResource):
 
     queryset = Tunel.objects.all()
     serializer_class = TunelSerializer
     contextclassname = 'tuneis'
+    def initialize_context(self):
+        self.context_resource = TunelListContext()
+        self.context_resource.resource = self
 
 class TunelDetail(FeatureResource):
 
     serializer_class = TunelSerializer
     contextclassname = 'tuneis'
+    def initialize_context(self):
+        self.context_resource = TunelListContext()
+        self.context_resource.resource = self
 
-class BrejoPantanoList(FeatureCollectionResource):
-
-    queryset = BrejoPantano.objects.all()
-    serializer_class = BrejoPantanoSerializer
-    contextclassname = 'brejos-e-pantanos'
-
-class BrejoPantanoDetail(FeatureResource):
-
-    serializer_class = BrejoPantanoSerializer
-    contextclassname = 'brejos-e-pantanos'
 
 class MangueList(FeatureCollectionResource):
 
@@ -659,32 +813,54 @@ class MangueList(FeatureCollectionResource):
     serializer_class = MangueSerializer
     contextclassname = 'mangues'
 
+    def initialize_context(self):
+        self.context_resource = MangueListContext()
+        self.context_resource.resource= self
+
 class MangueDetail(FeatureResource):
 
     serializer_class = MangueSerializer
     contextclassname  = 'mangues'
+    def initialize_context(self):
+        self.context_resource = MangueListContext()
+        self.context_resource.resource= self
 
 class VegRestingaList(FeatureCollectionResource):
 
     queryset = VegRestinga.objects.all()
     serializer_class = VegRestingaSerializer
     contextclassname = 'vegetacoes-de-restinga'
+    def initialize_context(self):
+        self.context_resource = VegRestingaListContext()
+        self.context_resource.resource= self
+
 
 class VegRestingaDetail(FeatureResource):
 
     serializer_class = VegRestingaSerializer
     contextclassname = 'vegetacoes-de-restinga'
+    def initialize_context(self):
+        self.context_resource = VegRestingaListContext()
+        self.context_resource.resource= self
 
 class EdifPubMilitarList(FeatureCollectionResource):
 
     queryset = EdifPubMilitar.objects.all()
     serializer_class = EdifPubMilitarSerializer
     contextclassname = 'edificacoes-publica-militar'
+    def initialize_context(self):
+        self.context_resource = EdifPubMilitarListContext()
+        self.context_resource.resource= self
 
 class EdifPubMilitarDetail(FeatureResource):
 
     serializer_class = EdifPubMilitarSerializer
     contextclassname = 'edificacoes-publica-militar'
+
+    def initialize_context(self):
+       self.context_resource = EdifPubMilitarListContext()
+       self.context_resource.resource = self
+
 
 class PostoFiscalList(FeatureCollectionResource):
 
@@ -692,11 +868,19 @@ class PostoFiscalList(FeatureCollectionResource):
     serializer_class = PostoFiscalSerializer
     contextclassname = 'postos-fiscais'
 
+    def initialize_context(self):
+      self.context_resource = PostoFiscalListContext()
+      self.context_resource.resource = self
+
 
 class PostoFiscalDetail(FeatureResource):
 
     serializer_class = PostoFiscalSerializer
     contextclassname = 'postos-fiscais'
+
+    def initialize_context(self):
+        self.context_resource = PostoFiscalListContext()
+        self.context_resource.resource = self
 
 class EdifAgropecExtVegetalPescaList(FeatureCollectionResource):
 
@@ -704,87 +888,136 @@ class EdifAgropecExtVegetalPescaList(FeatureCollectionResource):
     serializer_class = EdifAgropecExtVegetalPescaSerializer
     contextclassname = 'edificacoes-agropecuarias-de-extracao-vegetal-e-pesca'
 
+    def initialize_context(self):
+        self.context_resource = EdifAgropecExtVegetalPescaListContext()
+        self.context_resource.resource = self
+
 class EdifAgropecExtVegetalPescaDetail(FeatureResource):
 
     serializer_class = EdifAgropecExtVegetalPescaSerializer
     contextclassname = 'edificacoes-agropecuarias-de-extracao-vegetal-e-pesca'
+    def initialize_context(self):
+        self.context_resource = EdifAgropecExtVegetalPescaListContext()
+        self.context_resource.resource = self
 
 class EdifIndustrialList(FeatureCollectionResource):
 
     queryset = EdifIndustrial.objects.all()
     serializer_class = EdifIndustrialSerializer
     contextclassname = 'edificacoes-industrial'
+    def initialize_context(self):
+        self.context_resource = EdifIndustrialListContext()
+        self.context_resource.resource = self
 
 class EdifIndustrialDetail(FeatureResource):
 
     serializer_class = EdifIndustrialSerializer
     contextclassname = 'edificacoes-industrial'
+    def initialize_context(self):
+        self.context_resource = EdifIndustrialListContext()
+        self.context_resource.resource = self
 
 class ExtMineralList(FeatureCollectionResource):
 
     queryset = ExtMineral.objects.all()
     serializer_class = ExtMineralSerializer
     contextclassname = 'extracoes-minerais'
+    def initialize_context(self):
+        self.context_resource = ExtMineralListContext()
+        self.context_resource.resource = self
 
 class ExtMineralDetail(FeatureResource):
 
     serializer_class = ExtMineralSerializer
     contextclassname = 'extracoes-minerais'
+    def initialize_context(self):
+        self.context_resource = ExtMineralListContext()
+        self.context_resource.resource = self
 
 class EdifReligiosaList(FeatureCollectionResource):
 
     queryset = EdifReligiosa.objects.all()
     serializer_class = EdifReligiosaSerializer
     contextclassname = 'edificacoes-religiosa'
+    def initialize_context(self):
+        self.context_resource = EdifReligiosaListContext()
+        self.context_resource.resource = self
 
 class EdifReligiosaDetail(FeatureResource):
 
     serializer_class = EdifReligiosaSerializer
     contextclassname = 'edificacoes-religiosa'
+    def initialize_context(self):
+        self.context_resource = EdifReligiosaListContext()
+        self.context_resource.resource = self
 
 class EstGeradEnergiaEletricaList(FeatureCollectionResource):
 
     queryset = EstGeradEnergiaEletrica.objects.all()
     serializer_class = EstGeradEnergiaEletricaSerializer
     contextclassname = 'estacoes-geradoras-de-energia-eletrica'
+    def initialize_context(self):
+        self.context_resource = EstGeradEnergiaEletricaListContext()
+        self.context_resource.resource = self
 
 class EstGeradEnergiaEletricaDetail(FeatureResource):
 
     serializer_class = EstGeradEnergiaEletricaSerializer
     contextclassname = 'estacoes-geradoras-de-energia-eletrica'
+    def initialize_context(self):
+        self.context_resource = EstGeradEnergiaEletricaListContext()
+        self.context_resource.resource = self
 
 class HidreletricaList(FeatureCollectionResource):
 
     queryset = Hidreletrica.objects.all()
     serializer_class = HidreletricaSerializer
     contextclassname = 'hidreletricas'
+    def initialize_context(self):
+        self.context_resource = HidreletricaListContext()
+        self.context_resource.resource = self
 
 class HidreletricaDetail(FeatureResource):
 
     serializer_class = HidreletricaSerializer
     contextclassname = 'hidreletricas'
+    def initialize_context(self):
+        self.context_resource = HidreletricaListContext()
+        self.context_resource.resource = self
 
 class TermeletricaList(FeatureCollectionResource):
 
     queryset = Termeletrica.objects.all()
     serializer_class = TermeletricaSerializer
     contextclassname = 'termeletricas'
+    def initialize_context(self):
+        self.context_resource = TermeletricaListContext()
+        self.context_resource.resource = self
 
 class TermeletricaDetail(FeatureResource):
 
     serializer_class = TermeletricaSerializer
     contextclassname = 'termeletricas'
+    def initialize_context(self):
+        self.context_resource = TermeletricaListContext()
+        self.context_resource.resource = self
 
 class TorreEnergiaList(FeatureCollectionResource):
 
     queryset = TorreEnergia.objects.all()
     serializer_class = TorreEnergiaSerializer
     contextclassname = 'torres-de-energia'
+    def initialize_context(self):
+        self.context_resource = TorreEnergiaListContext()
+        self.context_resource.resource = self
 
 class TorreEnergiaDetail(FeatureResource):
 
     serializer_class = TorreEnergiaSerializer
     contextclassname = 'torres-de-energia'
+    def initialize_context(self):
+        self.context_resource = TorreEnergiaListContext()
+        self.context_resource.resource = self
 
 class BancoAreiaList(FeatureCollectionResource):
 
@@ -792,10 +1025,18 @@ class BancoAreiaList(FeatureCollectionResource):
     serializer_class = BancoAreiaSerializer
     contextclassname = 'bancos-de-areia'
 
+    def initialize_context(self):
+        self.context_resource = BancoAreiaListContext()
+        self.context_resource.resource= self
+
 class BancoAreiaDetail(FeatureResource):
 
     serializer_class = BancoAreiaSerializer
     contextclassname = 'bancos-de-areia'
+
+    def initialize_context(self):
+        self.context_resource = BancoAreiaDetailContext()
+        self.context_resource.resource= self
 
 class BarragemList(FeatureCollectionResource):
 
@@ -803,10 +1044,18 @@ class BarragemList(FeatureCollectionResource):
     serializer_class = BarragemSerializer
     contextclassname = 'barragens'
 
+    def initialize_context(self):
+        self.context_resource = BarragemListContext()
+        self.context_resource.resource= self
+
 class BarragemDetail(FeatureResource):
 
     serializer_class = BarragemSerializer
     contextclassname = 'barragens'
+
+    def initialize_context(self):
+        self.context_resource = BarragemListContext()
+        self.context_resource.resource= self
 
 class CorredeiraList(FeatureCollectionResource):
 
@@ -814,10 +1063,18 @@ class CorredeiraList(FeatureCollectionResource):
     serializer_class = CorredeiraSerializer
     contextclassname = 'corredeiras'
 
+    def initialize_context(self):
+        self.context_resource = CorredeiraListContext()
+        self.context_resource.resource = self
+
 class CorredeiraDetail(FeatureResource):
 
     serializer_class = CorredeiraSerializer
     contextclassname = 'corredeiras'
+
+    def initialize_context(self):
+        self.context_resource = CorredeiraListContext()
+        self.context_resource.resource = self
 
 class FozMaritimaList(FeatureCollectionResource):
 

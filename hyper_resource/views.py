@@ -2268,6 +2268,7 @@ class AbstractCollectionResource(AbstractResource):
 
         elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
             operations_for_collection = self.operation_controller.collection_operations_dict()
+            operations_for_collection.update(self.operation_controller.spatial_collection_operations_dict())
             last_operation_name = ""
             attributes_functions_list = attributes_functions_str.split("/")
             for attr_func in attributes_functions_list:

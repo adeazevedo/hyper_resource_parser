@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, FeatureModel
 # This is an auto-generated Django model module.
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
@@ -12,10 +12,10 @@ import datetime
 from django.contrib.gis.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from hyper_resource.models import FeatureModel, BusinessModel
+from hyper_resource.models import FeatureModel, FeatureModel
 
 
-class EdifPubMilitar(BusinessModel):
+class EdifPubMilitar(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -36,7 +36,7 @@ class EdifPubMilitar(BusinessModel):
         db_table = 'adm_edif_pub_militar_p'
 
 
-class PostoFiscal(BusinessModel):
+class PostoFiscal(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -57,7 +57,7 @@ class PostoFiscal(BusinessModel):
 
 
 
-class EdifAgropecExtVegetalPesca(BusinessModel):
+class EdifAgropecExtVegetalPesca(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -75,7 +75,7 @@ class EdifAgropecExtVegetalPesca(BusinessModel):
         db_table = 'eco_edif_agropec_ext_vegetal_pesca_p'
 
 
-class EdifIndustrial(BusinessModel):
+class EdifIndustrial(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -94,7 +94,7 @@ class EdifIndustrial(BusinessModel):
         db_table = 'eco_edif_industrial_p'
 
 
-class ExtMineral_A(BusinessModel):
+class ExtMineral_A(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -117,7 +117,7 @@ class ExtMineral_A(BusinessModel):
         db_table = 'eco_ext_mineral_a'
 
 
-class ExtMineral(BusinessModel):
+class ExtMineral(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -140,7 +140,7 @@ class ExtMineral(BusinessModel):
         db_table = 'eco_ext_mineral_p'
 
 
-class EdifReligiosa(BusinessModel):
+class EdifReligiosa(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -162,7 +162,7 @@ class EdifReligiosa(BusinessModel):
 
 
 
-class Employee(BusinessModel):
+class Employee(FeatureModel):
     employee_id = models.IntegerField(blank=True, null=True)
     name = models.CharField(max_length=30, blank=True, null=True)
     hire_date = models.DateField(blank=True, null=True)
@@ -175,7 +175,7 @@ class Employee(BusinessModel):
 
 
 
-class EstGeradEnergiaEletrica(BusinessModel):
+class EstGeradEnergiaEletrica(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -196,7 +196,7 @@ class EstGeradEnergiaEletrica(BusinessModel):
         db_table = 'enc_est_gerad_energia_eletrica_p'
 
 
-class Hidreletrica(BusinessModel):
+class Hidreletrica(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -215,7 +215,7 @@ class Hidreletrica(BusinessModel):
         db_table = 'enc_hidreletrica_p'
 
 
-class Termeletrica(BusinessModel):
+class Termeletrica(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -237,7 +237,7 @@ class Termeletrica(BusinessModel):
         db_table = 'enc_termeletrica_p'
 
 
-class TorreEnergia(BusinessModel):
+class TorreEnergia(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -258,7 +258,7 @@ class TorreEnergia(BusinessModel):
 
 
 
-class BancoAreia(BusinessModel):
+class BancoAreia(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -275,7 +275,7 @@ class BancoAreia(BusinessModel):
         db_table = 'hid_banco_areia_a'
 
 
-class Barragem(BusinessModel):
+class Barragem(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -293,7 +293,7 @@ class Barragem(BusinessModel):
         db_table = 'hid_barragem_l'
 
 
-class Corredeira(BusinessModel):
+class Corredeira(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -307,7 +307,7 @@ class Corredeira(BusinessModel):
         db_table = 'hid_corredeira_l'
 
 
-class Corredeira_P(BusinessModel):
+class Corredeira_P(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -321,7 +321,7 @@ class Corredeira_P(BusinessModel):
         db_table = 'hid_corredeira_p'
 
 
-class FozMaritima(BusinessModel):
+class FozMaritima(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -335,7 +335,7 @@ class FozMaritima(BusinessModel):
         db_table = 'hid_foz_maritima_l'
 
 
-class Ilha(BusinessModel):
+class Ilha(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -350,7 +350,7 @@ class Ilha(BusinessModel):
         db_table = 'hid_ilha_a'
 
 
-class MassaDagua(BusinessModel):
+class MassaDagua(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -367,7 +367,7 @@ class MassaDagua(BusinessModel):
         db_table = 'hid_massa_dagua_a'
 
 
-class QuedaDagua(BusinessModel):
+class QuedaDagua(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -383,7 +383,7 @@ class QuedaDagua(BusinessModel):
         db_table = 'hid_queda_dagua_l'
 
 
-class QuedaDagua_P(BusinessModel):
+class QuedaDagua_P(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -399,7 +399,7 @@ class QuedaDagua_P(BusinessModel):
         db_table = 'hid_queda_dagua_p'
 
 
-class Recife(BusinessModel):
+class Recife(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -416,7 +416,7 @@ class Recife(BusinessModel):
         db_table = 'hid_recife_a'
 
 
-class Recife_P(BusinessModel):
+class Recife_P(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -433,7 +433,7 @@ class Recife_P(BusinessModel):
         db_table = 'hid_recife_p'
 
 
-class RochaEmAgua(BusinessModel):
+class RochaEmAgua(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -449,7 +449,7 @@ class RochaEmAgua(BusinessModel):
         db_table = 'hid_rocha_em_agua_a'
 
 
-class RochaEmAgua_P(BusinessModel):
+class RochaEmAgua_P(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -465,7 +465,7 @@ class RochaEmAgua_P(BusinessModel):
         db_table = 'hid_rocha_em_agua_p'
 
 
-class SumidouroVertedouro(BusinessModel):
+class SumidouroVertedouro(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -481,7 +481,7 @@ class SumidouroVertedouro(BusinessModel):
         db_table = 'hid_sumidouro_vertedouro_p'
 
 
-class TerrenoSujeitoInundacao(BusinessModel):
+class TerrenoSujeitoInundacao(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -496,7 +496,7 @@ class TerrenoSujeitoInundacao(BusinessModel):
         db_table = 'hid_terreno_sujeito_inundacao_a'
 
 
-class TrechoDrenagem(BusinessModel):
+class TrechoDrenagem(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -520,7 +520,7 @@ class TrechoDrenagem(BusinessModel):
         db_table = 'hid_trecho_drenagem_l'
 
 
-class TrechoMassaDagua(BusinessModel):
+class TrechoMassaDagua(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -538,7 +538,7 @@ class TrechoMassaDagua(BusinessModel):
 
 
 
-class AreaDesenvolvimentoControle(BusinessModel):
+class AreaDesenvolvimentoControle(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -553,7 +553,7 @@ class AreaDesenvolvimentoControle(BusinessModel):
         db_table = 'lim_area_desenvolvimento_controle_a'
 
 
-class MarcoDeLimite(BusinessModel):
+class MarcoDeLimite(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -592,7 +592,7 @@ class Municipio(FeatureModel):
         db_table = 'lim_municipio_a'
 
 
-class OutrasUnidProtegidas(BusinessModel):
+class OutrasUnidProtegidas(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -612,7 +612,7 @@ class OutrasUnidProtegidas(BusinessModel):
         db_table = 'lim_outras_unid_protegidas_a'
 
 
-class OutrosLimitesOficiais(BusinessModel):
+class OutrosLimitesOficiais(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -630,7 +630,7 @@ class OutrosLimitesOficiais(BusinessModel):
         db_table = 'lim_outros_limites_oficiais_l'
 
 
-class Pais(BusinessModel):
+class Pais(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -646,7 +646,7 @@ class Pais(BusinessModel):
         db_table = 'lim_pais_a'
 
 
-class TerraIndigena(BusinessModel):
+class TerraIndigena(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -666,7 +666,7 @@ class TerraIndigena(BusinessModel):
         db_table = 'lim_terra_indigena_a'
 
 
-class LimTerraIndigenaP(BusinessModel):
+class LimTerraIndigenaP(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -686,7 +686,7 @@ class LimTerraIndigenaP(BusinessModel):
         db_table = 'lim_terra_indigena_p'
 
 
-class UnidadeConservacaoNaoSnuc(BusinessModel):
+class UnidadeConservacaoNaoSnuc(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -723,7 +723,7 @@ class UnidadeFederacao(FeatureModel):
         managed = False
         db_table = 'lim_unidade_federacao_a'
 
-class UnidadeProtecaoIntegral(BusinessModel):
+class UnidadeProtecaoIntegral(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -743,7 +743,7 @@ class UnidadeProtecaoIntegral(BusinessModel):
         db_table = 'lim_unidade_protecao_integral_a'
 
 
-class UnidadeUsoSustentavel(BusinessModel):
+class UnidadeUsoSustentavel(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -763,7 +763,7 @@ class UnidadeUsoSustentavel(BusinessModel):
         db_table = 'lim_unidade_uso_sustentavel_a'
 
 
-class AglomeradoRuralDeExtensaoUrbana(BusinessModel):
+class AglomeradoRuralDeExtensaoUrbana(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -777,7 +777,7 @@ class AglomeradoRuralDeExtensaoUrbana(BusinessModel):
         db_table = 'loc_aglomerado_rural_de_extensao_urbana_p'
 
 
-class AglomeradoRuralIsolado(BusinessModel):
+class AglomeradoRuralIsolado(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -809,7 +809,7 @@ class AldeiaIndigena(FeatureModel):
         db_table = 'loc_aldeia_indigena_p'
 
 
-class AreaEdificada(BusinessModel):
+class AreaEdificada(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True, db_column='id_objeto')
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -824,12 +824,12 @@ class AreaEdificada(BusinessModel):
         db_table = 'loc_area_edificada_a'
 
 
-class Capital(BusinessModel):
-    gid = models.AutoField(primary_key=True)
+class Capital(FeatureModel):
+    id_objeto = models.IntegerField(primary_key=True, db_column='id_objeto')
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
-    tipocapita = models.CharField(max_length=20, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
+    tipocapital = models.CharField(max_length=20, blank=True, null=True)
     geom = models.GeometryField(blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
@@ -839,11 +839,11 @@ class Capital(BusinessModel):
         db_table = 'loc_capital_p'
 
 
-class Cidade(BusinessModel):
-    gid = models.AutoField(primary_key=True)
+class Cidade(FeatureModel):
+    id_objeto = models.IntegerField(primary_key=True, db_column='id_objeto')
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
     geom = models.GeometryField(blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
@@ -853,7 +853,7 @@ class Cidade(BusinessModel):
         db_table = 'loc_cidade_p'
 
 
-class Vila(BusinessModel):
+class Vila(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -869,7 +869,7 @@ class Vila(BusinessModel):
 
 
 
-class Orderpart(BusinessModel):
+class Orderpart(FeatureModel):
     order_id = models.IntegerField(blank=True, null=True)
     part_id = models.IntegerField(blank=True, null=True)
     quantity = models.IntegerField(blank=True, null=True)
@@ -881,7 +881,7 @@ class Orderpart(BusinessModel):
         db_table = 'orderpart'
 
 
-class Part(BusinessModel):
+class Part(FeatureModel):
     part_id = models.IntegerField(blank=True, null=True)
     name = models.CharField(max_length=30, blank=True, null=True)
     cost = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
@@ -896,7 +896,7 @@ class Part(BusinessModel):
 
 
 
-class CurvaBatimetrica(BusinessModel):
+class CurvaBatimetrica(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     profundidade = models.IntegerField(blank=True, null=True)
     geom = models.GeometryField(blank=True, null=True)
@@ -908,7 +908,7 @@ class CurvaBatimetrica(BusinessModel):
         db_table = 'rel_curva_batimetrica_l'
 
 
-class CurvaNivel(BusinessModel):
+class CurvaNivel(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     cota = models.IntegerField(blank=True, null=True)
     depressao = models.CharField(max_length=3, blank=True, null=True)
@@ -923,7 +923,7 @@ class CurvaNivel(BusinessModel):
         db_table = 'rel_curva_nivel_l'
 
 
-class Duna(BusinessModel):
+class Duna(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -938,7 +938,7 @@ class Duna(BusinessModel):
         db_table = 'rel_duna_a'
 
 
-class ElementoFisiograficoNatural(BusinessModel):
+class ElementoFisiograficoNatural(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -953,7 +953,7 @@ class ElementoFisiograficoNatural(BusinessModel):
         db_table = 'rel_elemento_fisiografico_natural_l'
 
 
-class ElementoFisiograficoNatural_P(BusinessModel):
+class ElementoFisiograficoNatural_P(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -968,7 +968,7 @@ class ElementoFisiograficoNatural_P(BusinessModel):
         db_table = 'rel_elemento_fisiografico_natural_p'
 
 
-class Pico(BusinessModel):
+class Pico(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -982,7 +982,7 @@ class Pico(BusinessModel):
         db_table = 'rel_pico_p'
 
 
-class PontoCotadoAltimetrico(BusinessModel):
+class PontoCotadoAltimetrico(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
     cota = models.FloatField(blank=True, null=True)
@@ -996,7 +996,7 @@ class PontoCotadoAltimetrico(BusinessModel):
         db_table = 'rel_ponto_cotado_altimetrico_p'
 
 
-class PontoCotadoBatimetrico(BusinessModel):
+class PontoCotadoBatimetrico(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     profundidade = models.FloatField(blank=True, null=True)
     geom = models.GeometryField(blank=True, null=True)
@@ -1010,7 +1010,7 @@ class PontoCotadoBatimetrico(BusinessModel):
 
 
 
-class Salesorder(BusinessModel):
+class Salesorder(FeatureModel):
     order_id = models.IntegerField(blank=True, null=True)
     customer_id = models.IntegerField(blank=True, null=True)
     employee_id = models.IntegerField(blank=True, null=True)
@@ -1025,7 +1025,7 @@ class Salesorder(BusinessModel):
         db_table = 'salesorder'
 
 
-class Salesorder1(BusinessModel):
+class Salesorder1(FeatureModel):
     order_id = models.IntegerField(blank=True, null=True)
     customer_oid = models.TextField(blank=True, null=True)  # This field type is a guess.
     employee_oid = models.TextField(blank=True, null=True)  # This field type is a guess.
@@ -1038,7 +1038,7 @@ class Salesorder1(BusinessModel):
         db_table = 'salesorder1'
 
 
-class TLogradouro(BusinessModel):
+class TLogradouro(FeatureModel):
     cod_setor = models.BigIntegerField(blank=True, null=True)
     cod_situacao_setor = models.CharField(max_length=2, blank=True, null=True)
     cod_tipo_setor = models.CharField(max_length=2, blank=True, null=True)
@@ -1079,7 +1079,7 @@ class TLogradouro(BusinessModel):
 
 
 
-class Eclusa(BusinessModel):
+class Eclusa(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1100,7 +1100,7 @@ class Eclusa(BusinessModel):
         db_table = 'tra_eclusa_l'
 
 
-class EdifConstPortuaria(BusinessModel):
+class EdifConstPortuaria(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1119,7 +1119,7 @@ class EdifConstPortuaria(BusinessModel):
         db_table = 'tra_edif_const_portuaria_p'
 
 
-class EdifConstrAeroportuaria(BusinessModel):
+class EdifConstrAeroportuaria(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1138,7 +1138,7 @@ class EdifConstrAeroportuaria(BusinessModel):
         db_table = 'tra_edif_constr_aeroportuaria_p'
 
 
-class EdifMetroFerroviaria(BusinessModel):
+class EdifMetroFerroviaria(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1158,7 +1158,7 @@ class EdifMetroFerroviaria(BusinessModel):
         db_table = 'tra_edif_metro_ferroviaria_p'
 
 
-class Fundeadouro(BusinessModel):
+class Fundeadouro(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1174,7 +1174,7 @@ class Fundeadouro(BusinessModel):
         db_table = 'tra_fundeadouro_p'
 
 
-class PistaPontoPouso(BusinessModel):
+class PistaPontoPouso(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
@@ -1196,7 +1196,7 @@ class PistaPontoPouso(BusinessModel):
         db_table = 'tra_pista_ponto_pouso_p'
 
 
-class Ponte(BusinessModel):
+class Ponte(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
@@ -1223,7 +1223,7 @@ class Ponte(BusinessModel):
         db_table = 'tra_ponte_l'
 
 
-class Sinalizacao(BusinessModel):
+class Sinalizacao(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1240,7 +1240,7 @@ class Sinalizacao(BusinessModel):
         db_table = 'tra_sinalizacao_p'
 
 
-class Travessia(BusinessModel):
+class Travessia(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
@@ -1255,7 +1255,7 @@ class Travessia(BusinessModel):
         db_table = 'tra_travessia_l'
 
 
-class Travessia_P(BusinessModel):
+class Travessia_P(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
@@ -1270,7 +1270,7 @@ class Travessia_P(BusinessModel):
         db_table = 'tra_travessia_p'
 
 
-class TrechoDuto(BusinessModel):
+class TrechoDuto(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1293,7 +1293,7 @@ class TrechoDuto(BusinessModel):
         db_table = 'tra_trecho_duto_l'
 
 
-class TrechoFerroviario(BusinessModel):
+class TrechoFerroviario(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1320,7 +1320,7 @@ class TrechoFerroviario(BusinessModel):
         db_table = 'tra_trecho_ferroviario_l'
 
 
-class TrechoHidroviario(BusinessModel):
+class TrechoHidroviario(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1339,7 +1339,7 @@ class TrechoHidroviario(BusinessModel):
         db_table = 'tra_trecho_hidroviario_l'
 
 
-class TrechoRodoviario(BusinessModel):
+class TrechoRodoviario(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     codtrechorodov = models.CharField(max_length=25, blank=True, null=True)
     tipotrechorod = models.TextField(blank=True, null=True)
@@ -1363,7 +1363,7 @@ class TrechoRodoviario(BusinessModel):
         db_table = 'tra_trecho_rodoviario_l'
 
 
-class Tunel(BusinessModel):
+class Tunel(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
@@ -1389,7 +1389,7 @@ class Tunel(BusinessModel):
 
 
 
-class BrejoPantano(BusinessModel):
+class BrejoPantano(FeatureModel):
 
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
@@ -1409,7 +1409,7 @@ class BrejoPantano(BusinessModel):
         db_table = 'veg_brejo_pantano_a'
 
 
-class Mangue(BusinessModel):
+class Mangue(FeatureModel):
     id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1427,7 +1427,7 @@ class Mangue(BusinessModel):
         db_table = 'veg_mangue_a'
 
 
-class VegRestinga(BusinessModel):
+class VegRestinga(FeatureModel):
     id = models.IntegerField(primary_key=True, db_column='id_objeto')
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
@@ -1447,7 +1447,7 @@ class VegRestinga(BusinessModel):
 
 
 
-class Vegetable(BusinessModel):
+class Vegetable(FeatureModel):
     animal_id = models.IntegerField(blank=True, null=True)
     name = models.CharField(max_length=20, blank=True, null=True)
 
@@ -1458,7 +1458,7 @@ class Vegetable(BusinessModel):
         db_table = 'vegetable'
 
 
-class PontosExibicaoWgs84(BusinessModel):
+class PontosExibicaoWgs84(FeatureModel):
     id_gps = models.IntegerField(primary_key=True)
     long_decimal = models.FloatField(blank=True, null=True)
     lat_decimal = models.FloatField(blank=True, null=True)
@@ -1471,7 +1471,7 @@ class PontosExibicaoWgs84(BusinessModel):
         managed = False
         db_table = 'pontos_exibicao_wgs84'
 
-class BlocoR9(BusinessModel):
+class BlocoR9(FeatureModel):
     gid = models.AutoField(primary_key=True)
     nomenclatu = models.CharField(max_length=50, blank=True, null=True)
     situacao_b = models.CharField(max_length=1, blank=True, null=True)

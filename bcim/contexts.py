@@ -54,3 +54,53 @@ class TrechoFerroviarioListContext(FeatureCollectionResourceContext):
 
 class TrechoFerroviarioDetailContext(FeatureResouceContext):
     pass
+
+class AreaDesenvolvimentoControleListContext(FeatureResouceContext):
+    pass
+class AreaEdificadaListContext(FeatureResouceContext):
+    pass
+class AreaEdificadaDetailContext(FeatureResouceContext):
+    pass
+
+class BancoAreiaListContext(FeatureCollectionResourceContext):
+    pass
+
+class BancoAreiaDetailContext(FeatureResouceContext):
+    pass
+class BarragemListContext(FeatureCollectionResourceContext):
+    pass
+class BrejoPantanoListContext(FeatureCollectionResourceContext):
+    pass
+class CapitalListContext(FeatureCollectionResourceContext):
+    pass
+class CidadeListContext(FeatureCollectionResourceContext):
+    pass
+class CorredeiraListContext(FeatureCollectionResourceContext):
+    pass
+
+class CurvaBatimetricaListContext(FeatureCollectionResourceContext):
+    pass
+class CurvaNivelListContext(FeatureCollectionResourceContext):
+    pass
+class DunaListContext(FeatureCollectionResourceContext):
+    pass
+class EclusaListContext(FeatureCollectionResourceContext):
+    pass
+class EdifAgropecExtVegetalPescaListContext(FeatureCollectionResourceContext):
+    pass
+class EdifConstrAeroportuariaListContext(FeatureCollectionResourceContext):
+    pass
+class EdifConstPortuariaListContext(FeatureCollectionResourceContext):
+    pass
+class EdifMetroFerroviariaListContext(FeatureCollectionResourceContext):
+    pass
+class EdifIndustrialListContext(FeatureCollectionResourceContext):
+    pass
+class EdifPubMilitarListContext(FeatureCollectionResourceContext):
+    pass
+class EdifReligiosaListContext(FeatureCollectionResourceContext):
+    pass
+class ElementoFisiograficoNaturalListContext(FeatureCollectionResourceContext):
+    pass
+class PicoListContext(FeatureCollectionResourceContext):
+    pass
