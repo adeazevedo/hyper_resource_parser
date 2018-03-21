@@ -236,10 +236,6 @@ class OutrasUnidProtegidasDetail(FeatureResource):
         self.context_resource.resource= self
 
 
-class OutrosLimitesOficiaisContext(object):
-    pass
-
-
 class OutrosLimitesOficiaisList(FeatureCollectionResource):
 
     queryset = OutrosLimitesOficiais.objects.all()
@@ -264,54 +260,84 @@ class PaisList(FeatureCollectionResource):
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
     contextclassname = 'paises'
+    def initialize_context(self):
+        self.context_resource = PaisListContext()
+        self.context_resource.resource= self
 
 class PaisDetail(FeatureResource):
 
     serializer_class = PaisSerializer
     contextclassname = 'paises'
+    def initialize_context(self):
+        self.context_resource = PaisListContext()
+        self.context_resource.resource= self
 
 class TerraIndigenaList(FeatureCollectionResource):
 
     queryset = TerraIndigena.objects.all()
     serializer_class = TerraIndigenaSerializer
     contextclassname = 'terras-indigenas'
+    def initialize_context(self):
+        self.context_resource = TerraIndigenaListContext()
+        self.context_resource.resource= self
 
 class TerraIndigenaDetail(FeatureResource):
     serializer_class = TerraIndigenaSerializer
     contextclassname = 'terras-indigenas'
+    def initialize_context(self):
+        self.context_resource = TerraIndigenaListContext()
+        self.context_resource.resource= self
 
 class UnidadeConservacaoNaoSnucList(FeatureCollectionResource):
 
     queryset = UnidadeConservacaoNaoSnuc.objects.all()
     serializer_class = UnidadeConservacaoNaoSnucSerializer
     contextclassname = 'unidades-de-conservacao-nao-snuc'
+    def initialize_context(self):
+        self.context_resource = UnidadeConservacaoNaoSnucListContext()
+        self.context_resource.resource= self
 
 class UnidadeConservacaoNaoSnucDetail(FeatureResource):
 
     serializer_class = UnidadeConservacaoNaoSnucSerializer
     contextclassname = 'unidades-de-conservacao-nao-snuc'
+    def initialize_context(self):
+        self.context_resource = UnidadeConservacaoNaoSnucListContext()
+        self.context_resource.resource= self
 
 class UnidadeProtecaoIntegralList(FeatureCollectionResource):
 
     queryset = UnidadeProtecaoIntegral.objects.all()
     serializer_class = UnidadeProtecaoIntegralSerializer
     contextclassname = 'unidades-de-protecao-integral'
+    def initialize_context(self):
+        self.context_resource = UnidadeProtecaoIntegralListContext()
+        self.context_resource.resource= self
 
 class UnidadeProtecaoIntegralDetail(FeatureResource):
 
     serializer_class = UnidadeProtecaoIntegralSerializer
     contextclassname = 'unidades-de-protecao-integral'
+    def initialize_context(self):
+        self.context_resource = UnidadeProtecaoIntegralListContext()
+        self.context_resource.resource= self
 
 class UnidadeUsoSustentavelList(FeatureCollectionResource):
 
     queryset = UnidadeUsoSustentavel.objects.all()
     serializer_class = UnidadeUsoSustentavelSerializer
     contextclassname = 'unidades-de-uso-sustentavel'
+    def initialize_context(self):
+        self.context_resource = UnidadeUsoSustentavelListContext()
+        self.context_resource.resource= self
 
 class UnidadeUsoSustentavelDetail(FeatureResource):
 
     serializer_class = UnidadeUsoSustentavelSerializer
     contextclassname = 'unidades-de-uso-sustentavel'
+    def initialize_context(self):
+        self.context_resource = UnidadeUsoSustentavelListContext()
+        self.context_resource.resource= self
 
 class AglomeradoRuralDeExtensaoUrbanaList(FeatureCollectionResource):
 
@@ -440,11 +466,17 @@ class VilaList(FeatureCollectionResource):
     queryset = Vila.objects.all()
     serializer_class = VilaSerializer
     contextclassname = 'vilas'
+    def initialize_context(self):
+        self.context_resource = VilaListContext()
+        self.context_resource.resource = self
 
 class VilaDetail(FeatureResource):
 
     serializer_class = VilaSerializer
     contextclassname = 'vilas'
+    def initialize_context(self):
+        self.context_resource = VilaListContext()
+        self.context_resource.resource = self
 
 class CurvaBatimetricaList(FeatureCollectionResource):
 
@@ -1081,129 +1113,201 @@ class FozMaritimaList(FeatureCollectionResource):
     queryset = FozMaritima.objects.all()
     serializer_class = FozMaritimaSerializer
     contextclassname = 'fozes-maritima'
+    def initialize_context(self):
+        self.context_resource = FozMaritimaListContext()
+        self.context_resource.resource = self
 
 class FozMaritimaDetail(FeatureResource):
 
     serializer_class = FozMaritimaSerializer
     contextclassname = 'fozes-maritima'
+    def initialize_context(self):
+        self.context_resource = FozMaritimaListContext()
+        self.context_resource.resource = self
 
 class IlhaList(FeatureCollectionResource):
 
     queryset = Ilha.objects.all()
     serializer_class = IlhaSerializer
     contextclassname = 'ilhas'
+    def initialize_context(self):
+        self.context_resource = IlhaListContext()
+        self.context_resource.resource = self
 
 class IlhaDetail(FeatureResource):
 
     serializer_class = IlhaSerializer
     contextclassname = 'ilhas'
+    def initialize_context(self):
+        self.context_resource = IlhaListContext()
+        self.context_resource.resource = self
 
 class MassaDaguaList(FeatureCollectionResource):
 
     queryset = MassaDagua.objects.all()
     serializer_class = MassaDaguaSerializer
     contextclassname = 'massas-dagua'
+    def initialize_context(self):
+        self.context_resource = MassaDaguaListContext()
+        self.context_resource.resource = self
 
 class MassaDaguaDetail(FeatureResource):
 
     serializer_class = MassaDaguaSerializer
     contextclassname = 'massas-dagua'
+    def initialize_context(self):
+        self.context_resource = MassaDaguaListContext()
+        self.context_resource.resource = self
 
 class QuedaDaguaList(FeatureCollectionResource):
 
     queryset = QuedaDagua.objects.all()
     serializer_class = QuedaDaguaSerializer
     contextclassname = 'quedas-dagua'
+    def initialize_context(self):
+        self.context_resource = QuedaDaguaListContext()
+        self.context_resource.resource = self
 
 class QuedaDaguaDetail(FeatureResource):
 
     serializer_class = QuedaDaguaSerializer
     contextclassname = 'quedas-dagua'
+    def initialize_context(self):
+        self.context_resource = QuedaDaguaListContext()
+        self.context_resource.resource = self
 
 class RecifeList(FeatureCollectionResource):
 
     #queryset = Recife.objects.all()
     serializer_class = RecifeSerializer
     contextclassname = 'recifes'
+    def initialize_context(self):
+        self.context_resource = RecifeListContext()
+        self.context_resource.resource = self
 
 class RecifeDetail(FeatureResource):
 
     serializer_class = RecifeSerializer
     contextclassname = 'recifes'
+    def initialize_context(self):
+        self.context_resource = RecifeListContext()
+        self.context_resource.resource = self
 
 class RochaEmAguaList(FeatureCollectionResource):
 
     queryset = RochaEmAgua.objects.all()
     serializer_class = RochaEmAguaSerializer
     contextclassname = 'rochas-em-agua'
+    def initialize_context(self):
+        self.context_resource = RochaEmAguaListContext()
+        self.context_resource.resource = self
 
 class RochaEmAguaDetail(FeatureResource):
 
     serializer_class = RochaEmAguaSerializer
     contextclassname = 'rochas-em-agua'
+    def initialize_context(self):
+        self.context_resource = RochaEmAguaListContext()
+        self.context_resource.resource = self
 
 class SumidouroVertedouroList(FeatureCollectionResource):
 
     queryset = SumidouroVertedouro.objects.all()
     serializer_class = SumidouroVertedouroSerializer
     contextclassname = 'sumidouros-vertedouros'
+    def initialize_context(self):
+        self.context_resource = SumidouroVertedouroListContext()
+        self.context_resource.resource = self
 
 class SumidouroVertedouroDetail(FeatureResource):
 
     serializer_class = SumidouroVertedouroSerializer
     contextclassname = 'sumidouros-vertedouros'
+    def initialize_context(self):
+        self.context_resource = SumidouroVertedouroListContext()
+        self.context_resource.resource = self
 
 class TerrenoSujeitoInundacaoList(FeatureCollectionResource):
 
     queryset = TerrenoSujeitoInundacao.objects.all()
     serializer_class = TerrenoSujeitoInundacaoSerializer
     contextclassname = 'terrenos-sujeito-a-inundacao'
+    def initialize_context(self):
+        self.context_resource = TerrenoSujeitoInundacaoListContext()
+        self.context_resource.resource = self
 
 class TerrenoSujeitoInundacaoDetail(FeatureResource):
 
     serializer_class = TerrenoSujeitoInundacaoSerializer
     contextclassname = 'terrenos-sujeito-a-inundacao'
+    def initialize_context(self):
+        self.context_resource = TerrenoSujeitoInundacaoListContext()
+        self.context_resource.resource = self
 
 class TrechoDrenagemList(FeatureCollectionResource):
 
     queryset = TrechoDrenagem.objects.all()
     serializer_class = TrechoDrenagemSerializer
     contextclassname = 'trechos-de-drenagem'
+    def initialize_context(self):
+        self.context_resource = TrechoDrenagemListContext()
+        self.context_resource.resource = self
 
 class TrechoDrenagemDetail(FeatureResource):
 
     serializer_class = TrechoDrenagemSerializer
     contextclassname = 'trechos-de-drenagem'
+    def initialize_context(self):
+        self.context_resource = TrechoDrenagemListContext()
+        self.context_resource.resource = self
 
 class TrechoMassaDaguaList(FeatureCollectionResource):
 
     queryset = TrechoMassaDagua.objects.all()
     serializer_class = TrechoMassaDaguaSerializer
-    contextclassname = 'trechos-de-drenagem'
+    contextclassname = 'trechos-de-massa-dagua'
+    def initialize_context(self):
+        self.context_resource = TrechoMassaDaguaListContext()
+        self.context_resource.resource = self
 
 class TrechoMassaDaguaDetail(FeatureResource):
 
     serializer_class = TrechoMassaDaguaSerializer
     contextclassname = 'trechos-de-massa-dagua'
+    def initialize_context(self):
+        self.context_resource = TrechoMassaDaguaListContext()
+        self.context_resource.resource = self
 
 class AreaDesenvolvimentoControleList(FeatureCollectionResource):
 
     queryset = AreaDesenvolvimentoControle.objects.all()
     serializer_class = AreaDesenvolvimentoControleSerializer
     contextclassname = 'areas-de-desenvolvimento-de-controle'
+    def initialize_context(self):
+        self.context_resource = AreaDesenvolvimentoControleListContext()
+        self.context_resource.resource = self
 
 class AreaDesenvolvimentoControleDetail(FeatureResource):
 
     serializer_class = AreaDesenvolvimentoControleSerializer
     contextclassname = 'areas-de-desenvolvimento-de-controle'
+    def initialize_context(self):
+        self.context_resource = AreaDesenvolvimentoControleListContext()
+        self.context_resource.resource = self
 
 class MarcoDeLimiteList(FeatureCollectionResource):
 
     queryset = MarcoDeLimite.objects.all()
     serializer_class = MarcoDeLimiteSerializer
     contextclassname = 'marcos-de-limite'
+    def initialize_context(self):
+        self.context_resource = MarcoDeLimiteListContext()
+        self.context_resource.resource = self
 
 class MarcoDeLimiteDetail(FeatureResource):
 
     serializer_class = MarcoDeLimiteSerializer
     contextclassname = 'marcos-de-limite'
+    def initialize_context(self):
+        self.context_resource = MarcoDeLimiteListContext()
+        self.context_resource.resource = self

@@ -647,17 +647,18 @@ class Pais(FeatureModel):
 
 
 class TerraIndigena(FeatureModel):
-    gid = models.AutoField(primary_key=True)
+    id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
-    perimetroo = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
-    areaoficia = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
-    grupoetnic = models.CharField(max_length=100, blank=True, null=True)
-    datasituac = models.CharField(max_length=20, blank=True, null=True)
-    situacaoju = models.CharField(max_length=23, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
+    perimetrooficial = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    areaoficialha = models.DecimalField(max_digits=65535, decimal_places=65535, blank=True, null=True)
+    grupoetnico = models.CharField(max_length=100, blank=True, null=True)
+    datasituacaojuridica = models.CharField(max_length=20, blank=True, null=True)
+    situacaojuridica = models.CharField(max_length=23, blank=True, null=True)
     nometi = models.CharField(max_length=100, blank=True, null=True)
-    geom = models.MultiPolygonField(srid=4674, dim=4, blank=True, null=True)
+    geom = models.GeometryField(blank=True, null=True)
+    codigofunai = models.CharField(max_length=100, blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
     iri_style = models.CharField(max_length=1000, blank=True, null=True)
@@ -667,7 +668,7 @@ class TerraIndigena(FeatureModel):
 
 
 class LimTerraIndigenaP(FeatureModel):
-    gid = models.AutoField(primary_key=True)
+    id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
     geometriaa = models.CharField(max_length=3, blank=True, null=True)
@@ -687,17 +688,17 @@ class LimTerraIndigenaP(FeatureModel):
 
 
 class UnidadeConservacaoNaoSnuc(FeatureModel):
-    gid = models.AutoField(primary_key=True)
+    id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
     anocriacao = models.FloatField(blank=True, null=True)
     sigla = models.CharField(max_length=6, blank=True, null=True)
-    areaoficia = models.CharField(max_length=15, blank=True, null=True)
-    administra = models.CharField(max_length=18, blank=True, null=True)
-    classifica = models.CharField(max_length=100, blank=True, null=True)
+    areaoficial = models.CharField(max_length=15, blank=True, null=True)
+    administracao = models.CharField(max_length=18, blank=True, null=True)
+    classificacao = models.CharField(max_length=100, blank=True, null=True)
     atolegal = models.CharField(max_length=100, blank=True, null=True)
-    geom = models.MultiPolygonField(srid=4674, dim=4, blank=True, null=True)
+    geom = models.GeometryField(blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
     iri_style = models.CharField(max_length=1000, blank=True, null=True)
@@ -724,17 +725,17 @@ class UnidadeFederacao(FeatureModel):
         db_table = 'lim_unidade_federacao_a'
 
 class UnidadeProtecaoIntegral(FeatureModel):
-    gid = models.AutoField(primary_key=True)
+    id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
     anocriacao = models.FloatField(blank=True, null=True)
     sigla = models.CharField(max_length=6, blank=True, null=True)
-    areaoficia = models.CharField(max_length=15, blank=True, null=True)
-    administra = models.CharField(max_length=18, blank=True, null=True)
+    areaoficial = models.CharField(max_length=15, blank=True, null=True)
+    administracao = models.CharField(max_length=18, blank=True, null=True)
     atolegal = models.CharField(max_length=100, blank=True, null=True)
-    tipounidpr = models.CharField(max_length=100, blank=True, null=True)
-    geom = models.MultiPolygonField(srid=4674, dim=4, blank=True, null=True)
+    tipounidprotinteg = models.CharField(max_length=100, blank=True, null=True)
+    geom = models.GeometryField(blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
     iri_style = models.CharField(max_length=1000, blank=True, null=True)
@@ -744,17 +745,17 @@ class UnidadeProtecaoIntegral(FeatureModel):
 
 
 class UnidadeUsoSustentavel(FeatureModel):
-    gid = models.AutoField(primary_key=True)
+    id_objeto = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
     anocriacao = models.FloatField(blank=True, null=True)
     sigla = models.CharField(max_length=6, blank=True, null=True)
-    areaoficia = models.CharField(max_length=15, blank=True, null=True)
-    administra = models.CharField(max_length=18, blank=True, null=True)
+    areaoficial = models.CharField(max_length=15, blank=True, null=True)
+    administracao = models.CharField(max_length=18, blank=True, null=True)
     atolegal = models.CharField(max_length=100, blank=True, null=True)
-    tipounidus = models.CharField(max_length=100, blank=True, null=True)
-    geom = models.MultiPolygonField(srid=4674, dim=4, blank=True, null=True)
+    tipounidusosust = models.CharField(max_length=100, blank=True, null=True)
+    geom = models.GeometryField(blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
     iri_style = models.CharField(max_length=1000, blank=True, null=True)
@@ -854,10 +855,10 @@ class Cidade(FeatureModel):
 
 
 class Vila(FeatureModel):
-    gid = models.AutoField(primary_key=True)
+    id_objeto = models.IntegerField(primary_key=True, db_column='id_objeto')
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
-    geometriaa = models.CharField(max_length=3, blank=True, null=True)
+    geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)
     geom = models.GeometryField(blank=True, null=True)
 
     iri_metadata = models.CharField(max_length=1000, blank=True, null=True)
@@ -1428,7 +1429,7 @@ class Mangue(FeatureModel):
 
 
 class VegRestinga(FeatureModel):
-    id = models.IntegerField(primary_key=True, db_column='id_objeto')
+    id_objeto = models.IntegerField(primary_key=True)
     nome = models.CharField(max_length=100, blank=True, null=True)
     nomeabrev = models.CharField(max_length=50, blank=True, null=True)
     geometriaaproximada = models.CharField(max_length=3, blank=True, null=True)

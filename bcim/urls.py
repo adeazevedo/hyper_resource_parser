@@ -51,51 +51,56 @@ urlpatterns = (
     url(r'^trechos-ferroviarios/?$', views.TrechoFerroviarioList.as_view(), name='trecho_ferroviario_list'),
     url(r'^trechos-ferroviarios/(?P<attributes_functions>.*)/?$', views.TrechoFerroviarioList.as_view(), name='trecho_ferroviario_list_fn'),
 
-    url(r'^trechos-hidroviarios/?$', views.TrechoHidroviarioList.as_view(), name='trecho_hidroviario_list'),
-    url(r'^trechos-hidroviarios/(?P<attributes_functions>.*)/?$', views.TrechoHidroviarioList.as_view(), name='trecho_hidroviario_list_fn'),
     url(r'^trechos-hidroviarios/(?P<id_objeto>[0-9]+)/?$', views.TrechoHidroviarioDetail.as_view(), name='th_detail_id_objeto'),
     url(r'^trechos-hidroviarios/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.TrechoHidroviarioDetail.as_view(), name='th_detail_si'),
+    url(r'^trechos-hidroviarios/?$', views.TrechoHidroviarioList.as_view(), name='trecho_hidroviario_list'),
+    url(r'^trechos-hidroviarios/(?P<attributes_functions>.*)/?$', views.TrechoHidroviarioList.as_view(), name='trecho_hidroviario_list_fn'),
 
     #url(r'^trechos-rodoviarios/?$', views.TrechoRodoviarioList.as_view(), name='trecho_rodoviario_list'),
-    url(r'^trechos-rodoviarios/?$', views.TrechoRodoviarioList.as_view(), name='trecho_rodoviario_list'),
-    url(r'^trechos-rodoviarios/(?P<attributes_functions>.*)/?$', views.TrechoRodoviarioList.as_view(), name='trecho_rodoviario_list_fn'),
     url(r'^trechos-rodoviarios/(?P<id_objeto>[0-9]+)/?$', views.TrechoRodoviarioDetail.as_view(), name='trecho_rodoviario_detail_id_objeto'),
     url(r'^trechos-rodoviarios/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.TrechoRodoviarioDetail.as_view(), name='trecho_rodoviario_detail_si'),
+    url(r'^trechos-rodoviarios/?$', views.TrechoRodoviarioList.as_view(), name='trecho_rodoviario_list'),
+    url(r'^trechos-rodoviarios/(?P<attributes_functions>.*)/?$', views.TrechoRodoviarioList.as_view(), name='trecho_rodoviario_list_fn'),
 
-    url(r'^outras-unidades-protegidas/?$', views.OutrasUnidProtegidasList.as_view(), name='outras_unid_protegidas_list'),
-    url(r'^outras-unidades-protegidas/(?P<attributes_functions>.*)/?$', views.OutrasUnidProtegidasList.as_view(), name='outras_unid_protegidas_list_fn'),
+
     url(r'^outras-unidades-protegidas/(?P<id_objeto>[0-9]+)/?$', views.OutrasUnidProtegidasDetail.as_view(), name='outras_unid_protegidas_detail'),
     url(r'^outras-unidades-protegidas/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.OutrasUnidProtegidasDetail.as_view(), name='outras_unid_protegidas_si'),
+    url(r'^outras-unidades-protegidas/?$', views.OutrasUnidProtegidasList.as_view(), name='outras_unid_protegidas_list'),
+    url(r'^outras-unidades-protegidas/(?P<attributes_functions>.*)/?$', views.OutrasUnidProtegidasList.as_view(), name='outras_unid_protegidas_list_fn'),
 
-    url(r'^outros-limites-oficiais/?$', views.OutrosLimitesOficiaisList.as_view(), name='outros_limites_oficiais_list'),
-    url(r'^outros-limites-oficiais/(?P<attributes_functions>.*)/?$', views.OutrosLimitesOficiaisList.as_view(), name='outros_limites_oficiais_list_fn'),
+
     url(r'^outros-limites-oficiais/(?P<id_objeto>[0-9]+)/?$', views.OutrosLimitesOficiaisDetail.as_view(), name='outros_limites_oficiais_detail_id_objeto'),
     url(r'^outros-limites-oficiais/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.OutrosLimitesOficiaisDetail.as_view(), name='outros_limites_oficiais_detail_si'),
+    url(r'^outros-limites-oficiais/?$', views.OutrosLimitesOficiaisList.as_view(), name='outros_limites_oficiais_list'),
+    url(r'^outros-limites-oficiais/(?P<attributes_functions>.*)/?$', views.OutrosLimitesOficiaisList.as_view(), name='outros_limites_oficiais_list_fn'),
 
-    url(r'^paises/?$', views.PaisList.as_view(), name='pais_list'),
-    url(r'^paises/(?P<attributes_functions>.*)/?$', views.PaisList.as_view(), name='pais_list_fn'),
+
     url(r'^paises/(?P<id_objeto>[0-9]+)/?$', views.PaisDetail.as_view(), name='pais_detail_id_objeto'),
     url(r'^paises/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.PaisDetail.as_view(), name='pais_detail_si'),
+    url(r'^paises/?$', views.PaisList.as_view(), name='pais_list'),
+    url(r'^paises/(?P<attributes_functions>.*)/?$', views.PaisList.as_view(), name='pais_list_fn'),
 
+
+    url(r'^terras-indigenas/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.TerraIndigenaDetail.as_view(), name='terra_indigena_detail_id_objeto'),
+    url(r'^terras-indigenas/(?P<id_objeto>[0-9]+)/?$', views.TerraIndigenaDetail.as_view(), name='terra_indigena_detail_id_objeto'),
     url(r'^terras-indigenas/?$', views.TerraIndigenaList.as_view(), name='terra_indigena_list'),
     url(r'^terras-indigenas/(?P<attributes_functions>.*)/?$', views.TerraIndigenaList.as_view(), name='terra_indigena_list_fn'),
-    url(r'^terras-indigenas/(?P<id_objeto>[0-9]+)/?$', views.TerraIndigenaDetail.as_view(), name='terra_indigena_detail_id_objeto'),
 
-    url(r'^unidades-de-conservacao-nao-snuc/?$', views.UnidadeConservacaoNaoSnucList.as_view(), name='unidade_conservacao_nao_snuc_list'),
-    url(r'^unidades-de-conservacao-nao-snuc/(?P<attributes_functions>.*)/?$', views.UnidadeConservacaoNaoSnucList.as_view(), name='unidade_conservacao_nao_snuc_list'),
+
     url(r'^unidades-de-conservacao-nao-snuc/(?P<id_objeto>[0-9]+)/?$', views.UnidadeConservacaoNaoSnucDetail.as_view(), name='unidade_conservacao_nao_snuc_detail_id_objeto'),
     url(r'^unidades-de-conservacao-nao-snuc/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.UnidadeConservacaoNaoSnucDetail.as_view(), name='unidade_conservacao_nao_snuc_detail_si'),
+    url(r'^unidades-de-conservacao-nao-snuc/?$', views.UnidadeConservacaoNaoSnucList.as_view(), name='unidade_conservacao_nao_snuc_list'),
+    url(r'^unidades-de-conservacao-nao-snuc/(?P<attributes_functions>.*)/?$', views.UnidadeConservacaoNaoSnucList.as_view(), name='unidade_conservacao_nao_snuc_list'),
 
-    url(r'^unidades-de-protecao-integral/?$', views.UnidadeProtecaoIntegralList.as_view(), name='unidade_protecao_integral_list'),
-    url(r'^unidades-de-protecao-integral/(?P<attributes_functions>.*)/?$', views.UnidadeProtecaoIntegralList.as_view(), name='unidade_protecao_integral_list'),
     url(r'^unidades-de-protecao-integral/(?P<id_objeto>[0-9]+)/?$', views.UnidadeProtecaoIntegralDetail.as_view(), name='unidade_protecao_integral_detail_id_objeto'),
     url(r'^unidades-de-protecao-integral/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.UnidadeProtecaoIntegralDetail.as_view(), name='unidade_protecao_integral_detail_si'),
+    url(r'^unidades-de-protecao-integral/?$', views.UnidadeProtecaoIntegralList.as_view(), name='unidade_protecao_integral_list'),
+    url(r'^unidades-de-protecao-integral/(?P<attributes_functions>.*)/?$', views.UnidadeProtecaoIntegralList.as_view(), name='unidade_protecao_integral_list'),
 
-    url(r'^unidades-de-uso-sustentavel/?$', views.UnidadeUsoSustentavelList.as_view(), name='unidade_uso_sustentavel_list'),
-    url(r'^unidades-de-uso-sustentavel/(?P<attributes_functions>.*)/?$', views.UnidadeUsoSustentavelList.as_view(), name='unidade_uso_sustentavel_list'),
     url(r'^unidades-de-uso-sustentavel/(?P<id_objeto>[0-9]+)/?$', views.UnidadeUsoSustentavelDetail.as_view(), name='unidade_uso_sustentavel_detail_id_objeto'),
     url(r'^unidades-de-uso-sustentavel/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.UnidadeUsoSustentavelDetail.as_view(), name='unidade_uso_sustentavel_detail_id_objeto'),
-
+    url(r'^unidades-de-uso-sustentavel/?$', views.UnidadeUsoSustentavelList.as_view(), name='unidade_uso_sustentavel_list'),
+    url(r'^unidades-de-uso-sustentavel/(?P<attributes_functions>.*)/?$', views.UnidadeUsoSustentavelList.as_view(), name='unidade_uso_sustentavel_list'),
 
     url(r'^aglomerados-rurais-de-extensao-urbana/(?P<id_objeto>[0-9]+)/?$', views.AglomeradoRuralDeExtensaoUrbanaDetail.as_view(), name='aglomerado_rural_de_extensao_urbana_detail_id_objeto'),
     url(r'^aglomerados-rurais-de-extensao-urbana/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.AglomeradoRuralDeExtensaoUrbanaDetail.as_view(), name='aglomerado_rural_de_extensao_urbana_detail_id_objeto'),
@@ -108,17 +113,16 @@ urlpatterns = (
     url(r'^aglomerados-rurais-isolado/?$', views.AglomeradoRuralIsoladoList.as_view(), name='aglomerado_rural_isolado_list'),
     url(r'^aglomerados-rurais-isolado/(?P<attributes_functions>.*)/?$', views.AglomeradoRuralIsoladoList.as_view(), name='aglomerado_rural_isolado_list'),
 
-
-
     url(r'^areas-edificadas/(?P<id_objeto>[0-9]+)/?$', views.AreaEdificadaDetail.as_view(), name='area_edificada_detail_id_objeto'),
     url(r'^areas-edificadas/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.AreaEdificadaDetail.as_view(), name='area_edificada_detail_af'),
     url(r'^areas-edificadas/?$', views.AreaEdificadaList.as_view(), name='area_edificada_list'),
     url(r'^areas-edificadas/(?P<attributes_functions>.*)/?$', views.AreaEdificadaList.as_view(), name='area_edificada_list'),
 
-    url(r'^vilas/?$', views.VilaList.as_view(), name='vila_list'),
-    url(r'^vilas/(?P<attributes_functions>.*)/?$', views.VilaList.as_view(), name='vila_list'),
     url(r'^vilas/(?P<id_objeto>[0-9]+)/?$', views.VilaDetail.as_view(), name='vila_detail_id_objeto'),
     url(r'^vilas/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.VilaDetail.as_view(), name='vila_detail_af'),
+
+    url(r'^vilas/?$', views.VilaList.as_view(), name='vila_list'),
+    url(r'^vilas/(?P<attributes_functions>.*)/?$', views.VilaList.as_view(), name='vila_list'),
 
     url(r'^curvas-batimetricas/(?P<id_objeto>[0-9]+)/?$', views.CurvaBatimetricaDetail.as_view(), name='curva_batimetrica_detail_id_objeto'),
     url(r'^curvas-batimetricas/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.CurvaBatimetricaDetail.as_view(), name='curva_batimetrica_detail_af'),
@@ -146,22 +150,21 @@ urlpatterns = (
     url(r'^elementos-fisiografico-natural/(?P<attributes_functions>.*)/?$', views.ElementoFisiograficoNaturalList.as_view(), name='elemento_fisiografico_natural_list'),
 
 
-    url(r'^picos/?$', views.PicoList.as_view(), name='pico_list'),
-    url(r'^picos/(?P<attributes_functions>.*)/?$', views.PicoList.as_view(), name='pico_list'),
     url(r'^picos/(?P<id_objeto>[0-9]+)/?$', views.PicoDetail.as_view(), name='pico_detail_id_objeto'),
     url(r'^picos/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.PicoDetail.as_view(), name='pico_detail_af'),
+    url(r'^picos/?$', views.PicoList.as_view(), name='pico_list'),
+    url(r'^picos/(?P<attributes_functions>.*)/?$', views.PicoList.as_view(), name='pico_list'),
 
 
-    url(r'^pontos-cotados-altimetricos/?$', views.PontoCotadoAltimetricoList.as_view(), name='ponto_cotado_altimetrico_list'),
-    url(r'^pontos-cotados-altimetricos/(?P<attributes_functions>.*)/?$', views.PontoCotadoAltimetricoList.as_view(), name='ponto_cotado_altimetrico_list'),
     url(r'^pontos-cotados-altimetricos/(?P<id_objeto>[0-9]+)/?$', views.PontoCotadoAltimetricoDetail.as_view(), name='ponto_cotado_altimetrico_detail_id_objeto'),
     url(r'^pontos-cotados-altimetricos/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.PontoCotadoAltimetricoDetail.as_view(), name='ponto_cotado_altimetrico_detail_af'),
+    url(r'^pontos-cotados-altimetricos/?$', views.PontoCotadoAltimetricoList.as_view(), name='ponto_cotado_altimetrico_list'),
+    url(r'^pontos-cotados-altimetricos/(?P<attributes_functions>.*)/?$', views.PontoCotadoAltimetricoList.as_view(), name='ponto_cotado_altimetrico_list'),
 
-
-    url(r'^pontos-cotados-batimetricos/?$', views.PontoCotadoBatimetricoList.as_view(), name='ponto_cotado_batimetrico_list'),
-    url(r'^pontos-cotados-batimetricos/(?P<attributes_functions>.*)/?$', views.PontoCotadoBatimetricoList.as_view(), name='ponto_cotado_batimetrico_list'),
     url(r'^pontos-cotados-batimetricos/(?P<id_objeto>[0-9]+)/?$', views.PontoCotadoBatimetricoDetail.as_view(), name='ponto_cotado_batimetrico_detail_id_objeto'),
     url(r'^pontos-cotados-batimetricos/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.PontoCotadoBatimetricoDetail.as_view(), name='ponto_cotado_batimetrico_detail_af'),
+    url(r'^pontos-cotados-batimetricos/?$', views.PontoCotadoBatimetricoList.as_view(), name='ponto_cotado_batimetrico_list'),
+    url(r'^pontos-cotados-batimetricos/(?P<attributes_functions>.*)/?$', views.PontoCotadoBatimetricoList.as_view(), name='ponto_cotado_batimetrico_list'),
 
     url(r'^eclusas/(?P<id_objeto>[0-9]+)/?$', views.EclusaDetail.as_view(), name='eclusa_detail_id_objeto'),
     url(r'^eclusas/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.EclusaDetail.as_view(), name='eclusa_detail_af'),
@@ -210,8 +213,8 @@ urlpatterns = (
     url(r'^sinalizacaoes/(?P<attributes_functions>.*)/?$', views.SinalizacaoList.as_view(), name='sinalizacao_list'),
 
 
-    url(r'^travessias/(?P<id_objeto>[0-9]+)/?$', views.EdifConstPortuariaDetail.as_view(), name='edif_const_portuaria_detail_id_objeto'),
-    url(r'^travessias/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.EdifConstPortuariaDetail.as_view(), name='edif_const_portuaria_detail_af'),
+    url(r'^travessias/(?P<id_objeto>[0-9]+)/?$', views.TravessiaDetail.as_view(), name='travessia_detail_id_objeto'),
+    url(r'^travessias/(?P<id_objeto>[0-9]+)/(?P<attributes_functions>.*)/?$', views.TravessiaDetail.as_view(), name='travessia_detail_id_objeto_detail_af'),
     url(r'^travessias/?$', views.TravessiaList.as_view(), name='travessia_list'),
     url(r'^travessias/(?P<attributes_functions>.*)/?$', views.TravessiaList.as_view(), name='travessia_list'),
 
