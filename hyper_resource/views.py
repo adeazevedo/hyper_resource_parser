@@ -823,7 +823,7 @@ class AbstractResource(APIView):
         # 'queryset' is the requested resource without serialization
         queryset = required_object.origin_object
 
-        image = self.get_png(self.current_object_state, request)
+        image = self.get_png(queryset, request)
         required_object.representation_object = image
         key = self.get_key_cache(request, CONTENT_TYPE_IMAGE_PNG)
         e_tag = self.generate_e_tag(image)
@@ -935,6 +935,9 @@ class AbstractResource(APIView):
         :param kwargs:
         :return:
         """
+        if 'HTTP_ETAG' in request.META:
+            etag = request.META['HTTP_ETAG']
+
         #return super(AbstractResource, self).get(request, *args, **kwargs)
         resp = None
         # responds with a conditional get if the request has If-None-Match or If-Unmodified-Since header
@@ -2145,6 +2148,7 @@ class AbstractCollectionResource(AbstractResource):
     def basic_get(self, request, *args, **kwargs):
 
         self.object_model = self.model_class()()
+        self.current_object_state = self.object_model
         self.set_basic_context_resource(request)
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
         self.inject_e_tag()
@@ -2510,6 +2514,24 @@ class FeatureCollectionResource(SpatialCollectionResource):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
 
         return objects
+
+    def get_png(self, queryset, request):
+        style = self.get_style_file(request)
+        wkt = "GEOMETRYCOLLECTION("
+        for i, e in enumerate(queryset):
+            wkt += e.geom.wkt  # it is need to fix the case that the attribute is not called by geom
+            if i != len(queryset) - 1:
+                wkt += ","
+            else:
+                wkt += ")"
+        geom_type = queryset[0].geom.geom_type
+
+        config = {'wkt': wkt, 'type': geom_type}
+        if style is not None:
+            config["style"] = style
+            config["deleteStyle"] = True
+        builder_png = BuilderPNG(config)
+        return builder_png.generate()
 
 
     def basic_response(self, request, objects):
