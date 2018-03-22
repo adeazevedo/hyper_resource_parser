@@ -29,7 +29,8 @@ class TrechoDrenagemListContext(FeatureResouceContext):
     pass
 class UnidadeFederacaoListContext(FeatureResouceContext):
     pass
-
+class UnidadeFederacaoDetailContext(FeatureResouceContext):
+    pass
 class MunicipioListContext(FeatureResouceContext):
     pass
 
