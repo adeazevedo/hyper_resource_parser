@@ -925,6 +925,12 @@ class AbstractResource(APIView):
         # if not matches return a regular Response (with database requests)
         return self.response_base_get(request, *args, **kwargs)
 
+    #If client request .png  into IRI chance header's accept to image/png and removes .png fron IRI. Affordance for user.
+    def change_request_if_image_png_into_IRI(self, request, kwargs):
+        if 'attributes_functions' in kwargs and kwargs['attributes_functions'][-4:] == '.png':
+            kwargs['attributes_functions'] = kwargs['attributes_functions'][:-4]
+            request.META[HTTP_ACCEPT] = 'image/png'
+
     #Could be overrided
     def get(self, request, *args, **kwargs):
         """
@@ -1796,7 +1802,7 @@ class FeatureResource(SpatialResource):
             a_value = json.loads(a_value.geojson)
             return RequiredObject(a_value, CONTENT_TYPE_GEOJSON, self.object_model,  200)
         elif isinstance(a_value, SpatialReference):
-           a_value = { self.name_of_last_operation_executed: a_value.pretty_wkt}
+           a_value = { self.name_of_last_operation_executed: a_value.wkt.strip('\n')}
         elif isinstance(a_value, memoryview) or isinstance(a_value, buffer):
            return RequiredObject(a_value, CONTENT_TYPE_OCTET_STREAM, self.object_model,200)
         else:
@@ -1880,6 +1886,9 @@ class FeatureResource(SpatialResource):
         self.add_base_headers(request, resp)
         return resp
 
+    def get(self, request, *args, **kwargs):
+       self.change_request_if_image_png_into_IRI(request, kwargs)
+       return super(FeatureResource,self).get(request, *args, **kwargs)
 class AbstractCollectionResource(AbstractResource):
 
     def __init__(self):
@@ -2632,3 +2641,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         else:
             return {"data": "This request has invalid attribute or operation","status": 400, "content_type": CONTENT_TYPE_JSON}
+
+
+
+    def get(self, request, *args, **kwargs):
+       self.change_request_if_image_png_into_IRI(request, kwargs)
+       return super(FeatureCollectionResource,self).get(request, *args, **kwargs)
