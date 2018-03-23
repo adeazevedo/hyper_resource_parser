@@ -861,13 +861,7 @@ class AbstractResource(APIView):
     def response_base_get(self, request, *args, **kwargs):
         """
         Returns a Response for the Request. If the response is in cache
-        returns the cached resource. If the response isn't in cache
-        responds with a regular response, treating images and binary requests
-        as such and caching the response
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
+
         """
 
         # AbstractResource.resource_in_cache_or_None() returns the requested resource from cache
@@ -926,9 +920,9 @@ class AbstractResource(APIView):
         return self.response_base_get(request, *args, **kwargs)
 
     #If client request .png  into IRI chance header's accept to image/png and removes .png fron IRI. Affordance for user.
-    def change_request_if_image_png_into_IRI(self, request, kwargs):
-        if 'attributes_functions' in kwargs and kwargs['attributes_functions'][-4:] == '.png':
-            kwargs['attributes_functions'] = kwargs['attributes_functions'][:-4]
+    def change_request_if_image_png_into_IRI(self, request):
+        if 'attributes_functions' in self.kwargs and self.kwargs['attributes_functions'][-4:] == '.png':
+            self.kwargs['attributes_functions'] = self.kwargs['attributes_functions'][:-4]
             request.META[HTTP_ACCEPT] = 'image/png'
 
     #Could be overrided
@@ -1887,8 +1881,8 @@ class FeatureResource(SpatialResource):
         return resp
 
     def get(self, request, *args, **kwargs):
-       self.change_request_if_image_png_into_IRI(request, kwargs)
-       return super(FeatureResource,self).get(request, *args, **kwargs)
+       self.change_request_if_image_png_into_IRI(request)
+       return super(FeatureResource,self).get(request, *args, **self.kwargs)
 class AbstractCollectionResource(AbstractResource):
 
     def __init__(self):
@@ -2200,6 +2194,8 @@ class AbstractCollectionResource(AbstractResource):
             #self._set_context_to_attributes(objects.keys())
             if len(objects) > 0 and isinstance(objects[0], BusinessModel):
                 serializer = self.serializer_class(objects, many=True,  context={'request': request})
+                if self.content_type_or_default_content_type(request) == CONTENT_TYPE_IMAGE_PNG:
+                    return RequiredObject(objects, self.content_type_or_default_content_type(request), objects, 200)
             else:
                 return RequiredObject(objects, self.content_type_or_default_content_type(request), objects, 200)
             return self.required_object_by_operations(request, serializer.data)
@@ -2526,14 +2522,22 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def get_png(self, queryset, request):
         style = self.get_style_file(request)
+        geom_type = None
         wkt = "GEOMETRYCOLLECTION("
         for i, e in enumerate(queryset):
-            wkt += e.geom.wkt  # it is need to fix the case that the attribute is not called by geom
+            if isinstance(e,FeatureModel):
+                wkt += e.get_geometry_object().wkt  # it is need to fix the case that the attribute is not called by geom
+            else:
+                geome = GEOSGeometry(json.dumps(e['geometry']))
+                wkt +=  geome.wkt
+                geom_type = geome.geom_type
             if i != len(queryset) - 1:
                 wkt += ","
             else:
                 wkt += ")"
-        geom_type = queryset[0].geom.geom_type
+        if isinstance(queryset[0], FeatureModel):
+            geom_type = queryset[0].get_geometry_object().geom_type
+
 
         config = {'wkt': wkt, 'type': geom_type}
         if style is not None:
@@ -2645,5 +2649,5 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
 
     def get(self, request, *args, **kwargs):
-       self.change_request_if_image_png_into_IRI(request, kwargs)
-       return super(FeatureCollectionResource,self).get(request, *args, **kwargs)
+       self.change_request_if_image_png_into_IRI(request)
+       return super(FeatureCollectionResource,self).get(request, *args, **self.kwargs)

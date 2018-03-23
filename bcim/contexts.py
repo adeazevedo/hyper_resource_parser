@@ -25,6 +25,24 @@ class UnidadeFederacaoContext(FeatureResouceContext):
     #]}
     #return dic
 
+class UnidadeFederacaoDetailContext(FeatureResouceContext):
+
+    def attributes_contextualized_dict(self):
+
+        dic_context = {            "id_objeto":  "http://schema.org/identifier",
+                                   "nome":  "http://schema.org/name",
+                                   "nomeabrev":  "http://schema.org/alternateName",
+                                   "sigla": "http://schema.org/alternateName",
+                                   "geometriaaproximada": "http://schema.org/Boolean",
+                                   "geocodigo": "http://schema.org/code",
+                                   "geom": "http://geojson.org/geojson-ld/vocab.html#geometry"
+                       }
+
+        return dic_context
+
+    def representation_name(self):
+        return "sigla"
+
 class TrechoDrenagemListContext(FeatureResouceContext):
     pass
 class UnidadeFederacaoListContext(FeatureResouceContext):
