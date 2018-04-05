@@ -1958,7 +1958,8 @@ class AbstractCollectionResource(AbstractResource):
             return len(att_funcs) >= 3 and  (att_funcs[0].lower() == 'collect')
         return False
 
-    #Responds an array of operations name. Shoud be overrided
+    #Responds an array of operations name.
+    # Shoud be overrided
     def array_of_operation_name_collection(self):
         return self.operation_controller.collection_operations_dict().keys()
 
@@ -1974,6 +1975,10 @@ class AbstractCollectionResource(AbstractResource):
         if first_part_name == self.operation_controller.collect_collection_operation_name and '/*filter' in attributes_functions_str:
             return first_part_name + '_and_filter'
         return first_part_name
+
+
+    def path_has_operations(self, attributes_functions_str):
+        return self.get_operation_name_from_path(attributes_functions_str) is not None
 
     def required_object_for_count_resource_operation(self,request, attributes_functions_str):
         return RequiredObject({"countResource": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
@@ -2240,10 +2245,11 @@ class AbstractCollectionResource(AbstractResource):
     def get_context_from_method_to_execute(self, request, attributes_functions_str):
         method_to_execute = self.get_operation_to_execute(request, attributes_functions_str)
         if method_to_execute is None:
-            return self.context_resource
+            return self.context_resource.context()
+        if method_to_execute == self.required_object_for_count_resource_operation:
+            self._set_context_to_operation()
         if method_to_execute == self.get_objects_from_filter_and_collect_operation:
             pass
-
 
     def basic_get(self, request, *args, **kwargs):
 
@@ -2492,12 +2498,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
     #attributes_functions_str == spatial_collection_operations_dict/... Or attributes_functions_str == geom/spatial_collection_operations_dict/....
 
     #todo
-    def path_request_is_ok(attributes_functions_str):
+    def path_request_is_ok(self, attributes_functions_str):
         return True
-
-    #Responds if path in url has a operation. For instance: http://host/unidades-federativas/crosses/Polygon(...) is True
-    def path_has_operations(self, attributes_functions_str):
-        print(attributes_functions_str)
 
 
     def path_has_only_spatial_operation(self, attributes_functions_str):

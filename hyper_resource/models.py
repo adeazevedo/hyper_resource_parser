@@ -721,6 +721,23 @@ class SpatialCollectionOperationController(BaseOperationController):
         self.distance_lte_operation_name = 'distance_lte'
         self.dwithin_operation_name = 'dwithin'
 
+    #Responds a dict with all the operations
+    def dict_all_operation_dict(self):
+       d =  self.feature_collection_operations_dict()
+       return d
+
+    def is_operation(self, an_object, name):
+      if isinstance(an_object, BusinessModel):
+         return an_object.is_operation(name)
+
+      a_type=type(an_object)
+
+      if a_type not in self.dict_all_operation_dict():
+         return False
+
+      operation_dict = self.dict_all_operation_dict()[a_type]
+      return name in operation_dict
+
 class BusinessModel(models.Model):
 
     def id(self):
