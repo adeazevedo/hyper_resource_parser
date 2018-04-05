@@ -28,6 +28,7 @@ from django.test.runner import DiscoverRunner
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'bc_edgv.settings'
 #django.setup()
 #python manage.py test bcim.test_utils  --testrunner=bcim.test_utils.NoDbTestRunner
+#python manage.py test hyper_resource.tests --testrunner=hyper_resource.tests.NoDbTestRunner
 from django.contrib.gis.db.models import Q
 class NoDbTestRunner(DiscoverRunner):
    """ A test runner to test without database creation/deletion """
@@ -56,11 +57,12 @@ class Geometria(FeatureModel):
 # python manage.py test hyper_resource.tests  --testrunner=hyper_resource.tests.NoDbTestRunner
 ##
 #python manage.py test bcim.test_utils  --testrunner=bcim.test_utils.NoDbTestRunner
+#python manage.py test hyper_resource.tests --testrunner=hyper_resource.tests.NoDbTestRunner
 from django.test import SimpleTestCase
 #from bcim.utils import APIViewHypermedia
 #python manage.py test app --testrunner=app.filename.NoDbTestRunner
 #python manage.py test bcim.tests  --testrunner=bcim.tests.NoDbTestRunner
-#python manage.py test bcim.test_spatial_functions  --testrunner=bcim.test_spatial_functions.NoDbTestRunner
+#python manage.py test hyper_resource.tests --testrunner=hyper_resource.tests.NoDbTestRunner
 from bcim.models import ModeloTeste
 
 class ModelTest(models.Model):
@@ -176,6 +178,17 @@ class AbstractCollectionResourceTestCase(SimpleTestCase):
         self.attributes_functions = ['filter/sigla/in/rj,es,go/', 'filter/sigla/uppercase/in/rj,es,go/and/data/between/2017-02-01,2017-06-30/', 'filter/sigla/in/rj,es,go/and/geom/within/{"type":"Polygon","coordinates":[[[-41.881710164667396,-21.297482165015307],[-28.840495695785098,-21.297482165015307],[-28.840495695785098,-17.886950999070834],[-41.881710164667396,-17.886950999070834],[-41.881710164667396,-21.297482165015307]]]}']
         self.acr = AbstractCollectionResource()
 
+    def test_get_operation_name_from_path(self):
+        self.assertEquals(self.acr.get_operation_name_from_path('collect/geom/buffer/0.2'), 'collect')
+        self.assertEquals(self.acr.get_operation_name_from_path('filter/geom/buffer/0.2'), 'filter')
+        self.assertEquals(self.acr.get_operation_name_from_path('filter/geom/containing/http://host/aldeias-indigenas/821/*collect/nome.geom/buffer/0.2'), 'filter_collect')
+        self.assertEquals(self.acr.get_operation_name_from_path('collect/nome&geom/buffer/0.2/containing/http://host/aldeias-indigenas/821/*filter/nome/startswith/rio'), 'collect_filter')
+        self.assertEquals(self.acr.get_operation_name_from_path('count_resource'), 'count_resource')
+        self.assertEquals(self.acr.get_operation_name_from_path('group_by/nome'), 'group_by')
+        self.assertEquals(self.acr.get_operation_name_from_path('group_by_count/nome'), 'group_by_count')
+        self.assertEquals(self.acr.get_operation_name_from_path('distinct'), 'distinct')
+        self.assertEquals(self.acr.get_operation_name_from_path('offset_limit/1&10'), 'offset_limit')
+        self.assertEquals(self.acr.get_operation_name_from_path('nadahaver'), None)
     def test_attributes_functions_str_is_filter_with_spatial_operation(self):
         pass
         """

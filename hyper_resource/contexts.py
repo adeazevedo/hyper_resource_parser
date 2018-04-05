@@ -53,6 +53,7 @@ class Reflection:
                 callable ( getattr ( a_class, method ) ) and a_class.is_not_private ( method )]
 
 
+
 class FeatureCollection(object):
     pass
 
@@ -320,7 +321,7 @@ def initialize_dict():
     :return:
     """
     dict = {}
-    oc = OperationController()
+    oc = BaseOperationController()
     dict[GeometryField] = oc.geometry_operations_dict()
     dict[GEOSGeometry] = oc.geometry_operations_dict()
     dict[Point] = oc.point_operations_dict()
@@ -348,6 +349,12 @@ class ContextResource:
     #def attribute_type_list(self):
     #    return ( type(field) for field in self.model_class._meta.fields[:])
 
+    def get_context_for_object(an_object):
+
+        if isinstance(BusinessModel, an_object):
+            return an_object.context()
+        if  isinstance(GEOSGeometry, an_object):
+            return None
     def host_with_path(self):
         return self.host + self.basic_path + "/" + self.complement_path
 
@@ -423,9 +430,6 @@ class ContextResource:
         if ide_field is not None:
             return  {"hydra:property":ide_field.name , "@type": "SupportedProperty"}
         return {}
-
-
-
 
     def supportedProperties(self):
         arr_dict = []

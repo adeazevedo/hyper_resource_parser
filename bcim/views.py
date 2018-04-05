@@ -132,12 +132,14 @@ class UnidadeFederacaoDetail(FeatureResource):
     def get(self, request, *args, **kwargs):
         if kwargs.get('sigla') is not None:
             kwargs['sigla'] = kwargs.get('sigla').upper()
-        return super(UnidadeFederacaoDetail, self).get(request, *args, **kwargs)
+            self.kwargs['sigla'] = kwargs.get('sigla').upper()
+        return super(UnidadeFederacaoDetail, self).get(request, *args, **self.kwargs)
 
     def options(self, request, *args, **kwargs):
         if kwargs.get('sigla') is not None:
             kwargs['sigla'] = kwargs.get('sigla').upper()
-        return super(UnidadeFederacaoDetail, self).options(request, *args, **kwargs)
+            self.kwargs['sigla'] = kwargs.get('sigla').upper()
+        return super(UnidadeFederacaoDetail, self).options(request, *args, **self.kwargs)
 
 
 class UnidadeFederacaoList(FeatureCollectionResource):
