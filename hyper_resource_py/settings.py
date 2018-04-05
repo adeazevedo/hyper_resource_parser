@@ -69,6 +69,7 @@ CORS_ALLOW_HEADERS = (
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'link',
 )
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_EXPOSE_HEADERS = ['accept',
@@ -83,6 +84,7 @@ CORS_EXPOSE_HEADERS = ['accept',
                        'x-requested-with',
                        'x-access-token',
                        'access-control-allow-origin',
+                       'link',
                        ]
 
 TEMPLATES = [

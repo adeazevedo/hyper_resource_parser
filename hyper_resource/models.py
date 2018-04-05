@@ -597,6 +597,9 @@ class BaseOperationController:
 
         return dict(self.collection_operations_dict(), **self.spatial_collection_operations_dict())
 
+    def feature_collection_operations_names(self):
+        return self.feature_collection_operations_dict().keys()
+
     def dict_by_type_geometry_operations_dict(self):
 
         dicti = {}

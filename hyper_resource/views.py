@@ -31,6 +31,8 @@ CONTENT_TYPE_LD_JSON = "application/ld+json"
 CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
 CONTENT_TYPE_IMAGE_PNG = "image/png"
 SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG)
+ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD']
+from hyper_resource_py.settings import CORS_ALLOW_HEADERS, CORS_EXPOSE_HEADERS
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
     def select_parser(self, request, parsers):
@@ -334,6 +336,34 @@ class AbstractResource(APIView):
             response['Link'] += "," + link
         return response
 
+    def access_control_allow_origin_str(self):
+        return '*'
+
+    def access_control_allow_methods_str(self):
+        allow_methods_str = ''
+        for header_value in ACCESS_CONTROL_ALLOW_METHODS:
+            allow_methods_str += header_value + ', '
+        return allow_methods_str[:-2]
+
+    def access_control_allow_headers_str(self):
+        allow_headers_str = ''
+        for header_value in CORS_ALLOW_HEADERS:
+            allow_headers_str += header_value + ', '
+        return allow_headers_str[:-2]
+
+    def access_control_expose_headers_str(self):
+        expose_headers_str = ''
+        for header_value in CORS_EXPOSE_HEADERS:
+            expose_headers_str += header_value + ', '
+        return expose_headers_str[:-2]
+
+    def add_cors_header_in_header(self, response):
+        response['access-control-allow-origin'] = self.access_control_allow_origin_str()
+        response['access-control-allow-methods'] = self.access_control_allow_methods_str()
+        response['access-control-allow-headers'] = self.access_control_allow_headers_str()
+        response['access-control-expose-headers'] = self.access_control_expose_headers_str()
+
+
     def add_base_headers(self, request, response):
         """
         Adds the 'Link' header in the Response object containing
@@ -355,7 +385,7 @@ class AbstractResource(APIView):
         # the second url appended to 'Link' header is the absolute url minus the bar
         # with '.jsonld', the 'rel' is the relationship represented by w3.org url
         self.add_url_in_header(iri_base[:-1] + '.jsonld',response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
-        response['access-control-allow-origin'] = '*'
+        self.add_cors_header_in_header(response)
 
     def dispatch(self, request, *args, **kwargs):
         """
@@ -2252,6 +2282,9 @@ class AbstractCollectionResource(AbstractResource):
 
             context = self.context_resource.dict_context
             return Response(data=context, content_type='application/ld+json')
+
+        #a_context = self.get_context_from_method_to_execute(request, attributes_functions_str)
+        #return Response(data=a_context, content_type='application/ld+json')
 
         elif self.path_has_collect_operation(attributes_functions_str):
             collect_operation_index = attributes_functions_str.find("collect")

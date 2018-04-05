@@ -351,7 +351,7 @@ class ContextResource:
 
     def get_context_for_object(an_object):
 
-        if isinstance(BusinessModel, an_object):
+        if isinstance(AbstractResource, an_object):
             return an_object.context()
         if  isinstance(GEOSGeometry, an_object):
             return None
