@@ -400,16 +400,13 @@ class BaseOperationController:
             cls._instance.initialize()
         return cls._instance
 
+    def __init__(self):
+        #super(BaseOperationController, self).__init__()
+        self.initialize()
+
+    #Have to be overrided
     def initialize(self):
-        #abstract_collection
-        self.filter_collection_operation_name = 'filter'
-        self.collect_collection_operation_name = 'collect'
-        self.filter_and_collect_collection_operation_name = 'filter_and_collect'
-        self.count_resource_collection_operation_name = 'count_resource'
-        self.offset_limit_collection_operation_name = 'offset_limit'
-        self.distinct_collection_operation_name = 'distinct'
-        self.group_by_collection_operation_name = 'group_by'
-        self.group_by_count_collection_operation_name = 'group_by_count'
+        pass
 
     #Spatial Operations
     def geometry_operations_dict(self):
@@ -550,7 +547,6 @@ class BaseOperationController:
         dict = {}
         dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
         dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name,[object] , object)
-        dict[self.filter_and_collect_collection_operation_name] = Type_Called(self.filter_and_collect_collection_operation_name,[Q, object] , object)
         dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
         dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
@@ -682,16 +678,41 @@ class BaseOperationController:
         # if 'attr_of_method_name' doesn't represent a operations of 'an_object' type, return False
         return False
 
-class SpatialCollectionOperationController(BaseOperationController):
+class CollectionResourceOperationController(BaseOperationController):
     _instance = None
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            cls._instance = super(SpatialCollectionOperationController, cls).__new__(cls, *args, **kwargs)
-            cls._instance.initialize()
+            cls._instance = super(CollectionResourceOperationController, cls).__new__(cls, *args, **kwargs)
+
         return cls._instance
 
     def initialize(self):
-        super(SpatialCollectionOperationController, self).initialize()
+        #abstract_collection
+        self.filter_collection_operation_name = 'filter'
+        self.collect_collection_operation_name = 'collect'
+        self.count_resource_collection_operation_name = 'count_resource'
+        self.offset_limit_collection_operation_name = 'offset_limit'
+        self.distinct_collection_operation_name = 'distinct'
+        self.group_by_collection_operation_name = 'group_by'
+        self.group_by_count_collection_operation_name = 'group_by_count'
+
+class SpatialCollectionOperationController(CollectionResourceOperationController):
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(SpatialCollectionOperationController, cls).__new__(cls, *args, **kwargs)
+
+        return cls._instance
+
+    def initialize(self):
+        self.filter_collection_operation_name = 'filter'
+        self.collect_collection_operation_name = 'collect'
+        self.count_resource_collection_operation_name = 'count_resource'
+        self.offset_limit_collection_operation_name = 'offset_limit'
+        self.distinct_collection_operation_name = 'distinct'
+        self.group_by_collection_operation_name = 'group_by'
+        self.group_by_count_collection_operation_name = 'group_by_count'
+
         self.bbcontaining_operation_name = 'bbcontaining'
         self.bboverlaping_operation_name = 'bboverlaping'
         self.contained_operation_name = 'contained'

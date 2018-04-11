@@ -3,8 +3,8 @@ from time import sleep
 #servidor = ''
 #servidor = 'http://LUC00557347.ibge.gov.br/'
 #SERVER = 'http://LUC00557196.ibge.gov.br:8000/'
-SERVER = "http://172.30.10.130:8000/"
-#SERVER = "http://172.30.10.86"
+#SERVER = "http://172.30.10.130:8000/"
+SERVER = "http://172.30.10.86:8800/"
 arr_get_for_collection = [
 'controle-list/gasto-list/count_resource',
 'controle-list/gasto-list/offset_limit/1&10',

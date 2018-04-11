@@ -985,15 +985,12 @@ class AbstractResource(APIView):
 
     # Could be overrided
     def head(self, request, *args, **kwargs):
-        """
-        Just returns a 200 status code for HEAD requests
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        resp =  Response(status=status.HTTP_200_OK)
+        resp =  Response(data={}, status=status.HTTP_200_OK, content_type=self.content_type_or_default_content_type(request))
+        self.add_base_headers(request, resp)
         return resp
+
+    def define_head_content_type(self, request, response):
+        response['content-type'] = self.content_type_or_default_content_type(request)
 
     # Could be overrided
     def put(self, request, *args, **kwargs):
@@ -1905,6 +1902,8 @@ class AbstractCollectionResource(AbstractResource):
     def __init__(self):
         super(AbstractCollectionResource, self).__init__()
         self.queryset = None
+        self.operation_controller = CollectionResourceOperationController()
+        #self.operation_controller.initialize()
 
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
 
@@ -2210,7 +2209,7 @@ class AbstractCollectionResource(AbstractResource):
         d[self.operation_controller.group_by_count_collection_operation_name] = self.required_object_for_group_by_count_operation
         d[self.operation_controller.filter_collection_operation_name] = self.required_object_for_filter_operation
         d[self.operation_controller.collect_collection_operation_name] = self.required_object_for_collect_operation
-        d[self.operation_controller.filter_and_collect_collection_operation_name] = self.required_object_for_filter_and_collect_collection_operation
+
         return d
 
     #Responds a method to be executed.
@@ -2263,7 +2262,7 @@ class AbstractCollectionResource(AbstractResource):
             return self.required_object_for_simple_path(request)
 
         if self.path_has_only_attributes(attributes_functions_str):
-            return self.required_object_only_for_attributes(request)
+            return self.required_object_for_only_attributes(request, attributes_functions_str)
 
         res = self.get_requiredObject_from_method_to_execute(request, attributes_functions_str)
         if res is None:
@@ -2482,6 +2481,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def __init__(self):
          super(FeatureCollectionResource, self).__init__()
          self.operation_controller = SpatialCollectionOperationController()
+         #self.operation_controller.initialize()
 
     def geometry_operations(self):
         return self.operation_controller.feature_collection_operations_dict()
@@ -2494,6 +2494,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def is_spatial_operation(self, operation_name):
         return operation_name in self.geometry_operations()
+
+    def default_content_type(self):
+        return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
 
     #attributes_functions_str == spatial_collection_operations_dict/... Or attributes_functions_str == geom/spatial_collection_operations_dict/....
 
