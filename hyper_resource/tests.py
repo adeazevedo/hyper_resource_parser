@@ -329,3 +329,51 @@ class CollectionResourceTest(SimpleTestCase):
         self.assertEquals(res.status_code, 200)
         self.assertEquals(res.headers['content-type'], 'application/json')
     """
+
+class RequestOptionsTest(SimpleTestCase):
+    def setUp(self):
+        self.host = 'luc00557196.ibge.gov.br:8000/'
+        self.base_uri = "http://" + self.host + "ibge/bcim/"
+        self.simple_path_options_dict_keys = ['@context', 'hydra:iriTemplate', 'hydra:representationName', 'hydra:supportedOperations', 'hydra:supportedProperties']
+
+    def test_options_for_feature_collection_simple_path(self):
+        response = requests.options(self.base_uri + "aldeias-indigenas/")
+        self.assertEquals(response.status_code, 200)
+
+        json_response = json.loads(response.text)
+        response_list = list(json_response.keys())
+        response_list.sort()
+        self.assertListEqual(response_list, self.simple_path_options_dict_keys)
+
+    #todo:
+    def test_options_for_feature_collection_only_attributes(self):
+        attrs = ["nome", "geom"]
+        expected_external_dict_keys = ["@context", 'hydra:supportedOperations']
+        response = requests.options(self.base_uri + "aldeias-indigenas/" + attrs[0] + "," + attrs[1])
+        self.assertEquals(response.status_code, 200)
+
+        json_response = json.loads(response.text)
+        response_dict = dict(json_response)
+        response_dict_keys = list(response_dict.keys())
+        response_dict_keys.sort()
+        self.assertEquals(response_dict_keys, expected_external_dict_keys)
+
+    def test_options_for_feature_collection_only_alphanumeric_attributes(self):
+        alpha_attrs = ["nome", "nomeabrev"]
+        response = requests.options(self.base_uri + "aldeias-indigenas/" + alpha_attrs[0] + "," + alpha_attrs[1])
+        self.assertEquals(response.status_code, 200)
+
+        json_response = json.loads(response.text)
+        response_dict = dict(json_response)
+        response_dict_keys = response_dict.keys()
+        response_dict_keys = list(response_dict_keys)
+        response_dict_keys.sort()
+        self.assertListEqual(response_dict_keys, ["@context"])
+
+        internal_dict = response_dict["@context"]
+        internal_dict_keys = internal_dict.keys()
+        internal_dict_keys = list(internal_dict_keys)
+        internal_dict_keys.sort()
+        self.assertListEqual(internal_dict_keys, alpha_attrs)
+
+

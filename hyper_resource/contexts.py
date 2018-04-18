@@ -22,37 +22,14 @@ from hyper_resource.models import *
 class Reflection:
 
     def superclass(a_class):
-        """
-        Retorna apenas uma das heranças de
-        'a_class'. Se houver uma herança
-        multipla, as demais classes serão
-        ignoradas
-        :return:
-        """
         return a_class.__base__
 
     def supeclasses(a_class):
-        """
-        Retorna a(s) classe(s) de que
-        'a_class' herda em forma do tupla
-        :return:
-        """
         return a_class.__bases__
 
     def operation_names(a_class):
-        """
-        Retorna uma lista de métodos públicos
-        de 'a_class'
-        :return:
-        """
-        # - dir() retona uma lista com todos os membros de 'a_class'
-        # - se o valor do membro 'method' de 'a_class' for um chamável,
-        # ou seja, se o valor de 'method' for uma função, e além disso,
-        # se esta função não for privada, adicionamos ela na lista
         return [method for method in dir ( a_class ) if
                 callable ( getattr ( a_class, method ) ) and a_class.is_not_private ( method )]
-
-
 
 class FeatureCollection(object):
     pass
@@ -264,13 +241,6 @@ class SupportedProperty():
 
 
     def context(self):
-        """
-        Retorna um dicionário que mostra informações de uma
-        determinada propriedade suportada por uma determinada classe,
-        como se esta é uma propriedade obrigatória (required) por exemplo
-        :return:
-        """
-
         return {
             "@type": "SupportedProperty",
             "hydra:property": self.property_name,
@@ -359,11 +329,6 @@ class ContextResource:
         return self.host + self.basic_path + "/" + self.complement_path
 
     def operation_names(self):
-        """
-        Retorna todos o valores de todos os métodos
-        do objeto ContextResource que não sejam privados
-        :return:
-        """
         return [method for method in dir(self) if callable(getattr(self, method)) and self.is_not_private(method)]
 
     def attribute_contextualized_dict_for(self, field):

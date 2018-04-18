@@ -1,25 +1,26 @@
 import requests
 from time import sleep
-#servidor = ''
+#se'rvidor = ''
 #servidor = 'http://LUC00557347.ibge.gov.br/'
 #SERVER = 'http://LUC00557196.ibge.gov.br:8000/'
-#SERVER = "http://172.30.10.130:8000/"
-SERVER = "http://172.30.10.86:8800/"
+SERVER = "http://172.30.11.72:8000/"
+#SERVER = "http://192.168.0.10:8000/"
+
 arr_get_for_collection = [
 'controle-list/gasto-list/count_resource',
 'controle-list/gasto-list/offset_limit/1&10',
 'controle-list/gasto-list/group_by_count/tipo_gasto',
 'controle-list/gasto-list/filter/tipo_gasto/eq/3',
 'ibge/bcim/unidades-federativas/filter/geom/within/' + SERVER + 'ibge/bcim/municipios/3159407/geom/*',
-'ibge/bcim/unidades-federativas/?*contains=POINT(-42 -21)',
-'ibge/bcim/unidades-federativas/?*contains=POINT(-42 -21)&sigla=RJ',
-'ibge/bcim/unidades-federativas/?*contains=URL&sigla=RJ',
-'ibge/bcim/unidades-federativas/contains/POINT(-42 -21)',
-'ibge/bcim/aldeias-indigenas/within/POLYGON((-41.8 -21.2,-41.8 -17.8,-28.8 -17.8,-28.8 -21.,-41.8 -21.2))/',
-'ibge/bcim/aldeias-indigenas/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*',
-'ibge/bcim/aldeias-indigenas/within/' + SERVER + 'ibge/bcim/unidades-federativas/PA/*',
+'ibge/bcim/unidades-federativas/?*col_contains=POINT(-42 -21)',
+'ibge/bcim/unidades-federativas/?*col_contains=POINT(-42 -21)&sigla=RJ',
+'ibge/bcim/unidades-federativas/?*col_contains=URL&sigla=RJ',
+'ibge/bcim/unidades-federativas/col_contains/POINT(-42 -21)',
+'ibge/bcim/aldeias-indigenas/col_within/POLYGON((-41.8 -21.2,-41.8 -17.8,-28.8 -17.8,-28.8 -21.,-41.8 -21.2))/',
+'ibge/bcim/aldeias-indigenas/col_within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*',
+'ibge/bcim/aldeias-indigenas/col_within/' + SERVER + 'ibge/bcim/unidades-federativas/PA/*',
 'ibge/bcim/unidades-federativas/filter/sigla/in/ES,PA/',
-'ibge/bcim/aldeias-indigenas/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*or/within/' + SERVER + 'ibge/bcim/unidades-federativas/PA/*',
+'ibge/bcim/aldeias-indigenas/col_within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*or/within/' + SERVER + 'ibge/bcim/unidades-federativas/PA/*',
 'ibge/bcim/aldeias-indigenas/filter/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*or/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/PA/*',
 'ibge/bcim/aldeias-indigenas/filter/id_objeto/eq/841/*and/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/geom/*',
 'ibge/bcim/aldeias-indigenas/filter/id_objeto/eq/841/*and/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/geom/*',
@@ -27,11 +28,14 @@ arr_get_for_collection = [
 'ibge/bcim/aldeias-indigenas/filter/id_objeto/eq/841/*or/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/geom/*',
 'ibge/bcim/aldeias-indigenas/filter/id_objeto/eq/841/*or/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/geom/*',
 'ibge/bcim/aldeias-indigenas/filter/id_objeto/eq/841/*or/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/geom/*or/' + SERVER + 'ibge/bcim/unidades-federativas/PR/*',
-'ibge/bcim/municipios/within/{"type":"Polygon","coordinates":[[[-48.759514611370854,-28.3426735036349],[-48.631647133384185,-28.3426735036349],[-48.631647133384185,-28.082673631081306],[-48.759514611370854,-28.082673631081306],[-48.759514611370854,-28.3426735036349]]]}',
-'ibge/bcim/municipios/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*',
+'ibge/bcim/municipios/col_within/{"type":"Polygon","coordinates":[[[-48.759514611370854,-28.3426735036349],[-48.631647133384185,-28.3426735036349],[-48.631647133384185,-28.082673631081306],[-48.759514611370854,-28.082673631081306],[-48.759514611370854,-28.3426735036349]]]}',
+'ibge/bcim/municipios/col_within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*',
 'ibge/bcim/municipios/filter/geom/overlaps/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*or/geom/within/' + SERVER + 'ibge/bcim/unidades-federativas/ES/*and/geocodigo/startswith/32/',
-'ibge/bcim/aldeias-indigenas/within/' + SERVER + 'ibge/bcim/unidades-federativas/PA/',
-'ibge/bcim/aldeias-indigenas/within/' + SERVER + 'ibge/bcim/unidades-federativas/PA',
+'ibge/bcim/aldeias-indigenas/col_within/' + SERVER + 'ibge/bcim/unidades-federativas/PA/',
+'ibge/bcim/aldeias-indigenas/col_within/' + SERVER + 'ibge/bcim/unidades-federativas/PA',
+'ibge/bcim/aldeias-indigenas/collect/nome&geom/buffer/0.5',
+'ibge/bcim/unidades-federativas/filter/sigla/in/RJ&ES/*collect/nome&geom/buffer/0.2',
+'ibge/bcim/aldeias-indigenas/offset_limit/0&2/*collect/nome&geom/buffer/0.5',
 ]
 
 arr_get_for_spatial_operations = [
@@ -91,8 +95,12 @@ arr_get_for_spatial_operations = [
 "ibge/bcim/trechos-hidroviarios/59121/z",
 ]
 
+arr_get_for_complex_requests = [
+"ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/ES/*collect/geom/buffer/0.2/!union/(" + SERVER + "ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/AM/*collect/geom/buffer/0.2)"
+]
+
 def test_requests(url_list):
-    print("\n\n**********\nInitializing test set\n**********\n\n")
+    print("\n\n" + 20 * "*" + "\nInitializing test set\n" + 20 * "*" + "\n\n")
 
     requests_with_error = []
     for req_str in url_list:
@@ -110,13 +118,12 @@ def test_requests(url_list):
     else:
         print("*********Sucess***********")
 
-    print("\n\n**********\nEnd of test set\n**********\n\n")
+    print("\n" + 20 * "-" + "End of this test set" + 20 * "-" + "\n")
 
 test_requests(arr_get_for_collection)
 test_requests(arr_get_for_spatial_operations)
+#test_requests(arr_get_for_complex_requests)
 
-
-
-
+print("\n\n" + 20 * "*" + "\nEnd of all test sets\n" + 20 * "*" + "\n\n")
 
 
