@@ -767,6 +767,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
         dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name,[object] , object)
         dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
+        dict[self.filter_and_count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
         dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
         dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
