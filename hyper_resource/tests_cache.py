@@ -25,8 +25,7 @@ from django.test import SimpleTestCase
 class APIAbstractResourceCacheTestCase(SimpleTestCase):
     def setUp(self):
         #self.host = 'luc00557347.ibge.gov.br'
-        #self.host = 'luc00557196.ibge.gov.br:8000'
-        self.host = '172.30.10.130:8000'
+        self.host = 'luc00557196.ibge.gov.br:8000'
         self.url_feature_resource_collection = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
         self.url_feature_resource = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
         self.headers = {'accept': 'application/octet-stream', 'If-None-Match': '48200128876656848'}

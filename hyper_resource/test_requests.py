@@ -9,6 +9,7 @@ SERVER = "http://172.30.11.72:8000/"
 arr_get_for_collection = [
 'controle-list/gasto-list/count_resource',
 'controle-list/gasto-list/offset_limit/1&10',
+'controle-list/gasto-list/offset_limit/1&10/data,valor',
 'controle-list/gasto-list/group_by_count/tipo_gasto',
 'controle-list/gasto-list/filter/tipo_gasto/eq/3',
 'ibge/bcim/unidades-federativas/filter/geom/within/' + SERVER + 'ibge/bcim/municipios/3159407/geom/*',
@@ -35,7 +36,8 @@ arr_get_for_collection = [
 'ibge/bcim/aldeias-indigenas/col_within/' + SERVER + 'ibge/bcim/unidades-federativas/PA',
 'ibge/bcim/aldeias-indigenas/collect/nome&geom/buffer/0.5',
 'ibge/bcim/unidades-federativas/filter/sigla/in/RJ&ES/*collect/nome&geom/buffer/0.2',
-'ibge/bcim/aldeias-indigenas/offset_limit/0&2/*collect/nome&geom/buffer/0.5',
+'ibge/bcim/aldeias-indigenas/offset_limit/0&2/nome,geom,nomeabrev/*collect/nome&geom/buffer/0.5',
+'ibge/bcim/aldeias-indigenas/offset_limit/0&2/nome,geom/*collect/geom/buffer/0.5',
 ]
 
 arr_get_for_spatial_operations = [
@@ -96,7 +98,11 @@ arr_get_for_spatial_operations = [
 ]
 
 arr_get_for_complex_requests = [
-"ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/ES/*collect/geom/buffer/0.2/!union/(" + SERVER + "ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/AM/*collect/geom/buffer/0.2)"
+#"ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/ES/*collect/geom/buffer/0.2/!union/(" + SERVER + "ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/AM/*collect/geom/buffer/0.2)"
+"ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/ES/*collect/geom/buffer/0.2/!union/" + SERVER + "ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/AM/*collect/geom/buffer/0.2",
+"ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/ES/*collect/nome&geom/buffer/0.2/!union/" + SERVER + "ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2",
+"ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2/!union/" + SERVER + "ibge/bcim/unidades-federativas/MG/envelope/",
+"ibge/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "ibge/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2/!union/Polygon((-51.04196101779323 -22.915330279829785, -39.86109832699603 -22.915330279829785, -39.86109832699603 -14.227537498798952, -51.04196101779323 -14.227537498798952, -51.04196101779323 -22.915330279829785))",
 ]
 
 def test_requests(url_list):
@@ -122,8 +128,6 @@ def test_requests(url_list):
 
 test_requests(arr_get_for_collection)
 test_requests(arr_get_for_spatial_operations)
-#test_requests(arr_get_for_complex_requests)
+test_requests(arr_get_for_complex_requests)
 
 print("\n\n" + 20 * "*" + "\nEnd of all test sets\n" + 20 * "*" + "\n\n")
-
-

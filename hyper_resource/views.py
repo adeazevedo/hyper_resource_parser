@@ -30,8 +30,7 @@ CONTENT_TYPE_JSON = "application/json"
 CONTENT_TYPE_LD_JSON = "application/ld+json"
 CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
 CONTENT_TYPE_IMAGE_PNG = "image/png"
-CONTENT_TYPE_COLLECTION_GEOJSON = "application/vnd.collection+json"
-SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG, CONTENT_TYPE_COLLECTION_GEOJSON)
+SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG)
 ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD']
 from hyper_resource_py.settings import CORS_ALLOW_HEADERS, CORS_EXPOSE_HEADERS, ENABLE_COMPLEX_REQUESTS
 
@@ -40,10 +39,8 @@ GEOSGEOMETRY_SUBCLASSES = ['POINT', 'MULTIPOINT', 'LINESTRING', 'MULTILINESTRING
 if ENABLE_COMPLEX_REQUESTS:
     print ('***************************************************************************************************************************')
     print("** WARNING: Complex requests is enabled                                                                                  **")
-    print("** Certify that your API isn't using the follow caracters for especific purposes:                                        **")
-    print("** '(' (open parenthesis) and ')' (closed parenthesis)                                                                   **")
-    print("** The only exception is URLs with Django GEOSGeometry objects like:                                                     **")
-    print("** POINT(-42 -21) or GEOMETRYCOLLECTION(POINT(-42 -21), POINT(8 25))                                                     **")
+    print("** Certify that your API isn't using the follow caracter(s) for especific purposes:                                      **")
+    print("** '!' (exclamation point)                                                                                               **")
     print ('***************************************************************************************************************************')
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
@@ -79,20 +76,10 @@ class BaseContext(object):
         # else:
         #     url = reverse('context:detail-property', args=[self.contextclassname, ",".join(properties)], request=request)
 
-        # pega a url absoluta, desde o host
         url = request.build_absolute_uri()
-        # se houver uma barra no final da url ela é retirada
         url = url if url[-1] != '/' else url[:-1]
-        # e adicionamos '.jsonld' ao ínvés da barra
         url = url + ".jsonld"
 
-        # este link de contexto, quando clicado em um navegador,
-        # deve levar a uma representação de uma requisição OPTIONS
-        # da página atual
-
-        # 'rel' é de relationship, isso significa que o tercho '<ulr>'
-        # representa um contexto para algo, neste caso este relacionamento
-        # é representado por dados no formato jsonld
         context_link = ' <'+url+'>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\" '
         if "Link" not in response:
             response['Link'] = context_link
@@ -116,8 +103,6 @@ class BaseContext(object):
             "mapping": []
         }
         if serializer_object is not None:
-            # percorre uma lista de atributos identificadores
-            # encontrados no serializer
             for attr in serializer_object.Meta.identifiers:
                 iriTemplate['mapping'].append({
                     "@type": "IriTemplateMapping",
@@ -178,17 +163,16 @@ class AbstractResource(APIView):
 
 
     def __init__(self):
-        # when this class is instatiated we call the construct of APIView
         super(AbstractResource, self).__init__()
         self.current_object_state = None
-        self.object_model = None # store the object model for this view
+        self.object_model = None
         self.name_of_last_operation_executed = None
-        self.context_resource = None # the context for the requests to this view
+        self.context_resource = None
         self.initialize_context()
         self.iri_metadata = None
         self.operation_controller = BaseOperationController()
-        self.token_need = self.token_is_need() # determines if requests from this view needs token
-        self.e_tag = None # the Etag for requests for this view
+        self.token_need = self.token_is_need()
+        self.e_tag = None
         self.temporary_content_type = None
 
     # indicates wich is the content negotiation class
@@ -198,32 +182,15 @@ class AbstractResource(APIView):
         return False
 
     def generate_e_tag(self, data):
-        """
-        Creates a Etag based in the object data
-        :param data:
-        :return:
-        """
         return str(hash(data))
 
     def set_etag_in_header(self, response, e_tag):
-        """
-        Receives a Response abject and add a Etag
-        as one of this headers
-        :param response:
-        :param e_tag:
-        :return:
-        """
         if not response.streaming:
             response[ETAG] = e_tag
         return response
 
     #should be overrided
     def hashed_value(self, object):
-        """
-        Return a hash code for a object
-        :param object:
-        :return:
-        """
         return hash(self.object)
 
     #should be overrided
@@ -248,11 +215,6 @@ class AbstractResource(APIView):
             return
 
     def jwt_algorithm(self):
-        """
-        Returns a string that represents wich JWT algorithm will be used
-        to secure tranmissions between two parts (client and server)
-        :return:
-        """
         return 'HS256'
 
     def token_is_ok(self, a_token):
@@ -271,18 +233,9 @@ class AbstractResource(APIView):
             return False
 
     def token_is_need(self):
-        """
-        Determines if requests for this view needs token or not
-        :return:
-        """
         return  False
 
     def token_is_http_or_https(self, token):
-        """
-        Return True if 'token' (part of absolute uri) is 'http\:' or 'https:'
-        :param token:
-        :return:
-        """
         return  token.lower() in ['http:', 'https:']
 
     def token_is_http(self, token):
@@ -292,11 +245,6 @@ class AbstractResource(APIView):
         return 'https:' == token
 
     def token_is_www(self, token):
-        """
-        Return True if 'token' (part of absolute uri) has the 'www.' string
-        :param token:
-        :return:
-        """
         return True if token.find('www.') > -1 else False
 
     def token_is_http_or_https_or_www(self, token):
@@ -438,34 +386,11 @@ class AbstractResource(APIView):
 
     #@abstractmethod #Could be override
     def initialize_context(self):
-        """
-        Sets 'self.context_resource' with a context class instance, reference to this view
-        and sets the 'resource' attribute of the context object with this view
-        (subclass of AbstractResource) as the his value
-        :return:
-        """
-        # __class__ shows in wich class this instruction is being executed
-        # (this works on the subclasses and not is this classe)
-        # __module__ shows in wich module is this classe (the all doted path)
-        # at this point we'll have something like this: bcim.UnidadeFederacaoList (where we'll stract bcim)
-        # we then split the result in a list where we get only the first element and append '.context'
-        # in the final we'll have something like 'bcim.contexts' that is the context class for the app
         context_module_name = self.__class__.__module__.split('.')[0] + '.contexts'
-        # importing the context class reference to the previous string
         context_module = importlib.import_module(context_module_name)
-        # getting the view class name and appending 'Context'
-        # remember, this name isn't 'AbstractResource', the name is a subclasse of 'AbstractResource'
-        # in the final we'll have something like this: UnidadeFederacaoListContext
         context_class_name = self.__class__.__name__ + 'Context'
-        # getting the context class inside the module reference at this view class (bcim.contexts, in this case)
         context_class = getattr(context_module, context_class_name )
-        # 'self.context_resource' is then a instance of
-        # the context class of this view (a subclass of AbstractResource)
         self.context_resource = context_class()
-        # the context class instance has the 'resource' attribute,
-        # his value is the view instance of the resource
-        # in the case of the exemple above, the value of 'self.context_resource.resource'
-        # is a UnidadeFederativaList object
         self.context_resource.resource = self
 
     # todo
@@ -473,35 +398,16 @@ class AbstractResource(APIView):
         return True
 
     def operations_with_parameters_type(self):
-        """
-        Returns a geometric operations dict for FeatureModel or returns a empty dict
-        for BusinessModel. This dict lists all the possible operations for this
-        resources (FeatureModel or BusinessModel)
-        :return:
-        """
         dic = self.object_model.operations_with_parameters_type()
         return dic
 
     def model_class(self):
-        """
-        Returns the model class reference to this view (subcalss of AbstractResource)
-        :return:
-        """
         return self.serializer_class.Meta.model #return self.object_model.model_class()
 
     def model_class_name(self):
-        """
-        Returns the model class name reference to this view
-        :return:
-        """
         return self.model_class().__name__
 
     def attribute_names_to_web(self):
-        """
-        Returns a list of model field NAMES reference to this view (or subclasses)
-        :return:
-        """
-        # BusinessModel.fields() returns a list of model field provided by Django database API
         return [field.name for field in self.object_model.fields()]
         #return self.serializer_class.Meta.fields
 
@@ -559,29 +465,10 @@ class AbstractResource(APIView):
     # ERROR: AbstractResource._set_context_to_model() is not used and contexModel() does not exists
 
     def _set_context_to_attributes(self, attribute_name_array):
-        """
-        Receives a list of model attribute names and sets a context dict
-        formed by this attributes in the context_resource for this view
-        (subclass of AbstractResource)
-        :param attribute_name_array:
-        :return:
-        """
-        # the command below sets a context dict references to the model fields
-        # and stores this in the ContextResource.context_dict attribute of
-        # AbstractResource.context_resource attribute of this view
         self.context_resource.set_context_to_attributes(attribute_name_array)
 
     def _set_context_to_only_one_attribute(self, attribute_name):
-        """
-        Sets a context for the received model attribute in AbstractResource.context_resource.
-        If 'attribute_name' represents a geometric attribute, also sets the supported operations context
-        to the context of this attribute
-        :param attribute_name:
-        :return:
-        """
-        # AbstractResource.field_for() returns the model field corresponding 'atribute_name' if this exists
         attribute_type = self.field_for(attribute_name)
-        # AbstractResource.current_object_state is the object model in a determinated moment
         self.context_resource.set_context_to_only_one_attribute(self.current_object_state, attribute_name, attribute_type)
 
     def _set_context_to_operation(self, operation_name):
@@ -679,16 +566,10 @@ class AbstractResource(APIView):
     def default_content_type(self):
         return CONTENT_TYPE_JSON
 
+    def default_resource_type(self):
+        return 'Thing'
+
     def content_type_or_default_content_type(self, requestOrNone):
-        """
-        Receives the Request object and defines wich Response Content-Type
-        will be returned using the Accept Request header. If the Accept Request
-        header value match with one of the supported Response Content-Types, the
-        Accept (Request) and Content-Type (Response) will be the same, otherwise
-        the default content-type will be returned
-        :param requestOrNone:
-        :return:
-        """
         if requestOrNone is None:
             return self.default_content_type()
 
@@ -697,16 +578,25 @@ class AbstractResource(APIView):
             return self.default_content_type()
         return a_content_type
 
+    def dict_by_accept_resource_type(self):
+        dict = {}
+        dict[CONTENT_TYPE_OCTET_STREAM] = bytes
+        return dict
+
+    def resource_type_for_accept_header(self, accept):
+        return self.dict_by_accept_resource_type()[accept] if accept in self.dict_by_accept_resource_type() else None
+
+    def resource_type_or_default_resource_type(self, requestOrNone):
+        if requestOrNone is None:
+            return self.default_resource_type()
+
+        accept = requestOrNone.META.get(HTTP_ACCEPT, '')
+        if accept not in SUPPORTED_CONTENT_TYPES:
+            return self.default_resource_type()
+        return self.resource_type_for_accept_header(accept)
+
     #todo
     def basic_response(self, request, serialized_object, status, content_type):
-        """
-        A basic response with data, status code and Content-Type
-        :param request:
-        :param serialized_object:
-        :param status:
-        :param content_type:
-        :return:
-        """
         return Response(data=serialized_object, status=status, content_type=content_type)
 
     #Answer if a client's etag is equal server's etag
@@ -731,12 +621,6 @@ class AbstractResource(APIView):
 
     #Answer if a get(request) is conditional
     def is_conditional_get(self, request):
-        """
-        Return True if If-None-Match or Unmodified-Sice header exists in the request
-        or return False otherwise
-        :param request:
-        :return:
-        """
         return request.META.get(HTTP_IF_NONE_MATCH, None) is not None or \
                request.META.get(HTTP_IF_UNMODIFIED_SINCE,  None) is not None
 
@@ -787,43 +671,17 @@ class AbstractResource(APIView):
         return cache.get(key)
 
     def is_image_content_type(self, request, **kwargs):
-        """
-        Return True if the resulted Content-Type of the Request object is image/png,
-        or if the parameter 'format' of the request is 'png'
-        :param request:
-        :param kwargs:
-        :return:
-        """
         return self.content_type_or_default_content_type(request) == CONTENT_TYPE_IMAGE_PNG or kwargs.get('format', None) == "png"
 
     def accept_is_binary(self, request):
-        """
-        Return True if the Request Accept header value is application/octet-stream
-        :param request:
-        :return:
-        """
         return request.META.get(HTTP_ACCEPT, '') == CONTENT_TYPE_OCTET_STREAM
 
     # Should be overrided
     def is_binary_content_type(self,required_object ):
-        """
-        Receives the required object and returns True
-        if his Content-Type is application/octet-stream
-        :param required_object:
-        :return:
-        """
         return required_object.content_type == CONTENT_TYPE_OCTET_STREAM
 
     # Should be overrided
     def response_base_get_binary(self, request, required_object):
-        """
-        Returns a Response to a required object with application/octet-stream Content-Type
-        and storing the data in cache. If the required object is a str instance, the response
-        will be a geobuf (until 10x smaller than a regular JSON)
-        :param request:
-        :param required_object:
-        :return:
-        """
         # 'key' will be absolute uri + application/octet-stream
         key = self.get_key_cache(request, CONTENT_TYPE_OCTET_STREAM)
         import geobuf
@@ -832,7 +690,7 @@ class AbstractResource(APIView):
             # geobuf minimize the response size
             result = geobuf.encode(required_object.representation_object) # GeoJSON or TopoJSON -> Geobuf string
         else:
-            result = required_object.representation_object
+            result = str(required_object.representation_object).encode()
 
         if isinstance(result, dict):
             value_to_e_tag = json.dumps(result)
@@ -988,13 +846,6 @@ class AbstractResource(APIView):
 
     # Could be overrided
     def patch(self, request, *args, **kwargs):
-        """
-        Just repass the request to APIView.patch()
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
         return super(AbstractResource, self).patch(request, *args, **kwargs)
 
     # Could be overrided
@@ -1027,14 +878,6 @@ class AbstractResource(APIView):
 
     # Could be overrided
     def delete(self, request, *args, **kwargs):
-        """
-        Use request arguments to delete resource from database
-        and returns a 204 status code
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
         obj = self.get_object(kwargs)
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -1045,69 +888,30 @@ class AbstractResource(APIView):
         return response
 
     def operation_names_model(self):
-        """
-        Returns a list with the name of all object model methods
-        :return:
-        """
         return self.object_model.operation_names()
 
     def attribute_names_model(self):
-        """
-        Returns a list of all public attributes of the object model
-        :return:
-        """
         return self.object_model.attribute_names()
 
     def is_private(self, attribute_or_method_name):
-        """
-        Return True if 'attribute_or_method_name' is private
-        :param attribute_or_method_name:
-        :return:
-        """
         return attribute_or_method_name.startswith('__') and attribute_or_method_name.endswith('__')
 
     def is_not_private(self, attribute_or_method_name):
-        """
-        Return True if 'attribute_or_method_name' is public (is not private)
-        :param attribute_or_method_name:
-        :return:
-        """
         return not self.is_private(attribute_or_method_name)
 
     def is_operation(self, operation_name):
-        """
-        Return True if 'operation_name' is the name of any object model methods
-        :param operation_name:
-        :return:
-        """
         return operation_name in self.operation_names_model()
 
     def is_attribute(self, attribute_name):
-        """
-        Returns True if 'attribute_name' is between the object model attribute names list
-        :param attribute_name:
-        :return:
-        """
         return self.object_model.is_attribute(attribute_name)
 
     def is_spatial_attribute(self, attribute_name):
         return False
 
     def _has_method(self,  method_name):
-        """
-        Return True if 'method_name' is between the list of object models method names
-        :param method_name:
-        :return:
-        """
         return method_name in self.operation_names_model()
 
     def is_simple_path(self, attributes_functions_str):
-        """
-        Returns True if the rreceived url parameters (attributes_functions_str)
-        is None or is length 0 string
-        :param attributes_functions_str:
-        :return:
-        """
         return attributes_functions_str is None or len(attributes_functions_str) == 0
 
     def path_has_operations(self, attributes_functions_name):
@@ -1122,7 +926,7 @@ class AbstractResource(APIView):
                 return True
         return False
 
-    def path_has_only_attributes(self,  attributes_functions_name):
+    def path_has_only_attributes(self, attributes_functions_name):
         """
         Return True if 'attributes_functions_name' (a string with a piece of
         url representing the functions or attributes for a url) is a path with
@@ -1147,20 +951,14 @@ class AbstractResource(APIView):
         return self.object_model.is_attribute(attrs_functs[0])
 
     def is_complex_request(self, request):
-        absolute_uri = request.build_absolute_uri()
-        open_par_idx = absolute_uri.find('(')
-        if open_par_idx == -1:
+        absolute_uri = request.scheme + '://' + request.get_host() + request.path
+        compx_req_marker_idx = absolute_uri.find('!')
+        if compx_req_marker_idx == -1 or absolute_uri.count('!') != 1:
             return False
-
-        if absolute_uri.count('(') > 0 and absolute_uri.count(')') > 0:
-            geos_subcls_in_uri = ['^' + geos_subclass for geos_subclass in GEOSGEOMETRY_SUBCLASSES if geos_subclass in absolute_uri]
-            if len(geos_subcls_in_uri) == 0:
-                return True
-            else:
-                regex = '[' + "|".join(geos_subcls_in_uri) + '|^\(](\()'
-                return True if re.search(regex, absolute_uri) != None else False
         else:
-            return False
+            uri_after_marker = absolute_uri[compx_req_marker_idx:]
+            operation_name = uri_after_marker[1:uri_after_marker.index('/')]
+            return operation_name in self.operation_controller.dict_all_operation_dict()
 
     def transform_path_with_url_as_array(self, arr_of_term):
         """
@@ -1219,6 +1017,7 @@ class AbstractResource(APIView):
         d["properties"] = a_dict
         return d
 
+
     def attributes_functions_splitted_by_url(self, attributes_functions_str_url):
         """
         Receive a string with parameters for an url (the addres of requested resource)
@@ -1247,12 +1046,6 @@ class AbstractResource(APIView):
         return [attributes_functions_str_url[0:res], attributes_functions_str_url[res:]]
 
     def path_has_url(self, attributes_functions_str_url):
-        """
-        Receives a string with a piece of url representing the functions or attributes
-        for this url and returns True if this string has 'http:', 'https:' or 'www.' substrings
-        :param attributes_functions_str_url:
-        :return:
-        """
         return (attributes_functions_str_url.find('http:') > -1) or (attributes_functions_str_url.find('https:') > -1)\
                or (attributes_functions_str_url.find('www.') > -1)
 
@@ -1294,44 +1087,19 @@ class AbstractResource(APIView):
            return att_functions_str_url.split('/')
 
     def _execute_attribute_or_method(self, object, attribute_or_method_name, array_of_attribute_or_method_name):
-        """
-        Return the value of 'object' attribute represented for
-        'attribute_or_method_name' if this represents an 'object'
-        attribute or return the value returned for 'object' method
-        if 'attribute_or_method_name' represents an 'object' method
-        :param object - the model object:
-        :param attribute_or_method_name - a attribute or a method for this object:
-        :param array_of_attribute_or_method_name - array of parameters for the operation (attribute_or_method_name):
-        :return:
-        """
         dic = {}
         parameters = []
-        # verify if 'attribute_or_method_name' represents a operation of 'object'
         if self.operation_controller.is_operation(object, attribute_or_method_name):
-            # verify if 'attribute_or_method_name' represents a 'object' operation and, if this is True
-            # verify if this operation has parameters
-            # OBS: this second verification turn the first 'if' redundant
             if self.operation_controller.operation_has_parameters(object, attribute_or_method_name):
 
-                # this part of code refers to Q object (Query object from django)
-                parameters = array_of_attribute_or_method_name[0].split('&')
+                parameters = array_of_attribute_or_method_name[0].split('&') if len(array_of_attribute_or_method_name) > 0 else []
                 array_of_attribute_or_method_name = array_of_attribute_or_method_name[1:]
 
-        # 'obj' is the value of the 'object' attribute if 'attribute_or_method_name' represents an 'object' attribute
-        # or 'obj' is the value returned by 'object' method if 'attribute_or_method_name' represents an 'object' method,
-        # 'parameters' may be used as parameter of 'attribute_or_method_name' is this case
         obj = self._value_from_object(object, attribute_or_method_name, parameters)
 
-        # if 'array_of_attribute_or_method_name' is empty, just return the value of 'object' attribute/method
         if len(array_of_attribute_or_method_name) == 0:
             return obj
 
-        # if the operation 'attribute_or_method_name' has parameters (array_of_attribute_or_method_name > 0)
-        # active this method recursively sending:
-        # - the value of 'object' attribute/method as the object,
-        # - the first element of 'array_of_attribute_or_method_name' as the method/attribute of this object's method/attribute
-        # (yes, the method/attribute of the method/attribute)
-        # and the rest of the elements of 'array_of_attribute_or_method_name' as the parameters of this method/attribute
         return self._execute_attribute_or_method(obj, array_of_attribute_or_method_name[0], array_of_attribute_or_method_name[1:])
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
@@ -1387,107 +1155,45 @@ class AbstractResource(APIView):
         return (a_dict, CONTENT_TYPE_JSON, self.object_model, {'status': 200})
 
     def all_parameters_converted(self, attribute_or_function_name, parameters):
-        """
-        Receive a operation name 'attribute_or_function_name' and verifies if
-        this is a FeatureModel or BusinessModel operation, and verify if the operation has parameters.
-        If this is True convert each 'parameters' element into the respective type required
-        by the operation (of FeatureModel or BusinessModel) represented by 'attribute_or_function_name'.
-        The list of converted parameters is finally returned. If 'attribute_or_function_name' doesn't
-        represent a FeatureModel or BusinessModel operation or it operation haven't parameters
-        this method just repass the 'parameters' list to be converted by AbstractResouce.parametersConverted()
-        into followed types: bool, int, float or GEOSGeometry.
-        As previously, the list of converted parameters is finally returned
-        :param attribute_or_function_name - the string representing a attribute of a function name of object model:
-        :param parameters - the parameters list for the operation represented in 'attribute_or_function_name':
-        :return:
-        """
         parameters_converted = []
-        # if 'attribute_or_function_name' is a operation (with parameters)
-        # of geometric field of the FeatureModel instace or a operation for BusinessModel instance ...
         if self.is_operation_and_has_parameters(attribute_or_function_name):
-            # - AbstractResource.operations_with_parameters_type()
-            # return a operations dict to an FeatureModel instance field type (the geometric field)
-            # or a empty dict to an BusinessModel
-            # - we'll use 'attribute_or_function_name' to get a specific operations in this dict
-            # and finally we'll get the parameters type for this operation and stores in 'parameters_type'
-            # - 'parameters_type' will be something like this: [float, int]
+
             parameters_type = self.operations_with_parameters_type()[attribute_or_function_name].parameters
             for i in range(0, len(parameters)):
-                if parameters_type[i] == GeometryCollection:
-                    param_converted = self.make_geometrycollection_from_featurecollection(parameters[i])
+
+                if parameters_type[i] == GEOSGeometry:
+                    ct = ConverterType()
+                    if ct.path_is_feature_collection(parameters[i]):
+                        param_converted = ct.make_geometrycollection_from_featurecollection(json.loads(parameters[i]))
+                    else: # if parameters[i] is GeometryCollection (GeoJson) or WKT ...
+                        param_converted = parameters_type[i](parameters[i])
                     parameters_converted.append(param_converted)
+
                 else:
                     parameters_converted.append(parameters_type[i](parameters[i]))
 
-            # return a list like [1.2, 5]
             return parameters_converted
-
-        # if 'attribute_or_function_name' isn't a operation of FeatureModel or BusinessModel with parameters
-        # we just convert the received 'parameters' (a list of string) into a list of elements with
-        # the fallwed types: bool, int, float or GEOSGeometry
         return self.parametersConverted(parameters)
 
     def is_attribute_for(self, object, attribute_or_function_name):
-        """
-        Return True if 'atribute_or_function_name' represents an 'object' attribute
-        :param object:
-        :param attribute_or_function_name:
-        :return:
-        """
-        # - hasattr() verifies if 'atribute_or_function_name' is an 'object' attribute
-        # - getattr() gets 'atribute_or_function_name' if this represents an 'object' attribute
-        # if 'atribute_or_function_name' represents an 'object' method, return this (i.e. returns a callable object)
         return  hasattr(object, attribute_or_function_name) and not callable(getattr(object, attribute_or_function_name))
 
     def _value_from_object(self, object, attribute_or_function_name, parameters):
-        """
-        If 'attribute_or_function_name' is an 'object' attribute, return his value.
-        If 'attribute_or_function_name' is an 'object' operation, return the value
-        returned by this operation using the received 'parameters' to do it if necessary
-        :param object - the model object:
-        :param attribute_or_function_name - a attribute or a method for this object:
-        :param parameters:
-        :return:
-        """
-        # exclude the blank spaces of 'attribute_or_function_name' edges
         attribute_or_function_name_striped = attribute_or_function_name.strip()
-        # 'attribute_or_function_name_striped' turns the last operation executed
         self.name_of_last_operation_executed = attribute_or_function_name_striped
 
         if self.is_attribute_for(object, attribute_or_function_name):
-            # if 'atribute_or_function_name' represents an 'object' attribute return his value
             return getattr(object, attribute_or_function_name_striped)
 
-        # if 'atribute_or_function_name' isn't an 'object' attribute, this represents an 'object' operation
-        # in this case, we verify if this operation has parameters (received by this method)
         if len(parameters)> 0:
 
             if (isinstance(object, BusinessModel) or isinstance(object, GEOSGeometry)):
-                # if 'object' is a BusinessModel or GOESGeomety instance, we repass operation name
-                # ('attribute_or_function_name_striped') and his parameters to
-                # AbstractResouce.all_parameters_converted() to convert each parameter to the required
-                # type by the operation, represented for 'attribute_or_function_name_striped'. In the case of
-                # GEOSGeometry instances, the parameters could be converted to one of the followed types:
-                # bool, int, float or GEOSGeometry (AbstractResouce.all_parameters_converted() process only
-                # FeatureModel and BusinessModel instance and repass the other instances to
-                # AbstractResouce.parametersConverted())
                 params = self.all_parameters_converted(attribute_or_function_name_striped, parameters)
             else:
-                # ConverterType.convert_parameters() convert 'parameters' values to match with
-                # 'attribute_or_function_name' operation parameters types of 'object' type
-                # Example: 'parameters' = ['1.2', '5', 'test']
-                #           Type_Called.parameters = [float, int, str]
-                #           return = [1.2, 5, 'test']
-                # OBS: Type_Called is the operation itself references to 'attribute_or_function_name' operation of object type
                 params = ConverterType().convert_parameters(type(object), attribute_or_function_name, parameters)
 
-            # after the 'params' convertion above, we execute the 'object' method
-            # (represented by 'attribute_or_function_name_striped') sending the 'params'
-            # list and return his value
             return getattr(object, attribute_or_function_name_striped)(*params)
 
-        # if there's no parameters, we simply get the 'object' method/operation with getattr(),
-        # execute this (observer the '()') and return the value returned by this method
         return getattr(object, attribute_or_function_name_striped)()
 
     def parametersConverted(self, params_as_array):
@@ -1593,117 +1299,21 @@ class AbstractResource(APIView):
         builder_png = BuilderPNG(config)
         return builder_png.generate()
 
-    def path_has_only_feature_collection(self, path):
-        exp = r"\|TI-(\d)\|"
-        token_numbers_str = re.findall(exp, path)
-        token_numbers = [int(token) for token in token_numbers_str]
+    def split_complex_uri(self, complex_uri):
+        marker_idx = complex_uri.index('!')
+        uri_before_marker = complex_uri[:marker_idx]
+        uri_after_marker = complex_uri[marker_idx:]
+        operation_name = uri_after_marker[:uri_after_marker.index('/')+1]
+        uri_after_oper_name = uri_after_marker.replace(operation_name, '')
+        clean_operation_name = operation_name[1:-1]
 
-        for number in token_numbers:
-            if number > 0:
-                # expression not simple
-                return False
+        uri_arr = [uri_before_marker, clean_operation_name, uri_after_oper_name]
+        return uri_arr
 
-        regex = r"(\|TI-0\|)(.+?)(\|TF-0\|)"
-        request_str = re.search(regex, path).group(2)
-        path_splited = request_str.split('/')
+    #must be overrided
+    def execute_complex_request(self, request):
+        pass
 
-        if len(path_splited) < 3:
-            return True if '{"type":"FeatureCollection"' in path_splited[0] else False
-        #elif '{"type":"FeatureCollection"' in path_splited[0] and '{"type":"FeatureCollection"' in path_splited[2]:
-        #    return True
-        else:
-        #    return False
-            return True
-
-    def execute_complex_request(self, url):
-        # envolving the first operation and the entire url in parenthesis
-        first_oper = url[0:url.rindex('/!')]
-        url_surr_parentheses = url.replace(first_oper, '(' + first_oper + ')')
-        url_surr_parentheses = '(' + url_surr_parentheses.replace('/!', '/') + ')'
-
-        url_classified_token = self.replace_parentheses_by_token(url_surr_parentheses)
-        return self.execute_complex_get(url_classified_token)
-
-    def execute_complex_get(self, url_with_classified_token):
-
-        current_classified_url = url_with_classified_token
-
-        if self.path_has_only_feature_collection(current_classified_url):
-            current_classified_url = current_classified_url.replace('|TI-0|', '').replace('|TF-0|', '')
-            classified_splited_url = current_classified_url.split('/')
-            feature_collection = self.make_geometrycollection_from_featurecollection(classified_splited_url[0])
-            #other_feature_collection = self.make_geometrycollection_from_featurecollection(classified_splited_url[2])
-            return self._execute_attribute_or_method(feature_collection, classified_splited_url[1], [classified_splited_url[2]])
-
-        exp = r"\|TI-(\d)\|"
-        token_numbers = re.findall(exp, current_classified_url)
-        token_numbers.sort()
-        token_numbers.reverse()
-
-        regex = r"(\|TI-" + token_numbers[0] + "\|)(.+?)(\|TF-" + token_numbers[0] + "\|)"
-        request_str = re.search(regex, current_classified_url).group(2)
-        response = requests.get(request_str)
-
-        regex_str = "|TI-" + token_numbers[0] + "|" + request_str + "|TF-" + token_numbers[0] + "|"
-        current_classified_url = current_classified_url.replace(regex_str, response.text, 1)
-
-        return self.execute_complex_get(current_classified_url)
-
-    #substitutes parentheses by classified (by priority) tokens
-    def replace_parentheses_by_token(self, url):
-        current_suburl = url
-        # index of first "open parentheses"
-        open_par_idx = current_suburl.find('(')
-        if open_par_idx == -1:
-            return current_suburl
-
-        num_open_par = 0
-        num_cls_par = 0
-        # index of "close parentheses" reference to first "open parentheses"
-        cls_par_idx = -1
-        for index, caracter in enumerate(current_suburl):
-            if caracter == '(':
-                num_open_par += 1
-            elif caracter == ')':
-                num_cls_par += 1
-
-            if num_open_par == num_cls_par and index > open_par_idx:
-                cls_par_idx = index
-                break
-
-        selected_operation = current_suburl[open_par_idx + 1:cls_par_idx]
-        after_sel_oper_str = current_suburl[cls_par_idx + 1:]
-        before_sel_oper_str = current_suburl[:open_par_idx]
-        replaced_url = before_sel_oper_str + '|PI|' + selected_operation + '|PF|' + after_sel_oper_str
-
-        # print(replaced_url)
-        url_classified_token = self.classify_token_priority(replaced_url)
-        return self.replace_parentheses_by_token(url_classified_token)
-
-    #classify the provisory tokens ('|PI|' and '|PF|') according how internal it is
-    def classify_token_priority(self, url_with_token):
-        url_classified_token = url_with_token
-        par_ini_idx = url_classified_token.find('|PI|')
-        par_fin_idx = url_classified_token.find('|PF|')
-        snippet_after_parenthesis = url_classified_token[par_fin_idx + 4:]
-        snippet_before_parenthesis = url_classified_token[:par_ini_idx]
-
-        # the T's token munst be summed like parenthesis, since T's token is substitute for parentheses
-        num_opn_par_after_pf = snippet_after_parenthesis.count('(') + snippet_after_parenthesis.count('TI')
-        num_cls_par_after_pf = snippet_after_parenthesis.count(')') + snippet_after_parenthesis.count('TF')
-
-        num_opn_par_before_pi = snippet_before_parenthesis.count('(') + snippet_before_parenthesis.count('TI')
-        num_cls_par_before_pi = snippet_before_parenthesis.count(')') + snippet_before_parenthesis.count('TF')
-
-        if num_opn_par_after_pf == num_cls_par_after_pf and num_opn_par_before_pi == num_cls_par_before_pi:
-            url_classified_token = url_classified_token.replace('|PI|', '|TI-0|')
-            url_classified_token = url_classified_token.replace('|PF|', '|TF-0|')
-        else:
-            closing_parenthesis = num_cls_par_after_pf - num_opn_par_after_pf
-            # parenthesis_not_closed = num_opn_par_before_pi - num_cls_par_before_pi
-            url_classified_token = url_classified_token.replace('|PI|', '|TI-' + str(closing_parenthesis) + '|')
-            url_classified_token = url_classified_token.replace('|PF|', '|TF-' + str(closing_parenthesis) + '|')
-        return url_classified_token
 
 class NonSpatialResource(AbstractResource):
 
@@ -1893,6 +1503,9 @@ class FeatureResource(SpatialResource):
     def __init__(self):
         super(FeatureResource, self).__init__()
 
+    def default_resource_type(self):
+        return 'Feature'
+
     # Must be override
     def initialize_context(self):
         pass
@@ -1950,7 +1563,7 @@ class FeatureResource(SpatialResource):
         elif isinstance(a_value, SpatialReference):
            a_value = { self.name_of_last_operation_executed: a_value.wkt.strip('\n')}
         elif isinstance(a_value, memoryview) or isinstance(a_value, buffer):
-           return RequiredObject(a_value, CONTENT_TYPE_OCTET_STREAM, self.object_model,200)
+           return RequiredObject(a_value.obj, CONTENT_TYPE_OCTET_STREAM, self.object_model,200)
         else:
             a_value = {self.name_of_last_operation_executed: a_value}
 
@@ -1982,7 +1595,6 @@ class FeatureResource(SpatialResource):
         resp =  Response(data=required_object.representation_object,status=200, content_type=required_object.content_type)
         self.set_etag_in_header(resp, self.e_tag)
         return resp
-
 
     def basic_get(self, request, *args, **kwargs):
 
@@ -2044,6 +1656,9 @@ class AbstractCollectionResource(AbstractResource):
         #self.operation_controller = CollectionResourceOperationController()
         #self.operation_controller.initialize()
 
+    def default_resource_type(self):
+        return 'Collection'
+
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
 
         arr_str = attributes_functions_str.split('/')[1:]
@@ -2099,7 +1714,13 @@ class AbstractCollectionResource(AbstractResource):
     #Responds an array of operations name.
     # Shoud be overrided
     def array_of_operation_name_collection(self):
-        return self.operation_controller.collection_operations_dict().keys()
+        collection_operations_array = list(self.operation_controller.collection_operations_dict().keys())
+        collection_operations_array.extend(self.operation_controller.fake_collection_operations_dict().keys())
+        return collection_operations_array
+
+    def get_real_operation_name(self, operation_name_from_path):
+        type_called = self.operation_controller.collection_operations_dict()[operation_name_from_path]
+        return type_called.name
 
     #Responds the basic name of the operation in IRI. For Instance: http://host/unidades-federativas/count_resource returns count_resource
     def get_operation_name_from_path(self, attributes_functions_str):
@@ -2124,8 +1745,15 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject({"count_resource": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
 
     def required_object_for_offset_limit_operation(self, request, attributes_functions_str):
-        objects = self.get_objects_from_offset_limit_operation(attributes_functions_str)
-        return self.required_object(request, objects)
+        queryset_or_objects = self.get_objects_from_offset_limit_operation(attributes_functions_str)
+        attrs_funct_splited = attributes_functions_str.split('/') if attributes_functions_str[-1] != '/' else attributes_functions_str.split('/')[:-1]
+
+        if len(attrs_funct_splited) <= 2:
+             required_object = self.required_object(request, queryset_or_objects)
+        else:
+            objects = self.get_objects_serialized_by_only_attributes(attrs_funct_splited[2], queryset_or_objects)
+            required_object = RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
+        return required_object
 
     def required_object_for_distinct_operation(self,request, attributes_functions_str):
         objects =  self.get_objects_from_distinct_operation(attributes_functions_str)
@@ -2153,7 +1781,7 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_offset_limit_and_collect_collection_operation(self, request, attributes_functions_str):
-        business_objects = self.get_objects_from_offset_limit_and_collection_operation(attributes_functions_str)
+        business_objects = self.get_objects_from_offset_limit_and_collect_operation(attributes_functions_str)
         return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_filter_and_count_resource_collection_operation(self, request, attributes_functions_str):
@@ -2185,9 +1813,21 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(serialized_data, content_type, objects, 200)
 
     def required_object_for_complex_request(self, request):
-        response = self.execute_complex_request(request.build_absolute_uri())
+        response = self.execute_complex_request(request)
         required_object = RequiredObject(json.loads(response.json), self.content_type_or_default_content_type(request), self, 200)
         return required_object
+
+    def required_context_for_simple_path(self, request):
+        resource_type = self.resource_type_or_default_resource_type(request)
+        return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_only_attributes(self, request, attributes_functions_str):
+        context = self.get_context_by_only_attributes(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_operation_return_type(self, request, attributes_functions_str):
+        context = self.get_context_for_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def generics_collection_operation_name(self):
        return self.operation_controller.feature_collection_operations_dict().keys()
@@ -2228,10 +1868,10 @@ class AbstractCollectionResource(AbstractResource):
 
         collect_object_list = []
         has_geo_field = False
+        attr_from_object = attrs_func_list[1].split('&')
 
         for obj in objects:
 
-            attr_from_object = attrs_func_list[1].split('&')
             dic = {}
             for attr in attr_from_object[:-1]:
                 dic[attr] = getattr(obj, attr)
@@ -2240,50 +1880,51 @@ class AbstractCollectionResource(AbstractResource):
             if isinstance(operated_value, GEOSGeometry):
                 has_geo_field = True
                 dic[attr_from_object[-1]] = json.loads(operated_value.geojson)
-                collect_object_list.append(self.dict_as_geojson(dic))
+
+                if len(attr_from_object) > 1:
+                    collect_object_list.append(self.dict_as_geojson(dic))
+                else:
+                    collect_object_list.append(dic[self.geometry_field_name()] )
             else:
                 dic[attrs_func_list[2]] = json.dumps(operated_value)
                 collect_object_list.append(dic)
 
         if has_geo_field:
-            collect_object_list = self.dict_list_as_feature_collection(collect_object_list)
+            if len(attr_from_object) > 1:
+                collect_object_list = self.dict_list_as_feature_collection(collect_object_list)
+            else:
+                collect_object_list = self.dict_list_as_geometry_collection(collect_object_list)
 
         return collect_object_list
 
     def get_objects_from_filter_and_collect_operation(self, attributes_functions_str):
-        index_collect_oper = attributes_functions_str.index('/*collect')
-        filter_substring = attributes_functions_str[0:index_collect_oper+2]
-        collect_substring = attributes_functions_str[index_collect_oper+2:]
-        collect_substring_array = self.attribute_functions_str_splitted_by_slash(collect_substring)
-        q_object = self.q_object_for_filter_expression(filter_substring)
-        objects = self.model_class().objects.filter(q_object)
-        arr_for_collected_object = []
-        has_geo_field = False
-        for obj in objects:
-            d = {}
-            names_attribute = collect_substring_array[1].split('&')
-            for att in names_attribute[:-1]:
-                d[att] = self._execute_attribute_or_method(obj,att,[])
-            result = self._execute_attribute_or_method(obj, collect_substring_array[2], collect_substring_array[3:])
-            boole =  isinstance(result, GEOSGeometry)
-            if boole:
-                has_geo_field = True
-                result = json.loads(result.json)
-            d[names_attribute[-1]] = result
-            if boole:
-                res2 = self.dict_as_geojson(d)
-            else:
-                res2 = d
-            arr_for_collected_object.append(res2)
+        fiter_oper_snippet = attributes_functions_str[:attributes_functions_str.index("*")]
+        collect_oper_snippet = attributes_functions_str[attributes_functions_str.index("*")+1:]
+        filtered_collection = self.get_objects_from_filter_operation(fiter_oper_snippet)
+        collected_objects = self.get_objects_from_collect_operation(collect_oper_snippet, filtered_collection)
+        return collected_objects
 
-        if has_geo_field:
-            arr_for_collected_object = self.dict_list_as_feature_collection(arr_for_collected_object)
 
-        return arr_for_collected_object
+    def transform_queryset_in_object_model_list(self, queryset):
+        objs_list = []
+        for object in queryset:
+            model_object = self.model_class()()
+            for attr in object:
+                setattr(model_object, attr, object[attr])
+            objs_list.append(model_object)
 
-    def get_objects_from_offset_limit_and_collection_operation(self, attributes_functions_str):
-        objects = self.get_objects_from_offset_limit_operation(attributes_functions_str[0:attributes_functions_str.index('/*collect')])
+        return objs_list
+
+    def get_objects_from_offset_limit_and_collect_operation(self, attributes_functions_str):
+        queryset_or_objects = self.get_objects_from_offset_limit_operation(attributes_functions_str[0:attributes_functions_str.index('/*collect')])
         collect_operation_str = attributes_functions_str[attributes_functions_str.index('/*collect')+2:]
+
+        # queryset_or_objects could be a list of attribute set instead an model object list (queryset)
+        if type(queryset_or_objects[0]) != self.model_class():
+            objects = self.transform_queryset_in_object_model_list(queryset_or_objects)
+        else:
+            objects = queryset_or_objects
+
         collected_objects = self.get_objects_from_collect_operation(collect_operation_str, queryset=objects)
         return collected_objects
 
@@ -2313,15 +1954,29 @@ class AbstractCollectionResource(AbstractResource):
         attributes_functions_list = attributes_functions_str.split('/')
         attributes_functions_list = [attr_func for attr_func in attributes_functions_list if attr_func != '']
 
-        converted_params = self.converter_collection_operation_parameters(attributes_functions_list[0], attributes_functions_list[1:][0].split('&'))
-        offset = converted_params[0]
-        limit = converted_params[1]
+        params = attributes_functions_list[1].split('&')
 
-        objects = self.model_class().objects.all()[offset:offset + limit]
+        #converted_params = self.converter_collection_operation_parameters(attributes_functions_list[0], params)
+        #offset = converted_params[0]
+        #limit = converted_params[1]
+        offset = int(params[0])
+        limit = int(params[1])
+        # starting from 0 or 1 has the same effect
+        offset = offset if offset == 0 else offset - 1
+
+        if len(attributes_functions_list) > 2:
+            attrs_list = attributes_functions_list[2].split(',')
+            objects = self.model_class().objects.values(*attrs_list)[offset:offset + limit]
+        else:
+            objects = self.model_class().objects.all()[offset:offset + limit]
         return objects
 
-    #Have to be overrided
+    # Have to be overrided
     def get_objects_from_specialized_operation(self, attributes_functions_str):
+        pass
+
+    # Have to be overrided
+    def get_objects_serialized_by_only_attributes(self, attributes_functions_str, objects):
         pass
 
     def converter_collection_operation_parameters(self, operation_name, parameters):
@@ -2434,8 +2089,6 @@ class AbstractCollectionResource(AbstractResource):
             return self.context_resource.context()
         if method_to_execute == self.required_object_for_count_resource_operation:
             self._set_context_to_operation()
-        if method_to_execute == self.get_objects_from_filter_and_collect_operation:
-            pass
 
     def basic_get(self, request, *args, **kwargs):
 
@@ -2467,90 +2120,19 @@ class AbstractCollectionResource(AbstractResource):
         self.set_basic_context_resource(request)
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
 
-        if self.is_simple_path(attributes_functions_str):  # to get query parameters
-            return Response( data=self.context_resource.context(), content_type='application/ld+json' )
-
+        if self.is_simple_path(attributes_functions_str):
+            return self.required_context_for_simple_path(request)
         elif self.path_has_only_attributes(attributes_functions_str):
-            attrs_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
-            attrs_list = attrs_str.split(",")
-            if len(attrs_list) > 1:
-                self._set_context_to_attributes(attrs_list)
-            else:
-                self._set_context_to_only_one_attribute(attrs_list[0])
-
-            context = self.context_resource.dict_context
-            return Response(data=context, content_type='application/ld+json')
-
-        #a_context = self.get_context_from_method_to_execute(request, attributes_functions_str)
-        #return Response(data=a_context, content_type='application/ld+json')
-
-        elif self.path_has_collect_operation(attributes_functions_str):
-            collect_operation_index = attributes_functions_str.find("collect")
-            collect_operation = attributes_functions_str[collect_operation_index:]
-            collect_att_funcs = collect_operation.split('/')
-            collect_att_funcs = [ele for ele in collect_att_funcs if ele != '']
-            attrs = collect_att_funcs[1].split(",")
-            terms_after_collect = collect_att_funcs[2:]
-
-            all_object_operations_dict = self.operation_controller.string_operations_dict()
-            all_object_operations_dict.update(self.operation_controller.geometry_operations_dict())
-
-            last_operation_name = "collect"
-            pen_operation_name = ""
-            for term in terms_after_collect:
-                if term in all_object_operations_dict.keys():
-                    pen_operation_name = last_operation_name
-                    last_operation_name = term
-
-            self.context_resource.set_context_to_operation(self.object_model, last_operation_name)
-            if pen_operation_name == 'collect':
-                operation_context = self.context_resource.dict_context
-                if len(attrs) > 1:
-                    self._set_context_to_attributes(attrs)
-                else:
-                    self._set_context_to_only_one_attribute(attrs[0])
-                current_context = self.context_resource.dict_context
-                previous_context = operation_context["@context"]
-
-                self.context_resource.dict_context["@context"].update(previous_context)
-
-            last_operation_ret_type = all_object_operations_dict[last_operation_name].return_type
-            supported_operations = self.context_resource.supportedOperationsFor(self.object_model, last_operation_ret_type)
-
-            data = {"hydra:supportedOperations": supported_operations}
-            data.update(self.context_resource.dict_context)
-            return Response(data=data, content_type="application/ld+json")
-
-        elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
-            operations_for_collection = self.operation_controller.collection_operations_dict()
-            operations_for_collection.update(self.operation_controller.spatial_collection_operations_dict())
-            last_operation_name = ""
-            attributes_functions_list = attributes_functions_str.split("/")
-            for attr_func in attributes_functions_list:
-                if attr_func in operations_for_collection.keys():
-                    last_operation_name = attr_func
-
-            operation_ret_type = operations_for_collection[last_operation_name].return_type
-
-            supported_operations = []
-            if operation_ret_type == object:
-                for k, type_called in self.operation_controller.collection_operations_dict().items():
-                    supp_oper = SupportedOperation(operation=type_called.name,
-                                                             title=type_called.name,
-                                                             method="GET",
-                                                             expects=[vocabulary(param) for param in type_called.parameters],
-                                                             returns=vocabulary(type_called.return_type),
-                                                             link=vocabulary(type_called.name))
-                    supported_operations.append(supp_oper.context())
-
-            return Response(data={"hydra:supportedOperations": supported_operations}, content_type="application/ld+json")
-
+            return self.required_context_for_only_attributes(request, attributes_functions_str)
+        elif self.path_has_operations(attributes_functions_str):
+            return self.required_context_for_operation_return_type(request, attributes_functions_str)
         else:
-            data = {"data": "This request has invalid attribute or operation","status": 400, "content_type": CONTENT_TYPE_JSON}
-            return Response(data=data, content_type="application/ld+json")
+            return RequiredObject(representation_object={"This request has invalid attribute or operation: ":  attributes_functions_str},
+                              content_type=CONTENT_TYPE_JSON, origin_object=self,status_code=400)
 
     def options(self, request, *args, **kwargs):
-        response = self.basic_options(request, *args, **kwargs)
+        required_object = self.basic_options(request, *args, **kwargs)
+        response = Response(required_object.representation_object, content_type=required_object.content_type, status=200)
         self.add_base_headers(request, response)
         return response
 
@@ -2577,15 +2159,83 @@ class AbstractCollectionResource(AbstractResource):
         attribute_names_str_as_array = attribute_names_str.split(',')
         return self.model_class().objects.values(*attribute_names_str_as_array)
 
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        attrs_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
+        attrs_list = attrs_str.split(",")
+        if len(attrs_list) > 1:
+            self._set_context_to_attributes(attrs_list)
+        else:
+            self._set_context_to_only_one_attribute(attrs_list[0])
+
+        context = self.context_resource.dict_context
+        return context
+
+    # se for uma operação derivada de collect, definir supported operations de acordo com a lista de attributos
+    def get_context_for_operation(self, request, attributes_functions_str):
+        context = {}
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        operations_dict = self.operation_controller.fake_collection_operations_dict()
+        operations_dict.update(self.operation_controller.dict_all_operation_dict())
+
+        resource_type = self.resource_type_or_default_resource_type(request)
+
+        if operation_name in [self.operation_controller.collect_collection_operation_name, self.operation_controller.filter_and_collect_collection_operation_name, self.operation_controller.offset_limit_and_collect_collection_operation_name]:
+            context.update(self.get_context_for_collect_operation(request, attributes_functions_str))
+        else:
+
+            if resource_type is None:
+                return_type = operations_dict[operation_name].return_type
+            else:
+                return_type = resource_type
+            context.update({"hydra:supportedOperations": self.context_resource.supportedOperationsFor(self.object_model, return_type)})
+            real_oper_name = self.get_real_operation_name(operation_name)
+            self.context_resource.set_context_to_operation(self.object_model, real_oper_name)
+
+            self.set_resource_type_context_by_operation(request, operation_name)
+
+            context.update(self.context_resource.dict_context)
+        return context
+
+    def get_context_for_collect_operation(self, request, attributes_functions_str):
+        attrs_func_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
+        operation_name = self.get_operation_name_from_path(attrs_func_str)
+
+        if operation_name != self.operation_controller.collect_collection_operation_name:
+            collect_oper_snippet = attrs_func_str[attrs_func_str.index('*')+1:]
+            collect_operation_params = collect_oper_snippet.split('/')
+        else:
+            collect_operation_params = attrs_func_str.split('/')
+
+        operation_in_collect = "/".join(collect_operation_params)
+        context = self.get_context_for_operation_in_collect_operation(request, operation_in_collect)
+
+        attrs = ",".join(collect_operation_params[1].split("&"))
+        attrs_context = self.get_context_by_only_attributes(None, attrs)
+        context['@context'].update(attrs_context["@context"].items())
+
+        return context
+
+    def get_context_for_operation_in_collect_operation(self, request, collect_operation_str):
+        pass
+
+    def set_resource_type_context_by_operation(self, request, attributes_functions_str):
+        attrs_func_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
+        operation_name = self.get_operation_name_from_path(attrs_func_str)
+
+        type_called = self.operation_controller.feature_collection_operations_dict()[operation_name]
+
+        if operation_name in self.operation_controller.subcollection_operations_dict():
+            self.context_resource.set_context_to_resource_type(self.object_model, 'Collection')
+        else:
+            self.context_resource.set_context_to_resource_type(self.object_model, type_called.return_type)
+
+        return self.context_resource.get_resource_type_context()
+
 class CollectionResource(AbstractCollectionResource):
     def __init__(self):
         super(CollectionResource, self).__init__()
         self.queryset = None
         self.operation_controller = CollectionResourceOperationController()
-
-    def get_real_operation_name(self, operation_name_from_path):
-        type_called = self.operation_controller.collection_operations_dict()[operation_name_from_path]
-        return type_called.name
 
     def operations_with_parameters_type(self):
         return self.operation_controller.collection_operations_dict()
@@ -2607,7 +2257,7 @@ class CollectionResource(AbstractCollectionResource):
             a_dic = {}
             for att_name in attribute_names_str_as_array:
                 a_dic[att_name] = obj[att_name]
-                arr.append(a_dic)
+            arr.append(a_dic)
         return arr
 
     def get_objects_from_specialized_operation(self, attributes_functions_str):
@@ -2619,6 +2269,14 @@ class CollectionResource(AbstractCollectionResource):
         if self.path_has_filter_operation(attributes_functions_str):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
         return objects
+
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        attrs_context = super(CollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
+        resource_type = self.resource_type_or_default_resource_type(request)
+        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+
+        context = self.context_resource.dict_context
+        return context
 
     def basic_get_OLD(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
@@ -2684,8 +2342,13 @@ class FeatureCollectionResource(SpatialCollectionResource):
          self.operation_controller = SpatialCollectionOperationController()
          #self.operation_controller.initialize()
 
+    def default_resource_type(self):
+        return 'FeatureCollection'
+
     def get_real_operation_name(self, operation_name_from_path):
-        type_called = self.operation_controller.feature_collection_operations_dict()[operation_name_from_path]
+        all_geometry_collection_operations = dict(self.operation_controller.feature_collection_operations_dict(),
+                                                  **self.operation_controller.fake_collection_operations_dict())
+        type_called = all_geometry_collection_operations[operation_name_from_path]
         return type_called.name
 
     def geometry_operations(self):
@@ -2703,15 +2366,17 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def dict_list_as_feature_collection(self, dict_list):
         return {"type": "FeatureCollection", "features": dict_list}
 
+    def dict_list_as_geometry_collection(self, dict_list):
+        return {'type': 'GeometryCollection', "geometries": dict_list}
+
     def default_content_type(self):
-        return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_COLLECTION_GEOJSON
+        return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
 
     #attributes_functions_str == spatial_collection_operations_dict/... Or attributes_functions_str == geom/spatial_collection_operations_dict/....
 
     #todo
     def path_request_is_ok(self, attributes_functions_str):
         return True
-
 
     def path_has_only_spatial_operation(self, attributes_functions_str):
 
@@ -2752,16 +2417,29 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return arr_of_term
 
-    def make_geometrycollection_from_featurecollection(self, feature_collection):
-        geoms = []
-        features = json.loads(feature_collection)
-        for feature in features['features']:
-            feature_geom = json.dumps(feature['geometry'])
-            geoms.append(GEOSGeometry(feature_geom))
-        return GeometryCollection(tuple(geoms))
-
     def path_has_geometry_attribute(self, term_of_path):
         return term_of_path.lower() == self.geometry_field_name()
+
+    def execute_complex_request(self, request):
+        # using request.build_absolute_uri() will cause problems in the case use of GeoJson in request
+        absolute_uri = request.scheme + '://' + request.get_host() + request.path
+        absolute_uri = absolute_uri if absolute_uri[-1] != '/' else absolute_uri[:-1]
+        request_list = self.split_complex_uri(absolute_uri)
+        operation = request_list[1]
+        ct = ConverterType()
+
+        # requests for FeatureCollectionResource means that the first url request_list[0]
+        # is an url that corresponds to an FreatureCollection/GeometryCollection
+        geom_left = ct.get_geos_geometry_from_request(request_list[0])
+
+        if self.path_has_url(request_list[2]):
+            response = requests.get(request_list[2])
+            response_right = json.dumps(response.json())
+        else: # if request_list[2] is GeometryCollection (GeoJson) or WKT ...
+            response_right = request_list[2]
+
+        result = self._execute_attribute_or_method(geom_left, operation, [response_right])
+        return result
 
     def operation_name_method_dic(self):
         dicti = super(FeatureCollectionResource, self).operation_name_method_dic()
@@ -2797,7 +2475,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     #Responds an array of operations name.
     def array_of_operation_name_collection(self):
-        return self.operation_controller.feature_collection_operations_dict().keys()
+        collection_operations_array = super(FeatureCollectionResource, self).array_of_operation_name_collection()
+        collection_operations_array.extend(self.operation_controller.feature_collection_operations_dict().keys())
+        return collection_operations_array
 
     def required_object_for_specialized_operation(self,request, attributes_functions_str):
 
@@ -2815,8 +2495,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
         if  not self.path_has_geometry_attribute(arr[0]):
             arr = self.inject_geometry_attribute_in_spatial_operation_for_path(arr) #ex.: within/... => geom/within/...
 
-
-
         return self.get_objects_from_spatial_operation(arr)
 
     def get_objects_serialized_by_only_attributes(self, attribute_names_str, objects):
@@ -2833,16 +2511,22 @@ class FeatureCollectionResource(SpatialCollectionResource):
                 else:
                     a_dic[att_name] = dic[att_name]
 
+            # reference to each geometry
             if has_geo_field:
-                a_dic = self.dict_as_geojson(a_dic)
-
+                if len(attribute_names_str_as_array) > 1:
+                    a_dic = self.dict_as_geojson(a_dic)
+                else:
+                    a_dic = a_dic[self.geometry_field_name()]
             arr.append(a_dic)
 
+        # reference to the entire collection
         if has_geo_field:
-            arr = self.dict_list_as_feature_collection(arr)
+            if len(attribute_names_str_as_array) > 1:
+                arr = self.dict_list_as_feature_collection(arr)
+            else:
+                arr = self.dict_list_as_geometry_collection(arr)
         else:
             self.temporary_content_type = CONTENT_TYPE_JSON
-
         return arr
 
     def get_objects_from_within_operation(self, attributes_functions_str):
@@ -2856,6 +2540,63 @@ class FeatureCollectionResource(SpatialCollectionResource):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
 
         return objects
+
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        context = {}
+        attrs_context = super(FeatureCollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
+        context.update(attrs_context)
+
+        attrs_list = attributes_functions_str.split(',')
+        if self.geometry_field_name() in attrs_list:
+            resource_type = self.resource_type_or_default_resource_type(request) if len(attrs_list) > 1 else GeometryCollection
+            supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+            context.update({"hydra:supportedOperations": supported_operations_list})
+            self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+        else:
+            self.context_resource.set_context_to_resource_type(request, self.object_model, 'Collection')
+
+        resource_type_context = self.context_resource.get_resource_type_context()
+        context.update(resource_type_context)
+        return context
+
+    def get_context_for_operation_in_collect_operation(self, request, collect_operation_str):
+        collect_operation_arr = collect_operation_str.split('/')
+        oper_name_in_collect_arr = collect_operation_arr[2]
+        attrs_from_collect = collect_operation_arr[1].split('&')
+        resource_type = self.resource_type_or_default_resource_type(request)
+
+        if oper_name_in_collect_arr in self.operation_controller.geometry_operations_dict():
+            oper_ret_type = self.operation_controller.geometry_operations_dict()[oper_name_in_collect_arr].return_type
+
+            if issubclass(GEOSGeometry, oper_ret_type):
+                self.context_resource.set_context_to_operation(GeometryCollection(), oper_name_in_collect_arr)
+
+                if len(attrs_from_collect) == 1:
+                    # prioritizing operation return over default resource type
+                    resource_type = GeometryCollection if resource_type == self.default_resource_type() else resource_type
+
+                self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+            else:
+                self.context_resource.set_context_to_operation(list(), oper_name_in_collect_arr)
+                self.context_resource.set_context_to_resource_type(request, self.object_model, 'Collection')
+        return self.context_resource.dict_context
+
+    def set_resource_type_context_by_operation(self, request, oper_name):
+        resource_type = self.resource_type_or_default_resource_type(request)
+
+        if resource_type is None:
+            feature_collection_opers = self.operation_controller.feature_collection_operations_dict()
+            feature_collection_opers.update(self.operation_controller.fake_collection_operations_dict())
+            ret_type = feature_collection_opers[oper_name].return_type
+        else:
+            ret_type = resource_type
+
+        #if oper_name in self.operation_controller.subcollection_operations_dict() or ret_type == GeometryCollection:
+        self.context_resource.set_context_to_resource_type(request, self.object_model, ret_type)
+        #else:
+        #    self.context_resource.set_context_to_resource_type(request, self.object_model, ret_type)
+
+        return self.context_resource.get_resource_type_context()
 
     def get_png(self, queryset, request):
         style = self.get_style_file(request)

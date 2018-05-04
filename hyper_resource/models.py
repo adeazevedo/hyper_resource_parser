@@ -4,6 +4,7 @@ import importlib
 import inspect
 import json
 from datetime import date, datetime, time
+import re
 
 import jwt
 import requests
@@ -33,6 +34,8 @@ from django.contrib.gis.db.models import PolygonField
 from django.contrib.gis.db.models import ForeignKey
 from requests import ConnectionError
 from requests import HTTPError
+
+GEOSGEOMETRY_SUBCLASSES = ['POINT', 'MULTIPOINT', 'LINESTRING', 'MULTILINESTRING', 'POLYGON', 'MULTIPOLYGON', 'GEOMETRYCOLLECTION']
 
 import sys
 if sys.version_info > (3,):
@@ -76,6 +79,45 @@ class ConverterType():
     def value_has_url(self, value_str):
         return (value_str.find('http:') > -1) or (value_str.find('https:') > -1) or (value_str.find('www.') > -1)
 
+    def path_is_feature_collection(self, path):
+        try:
+            path_as_json = json.loads(path)
+        except json.decoder.JSONDecodeError:
+            return False
+
+        if 'type' in path_as_json.keys():
+            return path_as_json['type'].lower() == 'featurecollection'
+        else:
+            return False
+
+    def path_is_geometry_collection(self, path):
+        try:
+            path_as_json = json.loads(path)
+        except json.decoder.JSONDecodeError:
+            return False
+
+        if 'type' in path_as_json:
+            return path_as_json['type'].lower() == 'geometrycollection'
+        else:
+            return False
+
+    def path_is_feature(self, path):
+        try:
+            path_as_json = json.loads(path)
+        except json.decoder.JSONDecodeError:
+            return False
+
+        if 'type' in path_as_json:
+            return path_as_json['type'].lower() == 'feature'
+        else:
+            return False
+
+    def path_is_wkt(self, path):
+        geos_subclasses = [geom_subcls.capitalize() for geom_subcls in GEOSGEOMETRY_SUBCLASSES]
+        joined_geos_subclasses = "|".join(geos_subclasses)
+        regex = r"(" + joined_geos_subclasses + ")\(.+\)$"
+        return True if re.search(regex, path) is not None else False
+
     def make_geometrycollection_from_featurecollection(self, feature_collection):
         geoms = []
         #features = json.loads(feature_collection)
@@ -86,6 +128,13 @@ class ConverterType():
             gc.append(geos_geom)
         return gc
 
+    def make_geometrycollection_from_dict(self, geom_collection_dict):
+        gc = GeometryCollection()
+        for geometry in geom_collection_dict['geometries']:
+            geom_coordinates = json.dumps(geometry)
+            geos_geom = (GEOSGeometry(geom_coordinates))
+            gc.append(geos_geom)
+        return gc
 
     def get_geos_geometry_from_request(self, url_as_str):
         resp = requests.get(url_as_str)
@@ -108,51 +157,21 @@ class ConverterType():
         return GEOSGeometry(resp.content)
 
     def convert_to_string(self, value_as_str):
-        """
-        Recebe um valor e retorna sua representação em string
-        :param value_as_str:
-        :return:
-        """
         return str(value_as_str)
 
     def convert_to_int(self, value_as_str):
-        """
-        Recebe um valor e retorna sua representação em int
-        :param value_as_str:
-        :return:
-        """
         return int(value_as_str)
 
     def convert_to_float(self, value_as_str):
-        """
-        Recebe um valor e retorna sua representação em float
-        :param value_as_str:
-        :return:
-        """
         return float(value_as_str)
 
     def convert_to_date(self, value_as_str):
-        """
-        Recebe um valor e retorna sua representação em date
-        :param value_as_str:
-        :return:
-        """
         return datetime.strptime(value_as_str, "%Y-%m-%d").date()
 
     def convert_to_datetime(self, value_as_str):
-        """
-        Recebe um valor e retorna sua representação em datetime
-        :param value_as_str:
-        :return:
-        """
         return datetime.strptime(value_as_str, "%Y-%m-%d %H:%M:%S")
 
     def convert_to_time(self, value_as_str):
-        """
-        Recebe um valor e retorna sua representação em time
-        :param value_as_str:
-        :return:
-        """
         return datetime.time.strptime(value_as_str, "%Y-%m-%d %H:%M:%S")
 
     def convert_to_geometry(self, value_as_str):
@@ -166,14 +185,6 @@ class ConverterType():
 
 
     def operation_to_convert_value(self, a_type):
-        """
-        Receive type (a_type) and returns a convertion
-        method references to this type.
-        Example: a_type = float, return = a method to convert
-        values to float
-        :param a_type:
-        :return:
-        """
         d = {}
         d[str] = self.convert_to_string
         d[int] = self.convert_to_int
@@ -199,22 +210,10 @@ class ConverterType():
         d[MultiPointField] = self.convert_to_geometry
         d[ForeignKey] = self.convert_to_int
 
-
         return d[a_type]
 
     def value_converted(self, a_type, value):
-        """
-        Return the received 'value' converted to the same type of 'a_type'
-        :param a_type:
-        :param value:
-        :return:
-        """
-        # ConverterType.operation_to_convert_value() returns an
-        # method to convert values to 'a_type'. Example: if 'a_type'
-        # is str, ConverterType.operation_to_convert_value() will
-        # return a method to convert values to string
         object_method = self.operation_to_convert_value(a_type)
-        # return the received 'value' converted to the same type of 'a_type'
         return object_method(value)
 
     def convert_parameters(self, a_type, attribute_or_function_name, parameters):
@@ -226,7 +225,6 @@ class ConverterType():
                 type_called = operation_dict[attribute_or_function_name]
 
                 return [ConverterType().value_converted(param, parameters[i]) for i, param in enumerate(type_called.parameters) ]
-
 
         return parameters
 
@@ -325,10 +323,6 @@ class FactoryComplexQuery:
         '*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','isnotnull','*like','*notlike','*in','*notin']
 
     def logical_operators(self):
-        """
-        Return a list with logical operator (or, and, *or, *and)
-        :return:
-        """
         return ['or', 'and', '*or', '*and']
 
     def is_attribute(self, att_name, model_class):
@@ -542,64 +536,6 @@ class BaseOperationController:
         d['split'] = Type_Called('split', [str], [str])
         d['upper'] = Type_Called('upper', [], str)
         return d
-    #Abstract collection Operations
-    def collection_operations_dict(self):
-        dict = {}
-        dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
-        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name,[object] , object)
-        dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
-        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
-        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
-        dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
-        dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
-
-        return dict
-
-    """
-    #Abstract spatial collection Operations
-    def spatial_collection_operations_dict(self):
-        d = {}
-        d['bbcontaining'] = Type_Called('bbcontains', [GEOSGeometry], bool)
-        d['bboverlaping'] = Type_Called('bbcontains', [GEOSGeometry], bool)
-        d['contained']  = Type_Called('contained', [GEOSGeometry], bool)
-        d['containing']  = Type_Called('contains', [GEOSGeometry], bool)
-        d['containing_properly'] = Type_Called('contains_properly', [GEOSGeometry], bool)
-        d['covering_by'] = Type_Called('coveredby', [GEOSGeometry], bool)
-        d['covering']= Type_Called('covers', [GEOSGeometry], bool)
-        d['crossing'] = Type_Called('crosses', [GEOSGeometry], bool)
-        d['disjointing']= Type_Called('disjoint', [GEOSGeometry], bool)
-        d['intersecting']  = Type_Called('intersects', [GEOSGeometry], bool)
-        d['isvalid']  = Type_Called('isvalid', [GEOSGeometry], bool)
-        d['overlaping'] = Type_Called('overlaps', [GEOSGeometry], bool)
-        d['relating'] = Type_Called('relate', [tuple], bool)
-        d['touching'] = Type_Called('touches', [GEOSGeometry], bool)
-        d['within'] = Type_Called('within', [GEOSGeometry], object)
-        d['on_left'] = Type_Called('left', [GEOSGeometry], bool)
-        d['on_right'] = Type_Called('right', [GEOSGeometry], bool)
-        d['overlaping_left']  = Type_Called('overlaps_left', [GEOSGeometry], bool)
-        d['overlaping_right'] = Type_Called('overlaps_right', [GEOSGeometry], bool)
-        d['overlaping_above'] = Type_Called('overlaps_above', [GEOSGeometry], bool)
-        d['overlaping_below'] = Type_Called('overlaps_below', [GEOSGeometry], bool)
-        d['strictly_above'] = Type_Called('strictly_above', [GEOSGeometry], bool)
-        d['strictly_below'] = Type_Called('strictly_below', [GEOSGeometry], bool)
-        d['distance_gt'] = Type_Called('distance_gt', [GEOSGeometry], bool)
-        d['distance_gte'] = Type_Called('distance_gte', [GEOSGeometry], bool)
-        d['distance_lt'] = Type_Called('distance_lt', [GEOSGeometry], bool)
-        d['distance_lte'] = Type_Called('distance_lte', [GEOSGeometry], bool)
-        d['dwithin'] = Type_Called('dwithin', [GEOSGeometry], bool)
-
-        d['union'] = Type_Called('union', [GeometryCollection], object)
-
-        return d
-        """
-
-
-    def feature_collection_operations_dict(self):
-
-        return dict(self.collection_operations_dict(), **self.spatial_collection_operations_dict())
-
-    def feature_collection_operations_names(self):
-        return self.feature_collection_operations_dict().keys()
 
     def dict_by_type_geometry_operations_dict(self):
 
@@ -627,16 +563,9 @@ class BaseOperationController:
         return d
 
     def dict_all_operation_dict(self):
-        """
-        Return a dict with all the operations (for geometric and primitive types)
-        :return:
-        """
-        # OperationController.dict_by_type_geometry_operations_dict()
-        # returns a dict with geometric types as keys and a dict of geometric operations
-        # as his value
         d =  self.dict_by_type_geometry_operations_dict()
-        # join the geometric operations dict with primitive operations dict
         d.update(self.dict_by_type_primitive_operations_dict())
+        d.update(self.geometry_operations_dict())
         return d
 
     def is_operation(self, an_object, name):
@@ -699,14 +628,46 @@ class CollectionResourceOperationController(BaseOperationController):
         #abstract_collection
         self.filter_collection_operation_name = 'filter'
         self.collect_collection_operation_name = 'collect'
-        self.filter_and_collect_collection_operation_name = 'filter_and_collect'
-        self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
-        self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
         self.count_resource_collection_operation_name = 'count_resource'
         self.offset_limit_collection_operation_name = 'offset_limit'
         self.distinct_collection_operation_name = 'distinct'
         self.group_by_collection_operation_name = 'group_by'
         self.group_by_count_collection_operation_name = 'group_by_count'
+        self.filter_and_collect_collection_operation_name = 'filter_and_collect'
+        self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
+        self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
+
+    # operations that return a subcollection of an collection
+    def subcollection_operations_dict(self):
+        dict = {}
+        dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
+        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int, list], object)
+        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
+        dict[self.filter_and_collect_collection_operation_name] = Type_Called(self.filter_and_collect_collection_operation_name, [list], object)
+        dict[self.offset_limit_and_collect_collection_operation_name] = Type_Called(self.offset_limit_and_collect_collection_operation_name, [list], object)
+        return dict
+
+    def fake_collection_operations_dict(self):
+        dict = {}
+        dict[self.filter_and_collect_collection_operation_name] = Type_Called(self.filter_and_collect_collection_operation_name, [list], object)
+        dict[self.filter_and_count_resource_collection_operation_name] = Type_Called(self.filter_and_count_resource_collection_operation_name, [list], int)
+        dict[self.offset_limit_and_collect_collection_operation_name] = Type_Called(self.offset_limit_and_collect_collection_operation_name, [list], object)
+        return dict
+
+        # Abstract collection Operations
+    def collection_operations_dict(self):
+        dict = {}
+        dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
+        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [object], object)
+        dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
+        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int, list], object)
+        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
+        dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
+        dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
+        return dict
+
+    def dict_all_operation_dict(self):
+        return self.collection_operations_dict()
 
 class SpatialCollectionOperationController(CollectionResourceOperationController):
 
@@ -718,17 +679,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         return cls._instance
 
     def initialize(self):
-        self.filter_collection_operation_name = 'filter'
-        self.collect_collection_operation_name = 'collect'
-        self.filter_and_collect_collection_operation_name = 'filter_and_collect'
-        self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
-        self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
-        self.count_resource_collection_operation_name = 'count_resource'
-        self.offset_limit_collection_operation_name = 'offset_limit'
-        self.distinct_collection_operation_name = 'distinct'
-        self.group_by_collection_operation_name = 'group_by'
-        self.group_by_count_collection_operation_name = 'group_by_count'
-
+        super(SpatialCollectionOperationController, self).initialize()
         self.bbcontaining_operation_name = 'col_bbcontains'
         self.bboverlaping_operation_name = 'col_bboverlaps'
         self.contained_operation_name = 'col_contained'
@@ -762,54 +713,39 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         self.extent_collection_operation_name = 'col_extent'
         self.make_line_collection_operation_name = 'col_make_line'
 
-    def collection_operations_dict(self):
-        dict = {}
-        dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
-        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name,[object] , object)
-        dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
-        dict[self.filter_and_count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
-        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
-        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
-        dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
-        dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
-        dict[self.offset_limit_and_collect_collection_operation_name] = Type_Called(self.offset_limit_and_collect_collection_operation_name, [list], object)
-        dict[self.filter_and_collect_collection_operation_name] = Type_Called(self.filter_and_collect_collection_operation_name, [list], object)
-
-        return dict
-
     #Abstract spatial collection Operations
     def spatial_collection_operations_dict(self):
         d = {}
-        d[self.bbcontaining_operation_name] = Type_Called('bbcontains', [GEOSGeometry], bool)
-        d[self.bboverlaping_operation_name] = Type_Called('bboverlaps', [GEOSGeometry], bool)
-        d[self.contained_operation_name]  = Type_Called('contained', [GEOSGeometry], bool)
-        d[self.containing_operation_name]  = Type_Called('contains', [GEOSGeometry], bool)
-        d[self.containing_properly_operation_name] = Type_Called('contains_properly', [GEOSGeometry], bool)
-        d[self.covering_by_operation_name] = Type_Called('coveredby', [GEOSGeometry], bool)
-        d[self.covering_operation_name]= Type_Called('covers', [GEOSGeometry], bool)
-        d[self.crossing_operation_name] = Type_Called('crosses', [GEOSGeometry], bool)
-        d[self.disjointing_operation_name]= Type_Called('disjoint', [GEOSGeometry], bool)
-        d[self.intersecting_operation_name]  = Type_Called('intersects', [GEOSGeometry], bool)
-        d[self.isvalid_operation_name]  = Type_Called('isvalid', [GEOSGeometry], bool)
-        d[self.overlaping_operation_name] = Type_Called('overlaps', [GEOSGeometry], bool)
-        d[self.relating_operation_name] = Type_Called('relate', [tuple], bool)
-        d[self.touching_operation_name] = Type_Called('touches', [GEOSGeometry], bool)
-        d[self.within_operation_name] = Type_Called('within', [GEOSGeometry], object)
-        d[self.on_left_operation_name] = Type_Called('left', [GEOSGeometry], bool)
-        d[self.on_right_operation_name] = Type_Called('right', [GEOSGeometry], bool)
-        d[self.overlaping_left_operation_name]  = Type_Called('overlaps_left', [GEOSGeometry], bool)
-        d[self.overlaping_right_operation_name] = Type_Called('overlaps_right', [GEOSGeometry], bool)
-        d[self.overlaping_above_operation_name] = Type_Called('overlaps_above', [GEOSGeometry], bool)
-        d[self.overlaping_below_operation_name] = Type_Called('overlaps_below', [GEOSGeometry], bool)
-        d[self.strictly_above_operation_name] = Type_Called('strictly_above', [GEOSGeometry], bool)
-        d[self.strictly_below_operation_name] = Type_Called('strictly_below', [GEOSGeometry], bool)
-        d[self.distance_gt_operation_name] = Type_Called('distance_gt', [GEOSGeometry], bool)
-        d[self.distance_gte_operation_name] = Type_Called('distance_gte', [GEOSGeometry], bool)
-        d[self.distance_lt_operation_name] = Type_Called('distance_lt', [GEOSGeometry], bool)
-        d[self.distance_lte_operation_name] = Type_Called('distance_lte', [GEOSGeometry], bool)
+        d[self.bbcontaining_operation_name] = Type_Called('bbcontains', [GEOSGeometry], GeometryCollection)
+        d[self.bboverlaping_operation_name] = Type_Called('bboverlaps', [GEOSGeometry], GeometryCollection)
+        d[self.contained_operation_name]  = Type_Called('contained', [GEOSGeometry], GeometryCollection)
+        d[self.containing_operation_name]  = Type_Called('contains', [GEOSGeometry], GeometryCollection)
+        d[self.containing_properly_operation_name] = Type_Called('contains_properly', [GEOSGeometry], GeometryCollection)
+        d[self.covering_by_operation_name] = Type_Called('coveredby', [GEOSGeometry], GeometryCollection)
+        d[self.covering_operation_name]= Type_Called('covers', [GEOSGeometry], GeometryCollection)
+        d[self.crossing_operation_name] = Type_Called('crosses', [GEOSGeometry], GeometryCollection)
+        d[self.disjointing_operation_name]= Type_Called('disjoint', [GeometryCollection], GeometryCollection)
+        d[self.intersecting_operation_name]  = Type_Called('intersects', [GEOSGeometry], GeometryCollection)
+        d[self.isvalid_operation_name]  = Type_Called('isvalid', [GEOSGeometry], GeometryCollection)
+        d[self.overlaping_operation_name] = Type_Called('overlaps', [GEOSGeometry], GeometryCollection)
+        d[self.relating_operation_name] = Type_Called('relate', [tuple], GeometryCollection)
+        d[self.touching_operation_name] = Type_Called('touches', [GEOSGeometry], GeometryCollection)
+        d[self.within_operation_name] = Type_Called('within', [GEOSGeometry], GeometryCollection)
+        d[self.on_left_operation_name] = Type_Called('left', [GEOSGeometry], GeometryCollection)
+        d[self.on_right_operation_name] = Type_Called('right', [GEOSGeometry], GeometryCollection)
+        d[self.overlaping_left_operation_name]  = Type_Called('overlaps_left', [GEOSGeometry], GeometryCollection)
+        d[self.overlaping_right_operation_name] = Type_Called('overlaps_right', [GEOSGeometry], GeometryCollection)
+        d[self.overlaping_above_operation_name] = Type_Called('overlaps_above', [GEOSGeometry], GeometryCollection)
+        d[self.overlaping_below_operation_name] = Type_Called('overlaps_below', [GEOSGeometry], GeometryCollection)
+        d[self.strictly_above_operation_name] = Type_Called('strictly_above', [GEOSGeometry], GeometryCollection)
+        d[self.strictly_below_operation_name] = Type_Called('strictly_below', [GEOSGeometry], GeometryCollection)
+        d[self.distance_gt_operation_name] = Type_Called('distance_gt', [GEOSGeometry], GeometryCollection)
+        d[self.distance_gte_operation_name] = Type_Called('distance_gte', [GEOSGeometry], GeometryCollection)
+        d[self.distance_lt_operation_name] = Type_Called('distance_lt', [GEOSGeometry], GeometryCollection)
+        d[self.distance_lte_operation_name] = Type_Called('distance_lte', [GEOSGeometry], GeometryCollection)
         d[self.dwithin_operation_name] = Type_Called('dwithin', [GEOSGeometry], bool)
 
-        d[self.union_collection_operation_name] = Type_Called('union', [GeometryCollection], object)
+        d[self.union_collection_operation_name] = Type_Called('union', [GEOSGeometry], object)
         d[self.extent_collection_operation_name] = Type_Called('extent', [GEOSGeometry], object)
         d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], object)
 
@@ -818,10 +754,12 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
     def feature_collection_operations_dict(self):
         return dict(self.collection_operations_dict(), **self.spatial_collection_operations_dict())
 
+    def feature_collection_operations_names(self):
+        return self.feature_collection_operations_dict().keys()
+
     #Responds a dict with all the operations
     def dict_all_operation_dict(self):
-       d =  self.feature_collection_operations_dict()
-       return d
+       return self.feature_collection_operations_dict()
 
     def is_operation(self, an_object, name):
       if isinstance(an_object, BusinessModel):
@@ -841,55 +779,21 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
 class BusinessModel(models.Model):
 
     def id(self):
-        """
-        Retorna o valor da primary key
-        do objeto BusinessModel
-        :return:
-        """
         return self.pk
 
     def name_string(self):
-        """
-        Retorna a representação de string
-        do objeto BusinessModel
-        :return:
-        """
         return self.__str__()
 
     def attribute_primary_key(self):
-        """
-        Retorna o nome do identificador do
-        objeto BusinessModel através de seu
-        serializer
-        :return:
-        """
         return self.serializer_class.Meta.identifier
 
     def model_class(self):
-        """
-        Returns the model object type
-        :return:
-        """
         return type(self)
 
     def _key_is_identifier(self, key):
-        """
-        Retorna True se 'key' estiver na
-        lista de identificadores do modelo
-        :param key:
-        :return:
-        """
         return key in self.serializer_class.Meta.identifiers
 
     def dic_with_only_identitier_field(self, dict_params):
-        """
-        'dict_params' é um dicionário com todos os atributos
-        do modelo. O retorno é um dicionário oriundo deste
-        apenas com os atributos identificadores e seus
-        respectivos valores
-        :param dict_params:
-        :return:
-        """
         dic = dict_params.copy()
         a_dict = {}
         for key, value in dic.items():
@@ -898,11 +802,6 @@ class BusinessModel(models.Model):
         return a_dict
 
     def all_operation_name_and_value(self):
-        """
-        Return a list of tuples. Each tuple has the method name of object model as first element
-        and the value of the method (the method itself) as second element
-        :return:
-        """
         return inspect.getmembers(self, inspect.ismethod)
 
     def all_operation_name_and_args_length(self):
@@ -922,10 +821,6 @@ class BusinessModel(models.Model):
         return [(name, value) for name, value in self.all_operation_name_and_value() if not name.startwith('_')]
 
     def operation_names(self):
-        """
-        Returns a list with the name of all object model methods
-        :return:
-        """
         return [ name for name, value in self.all_operation_name_and_value() ]
 
     def public_operation_names(self):
@@ -962,58 +857,24 @@ class BusinessModel(models.Model):
         return [ attribute for attribute in dir(self) if not callable(getattr(self, attribute)) and self.is_not_private(attribute)]
 
     def fields(self):
-        """
-        Returns a list of model class (subclass of BusinessModel)
-        fields using the _meta attribute provided by Django database API
-        :return:
-        """
-        # model_class() return the model object type
-        # _meta.fields returns a list of model class fields
         return self.model_class()._meta.fields
 
     def field_names(self):
-        """
-        Returns a list of model field names (subclass of BusinessModel)
-        :return:
-        """
         return [field.name for field in self.fields()]
 
     def is_private(self, attribute_or_method_name):
-        """
-        Return True if 'attribute_or_method_name' starts and ends
-        with '__' (private)
-        :param attribute_or_method_name:
-        :return:
-        """
         return attribute_or_method_name.startswith('__') and attribute_or_method_name.endswith('__')
 
     def is_not_private(self, attribute_or_method_name):
-        """
-        Simply inverts the BusinessModel.is_private() logic
-        :param attribute_or_method_name:
-        :return:
-        """
         return not self.is_private(attribute_or_method_name)
 
     def is_operation(self, operation_name):
-        """
-        Return True if 'operation_name' is a name of BusinessModel instance method
-        :param operation_name:
-        :return:
-        """
         return operation_name in self.operation_names()
 
     def is_public_operations(self, operation_name):
         return operation_name in self.public_operation_names()
 
     def is_attribute(self, attribute_name):
-        """
-        Returns True if 'attribute_name' is between the object model attribute names list
-        :param attribute_name:
-        :return:
-        """
-        # - if 'attribute_name' represents a method of 'self' getattr() returns it, so returns a callable
-        # - if 'attribute_name' represents a attribute return his value, so returns a not callable
         return (attribute_name in dir(self) and not callable(getattr(self, attribute_name)))
 
     def operations_with_parameters_type(self):
@@ -1034,28 +895,15 @@ class BusinessModel(models.Model):
         abstract = True
 
 class FeatureModel(BusinessModel):
-    # geometry_object is a GEOSGeometry instance
     geometry_object = None
 
     class Meta:
         abstract = True
 
     def geo_field(self):
-        """
-        Returns the geometric field of FeatureModel (or his subclass) instance
-        :return:
-        """
-        # FearureModel.fields() returns a list of fields of a FeatureModel subclass
-        # the filter below gets only the GeometryField instance of this set of fields
-        # in this case we only get the first one (each geometry resource have just one GeometryField)
         return [field for field in self.fields() if isinstance(field, GeometryField)][0]
 
     def geo_field_name(self):
-        """
-        Returns the FeatureModel (or his subclass)
-        geometric field name (instance of GeometricField)
-        :return:
-        """
         return self.geo_field().name
 
     def get_geometry_object(self):
@@ -1106,22 +954,7 @@ class FeatureModel(BusinessModel):
         return geoType if geoType is not None else dict_map_geo_field_geometry()[type(self.geo_field())]
 
     def operations_with_parameters_type(self):
-        """
-        Returns a dict with geometric operations
-        references to geometric types.
-        Below you'll see a dialog that can better explain the funcyionality of this method:
-        A: What is the geometric type of the geometric field of the FearureModel instance?
-        B: Oh, is MultiPolygon.
-        A: So, the possible operations for this resource is: 'boundary', 'buffer', 'centroid', 'contains', ...
-        :return:
-        """
         oc = BaseOperationController()
-
-        # OperationController.dict_by_type_geometry_operations_dict()
-        # returns a dict whose his keys are geometric types that references
-        # another dict with operations linked to this geometric type
-        # OperationController.get_gometry_type() returns a geometric type
-        # (or a geometric model) that will be de index of the geometric operations dict
         return oc.dict_by_type_geometry_operations_dict()[self.get_geometry_type()]
 
     def centroid(self):

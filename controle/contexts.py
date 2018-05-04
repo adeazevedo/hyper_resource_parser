@@ -36,7 +36,7 @@ class GastoContext(FeatureResouceContext):
                 "@type": "http://schema.org/Date"
 
             }
-        },
+        }
 
         return dic_context
 
