@@ -27,8 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-ENABLE_COMPLEX_REQUESTS = True
-
 APPEND_SLASH = True
 # Application definition
 TOKEN_NEED= False

@@ -15,6 +15,7 @@ from datetime import datetime
 from django.core.cache import cache
 from hyper_resource.models import  FactoryComplexQuery, SpatialCollectionOperationController, BaseOperationController, BusinessModel, ConverterType
 from image_generator.img_generator import BuilderPNG
+import geobuf
 
 SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
 
@@ -32,7 +33,38 @@ CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
 CONTENT_TYPE_IMAGE_PNG = "image/png"
 SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG)
 ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD']
-from hyper_resource_py.settings import CORS_ALLOW_HEADERS, CORS_EXPOSE_HEADERS, ENABLE_COMPLEX_REQUESTS
+
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'content-location',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'link',
+)
+
+CORS_EXPOSE_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'content-location',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-access-token',
+    'access-control-allow-origin',
+    'link',
+]
+
+ENABLE_COMPLEX_REQUESTS = True
 
 GEOSGEOMETRY_SUBCLASSES = ['POINT', 'MULTIPOINT', 'LINESTRING', 'MULTILINESTRING', 'POLYGON', 'MULTIPOLYGON', 'GEOMETRYCOLLECTION']
 
@@ -174,6 +206,7 @@ class AbstractResource(APIView):
         self.token_need = self.token_is_need()
         self.e_tag = None
         self.temporary_content_type = None
+        self.resource_type = None
 
     # indicates wich is the content negotiation class
     content_negotiation_class = IgnoreClientContentNegotiation
@@ -412,12 +445,6 @@ class AbstractResource(APIView):
         #return self.serializer_class.Meta.fields
 
     def field_for(self, attribute_name):
-        """
-        If attribute_name matchs with any fields of the model fields list,
-        return this matched field. If has no matches, return None
-        :param attribute_name:
-        :return:
-        """
         fields_model = self.object_model.fields()
         for field in fields_model:
             if field.name == attribute_name:
@@ -449,20 +476,9 @@ class AbstractResource(APIView):
         # Is realy necessary or can i keep just one of their?
 
     def _base_path(self, full_path):
-        """
-        Receives the url (full_path) and returns the full
-        url excluding the path after the context class name
-        :param full_path:
-        :return:
-        """
-        # arr will be a list of each part of the url (full_path) separated by '/'
         arr = full_path.split('/')
-        # gets the index of context class name in the url
         ind = arr.index(self.contextclassname)
-        # gets the full url until the context class name (including this) and ignore the rest of urls
         return '/'.join(arr[:ind+1])
-
-    # ERROR: AbstractResource._set_context_to_model() is not used and contexModel() does not exists
 
     def _set_context_to_attributes(self, attribute_name_array):
         self.context_resource.set_context_to_attributes(attribute_name_array)
@@ -472,31 +488,14 @@ class AbstractResource(APIView):
         self.context_resource.set_context_to_only_one_attribute(self.current_object_state, attribute_name, attribute_type)
 
     def _set_context_to_operation(self, operation_name):
-        """
-        Sets a context to the AbstractResource.context_resource.dict_resource attribute
-        reference to the operation defined by operation_name
-        :param operation_name:
-        :return:
-        """
         self.context_resource.set_context_to_operation(self.current_object_state, operation_name)
 
     def set_basic_context_resource(self, request ):
-        """
-        Fill the context of this view (AbstractResource.context_resource)
-        with the basic informations of the request (host, basic_path and complement_path)
-        :param request:
-        :return:
-        """
-        # sets AbstractResource.context_resource.host with HTTP_HOST request header value
         self.context_resource.host = request.META['HTTP_HOST']
-        # get the PATH_INFO request header value (the entire url before the host ip and port) and
-        # sets AbstractResource.contex_resource.basic_path PATH_INFO value without the string after context class name
         self.context_resource.basic_path = self._base_path(request.META['PATH_INFO'])
         if len(self.kwargs.values()):
-            # if has any arguments AbstractResource.context_resourece.complement_path is the first one
             self.context_resource.complement_path = list(self.kwargs.values())[0]
         else:
-            # if hasn't arguments AbstractResource.context_resourece.complement_path is a empty string
             self.context_resource.complement_path = ''
 
     def key_is_identifier(self, key):
@@ -568,6 +567,10 @@ class AbstractResource(APIView):
 
     def default_resource_type(self):
         return 'Thing'
+
+    # must be overided
+    def define_resource_type(self, request, attributes_functions_str):
+        pass
 
     def content_type_or_default_content_type(self, requestOrNone):
         if requestOrNone is None:
@@ -684,7 +687,6 @@ class AbstractResource(APIView):
     def response_base_get_binary(self, request, required_object):
         # 'key' will be absolute uri + application/octet-stream
         key = self.get_key_cache(request, CONTENT_TYPE_OCTET_STREAM)
-        import geobuf
         if isinstance(required_object.representation_object, dict) and 'type' in required_object.representation_object:
             # if representation object is a dict is an GeoJson
             # geobuf minimize the response size
@@ -696,13 +698,9 @@ class AbstractResource(APIView):
             value_to_e_tag = json.dumps(result)
         else:
             value_to_e_tag =  result
-        # e_tag is a hash of the result
         e_tag = self.generate_e_tag(value_to_e_tag)
-        # sets the e_tag and the result in cache binded to a key
         self.set_key_with_data_in_cache(key, e_tag, result)
-        # mounts the HttpResponse with result as data and application/octet-stream as Content-Type
         resp = HttpResponse(result, content_type=CONTENT_TYPE_OCTET_STREAM)
-        # set Etag as a Response header
         self.set_etag_in_header(resp, e_tag)
         return resp
 
@@ -1506,6 +1504,11 @@ class FeatureResource(SpatialResource):
     def default_resource_type(self):
         return 'Feature'
 
+    def dict_by_accept_resource_type(self):
+        dict = {}
+        dict[CONTENT_TYPE_OCTET_STREAM] = 'Geobuf'
+        return dict
+
     # Must be override
     def initialize_context(self):
         pass
@@ -1715,11 +1718,24 @@ class AbstractCollectionResource(AbstractResource):
     # Shoud be overrided
     def array_of_operation_name_collection(self):
         collection_operations_array = list(self.operation_controller.collection_operations_dict().keys())
-        collection_operations_array.extend(self.operation_controller.fake_collection_operations_dict().keys())
+        collection_operations_array.extend(self.operation_controller.internal_collection_operations_dict().keys())
         return collection_operations_array
 
+    def _dict_all_operation_dict(self):
+        operations_dict = self.operation_controller.internal_collection_operations_dict()
+        operations_dict.update(self.operation_controller.dict_all_operation_dict())
+        return operations_dict
+
+    def get_operation_type_called(self, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        operations_dict = self._dict_all_operation_dict()
+        type_called = operations_dict[operation_name]
+        return type_called
+
     def get_real_operation_name(self, operation_name_from_path):
-        type_called = self.operation_controller.collection_operations_dict()[operation_name_from_path]
+        all_collection_operations = dict(self.operation_controller.collection_operations_dict(),
+                                                  **self.operation_controller.internal_collection_operations_dict())
+        type_called = all_collection_operations[operation_name_from_path]
         return type_called.name
 
     #Responds the basic name of the operation in IRI. For Instance: http://host/unidades-federativas/count_resource returns count_resource
@@ -1737,9 +1753,6 @@ class AbstractCollectionResource(AbstractResource):
         if first_part_name == self.operation_controller.filter_collection_operation_name and '/*count_resource' in attributes_functions_str:
             return first_part_name + '_and_count_resource'
         return first_part_name
-
-    def path_has_operations(self, attributes_functions_str):
-        return self.get_operation_name_from_path(attributes_functions_str) is not None
 
     def required_object_for_count_resource_operation(self,request, attributes_functions_str):
         return RequiredObject({"count_resource": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
@@ -1809,7 +1822,8 @@ class AbstractCollectionResource(AbstractResource):
     def required_object_for_only_attributes(self, request, attributes_functions_str):
         objects = self.get_objects_by_only_attributes(attributes_functions_str)
         serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
-        content_type = self.temporary_content_type if self.temporary_content_type != None else self.content_type_or_default_content_type(request)
+        #content_type = self.temporary_content_type if self.temporary_content_type != None else self.content_type_or_default_content_type(request)
+        content_type = self.content_type_or_default_content_type(request)
         return RequiredObject(serialized_data, content_type, objects, 200)
 
     def required_object_for_complex_request(self, request):
@@ -1856,44 +1870,27 @@ class AbstractCollectionResource(AbstractResource):
         return self.model_class().objects.filter(q_object)
 
     def get_objects_from_collect_operation(self, attributes_functions_str, queryset=None):
-        attrs_func_list = attributes_functions_str.split('/')
-        attrs_func_list = [attr_func for attr_func in attrs_func_list if attr_func != '']
-
-        # requests from 'collect' operation without previous filter operation
-        # will result in a request for all objects for this collection
-        if queryset == None:
-            objects = self.model_class().objects.all()
-        else:
-            objects = queryset
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
+        objects = self.model_class().objects.all() if queryset is None else queryset
 
         collect_object_list = []
-        has_geo_field = False
-        attr_from_object = attrs_func_list[1].split('&')
+        attrs_from_object = attrs_funcs_arr[1].split('&')
+        attrs_out_of_operation = attrs_from_object[:-1]
+        operated_attr = attrs_from_object[-1]
+
+        operation_name = attrs_funcs_arr[2]
+        operation_params = attrs_funcs_arr[3:]
 
         for obj in objects:
+            obj_attrs_dict = {}
+            for attr in attrs_out_of_operation:
+                obj_attrs_dict[attr] = getattr(obj, attr)
 
-            dic = {}
-            for attr in attr_from_object[:-1]:
-                dic[attr] = getattr(obj, attr)
+            value_to_operation = getattr(obj, operated_attr)
+            operated_value = self._execute_attribute_or_method(value_to_operation, operation_name, operation_params)
 
-            operated_value = self._execute_attribute_or_method(obj, attrs_func_list[2], attrs_func_list[3:])
-            if isinstance(operated_value, GEOSGeometry):
-                has_geo_field = True
-                dic[attr_from_object[-1]] = json.loads(operated_value.geojson)
-
-                if len(attr_from_object) > 1:
-                    collect_object_list.append(self.dict_as_geojson(dic))
-                else:
-                    collect_object_list.append(dic[self.geometry_field_name()] )
-            else:
-                dic[attrs_func_list[2]] = json.dumps(operated_value)
-                collect_object_list.append(dic)
-
-        if has_geo_field:
-            if len(attr_from_object) > 1:
-                collect_object_list = self.dict_list_as_feature_collection(collect_object_list)
-            else:
-                collect_object_list = self.dict_list_as_geometry_collection(collect_object_list)
+            obj_attrs_dict[operated_attr] = operated_value
+            collect_object_list.append(obj_attrs_dict)
 
         return collect_object_list
 
@@ -2132,8 +2129,11 @@ class AbstractCollectionResource(AbstractResource):
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)
-        response = Response(required_object.representation_object, content_type=required_object.content_type, status=200)
-        self.add_base_headers(request, response)
+        if required_object.status_code == 200:
+            response = Response(required_object.representation_object, content_type=required_object.content_type, status=200)
+            self.add_base_headers(request, response)
+        else:
+            response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)}, status=required_object.status_code)
         return response
 
     def basic_post(self, request):
@@ -2173,31 +2173,44 @@ class AbstractCollectionResource(AbstractResource):
     # se for uma operação derivada de collect, definir supported operations de acordo com a lista de attributos
     def get_context_for_operation(self, request, attributes_functions_str):
         context = {}
+        attrs_functs_arr = self.remove_last_slash(attributes_functions_str).split('/')
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        operations_dict = self.operation_controller.fake_collection_operations_dict()
-        operations_dict.update(self.operation_controller.dict_all_operation_dict())
 
-        resource_type = self.resource_type_or_default_resource_type(request)
+        if operation_name in self.operation_controller.internal_collection_operations_dict().keys():
+            last_oper_name = operation_name.split("_and_")[1]
+        else:
+            last_oper_name = operation_name
+        oper_type_called = self._dict_all_operation_dict()[last_oper_name]
 
-        if operation_name in [self.operation_controller.collect_collection_operation_name, self.operation_controller.filter_and_collect_collection_operation_name, self.operation_controller.offset_limit_and_collect_collection_operation_name]:
+        if operation_name in [self.operation_controller.collect_collection_operation_name,
+                              self.operation_controller.filter_and_collect_collection_operation_name,
+                              self.operation_controller.offset_limit_and_collect_collection_operation_name]:
             context.update(self.get_context_for_collect_operation(request, attributes_functions_str))
         else:
 
-            if resource_type is None:
-                return_type = operations_dict[operation_name].return_type
-            else:
-                return_type = resource_type
-            context.update({"hydra:supportedOperations": self.context_resource.supportedOperationsFor(self.object_model, return_type)})
-            real_oper_name = self.get_real_operation_name(operation_name)
-            self.context_resource.set_context_to_operation(self.object_model, real_oper_name)
+            #if resource_type is None or resource_type == self.default_resource_type():
+                # only uses default resource type if operation return type is too generic (like 'object')
+            #    return_type = resource_type if oper_type_called.return_type == object else oper_type_called.return_type
+            #else:
+            #    return_type = resource_type
 
-            self.set_resource_type_context_by_operation(request, operation_name)
+            #if operation_name in self.operation_controller.subcollection_operations_dict().keys():
+            if Q in oper_type_called.parameters:
+                context.update({"hydra:supportedProperties": self.context_resource.supportedProperties()})
+            #    property_field = self.field_for(attrs_functs_arr[1])
+            #    operators_type = type(property_field) if property_field is not None else 'object'
+                #context.update({"hydra:supportedOperators": self.context_resource.supportedOperators()})
 
-            context.update(self.context_resource.dict_context)
+            resource_type = self.define_resource_type(request, attributes_functions_str)
+            context.update({"hydra:supportedOperations": self.context_resource.supportedOperationsFor(self.object_model, resource_type)})
+            context.update(self.context_resource.get_resource_type_context(resource_type))
+            self.context_resource.set_context_to_operation(self.object_model, last_oper_name)
+            context.update({"@context": self.context_resource.dict_context["@context"]})
+
         return context
 
     def get_context_for_collect_operation(self, request, attributes_functions_str):
-        attrs_func_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
+        attrs_func_str = self.remove_last_slash(attributes_functions_str)
         operation_name = self.get_operation_name_from_path(attrs_func_str)
 
         if operation_name != self.operation_controller.collect_collection_operation_name:
@@ -2219,15 +2232,15 @@ class AbstractCollectionResource(AbstractResource):
         pass
 
     def set_resource_type_context_by_operation(self, request, attributes_functions_str):
-        attrs_func_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
+        attrs_func_str = self.remove_last_slash(attributes_functions_str)
         operation_name = self.get_operation_name_from_path(attrs_func_str)
 
-        type_called = self.operation_controller.feature_collection_operations_dict()[operation_name]
+        type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
 
         if operation_name in self.operation_controller.subcollection_operations_dict():
-            self.context_resource.set_context_to_resource_type(self.object_model, 'Collection')
+            self.context_resource.set_context_to_resource_type(request, self.object_model, 'Collection')
         else:
-            self.context_resource.set_context_to_resource_type(self.object_model, type_called.return_type)
+            self.context_resource.set_context_to_resource_type(request, self.object_model, type_called.return_type)
 
         return self.context_resource.get_resource_type_context()
 
@@ -2347,7 +2360,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def get_real_operation_name(self, operation_name_from_path):
         all_geometry_collection_operations = dict(self.operation_controller.feature_collection_operations_dict(),
-                                                  **self.operation_controller.fake_collection_operations_dict())
+                                                  **self.operation_controller.internal_collection_operations_dict())
         type_called = all_geometry_collection_operations[operation_name_from_path]
         return type_called.name
 
@@ -2371,6 +2384,55 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def default_content_type(self):
         return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
+
+    def dict_by_accept_resource_type(self):
+        dict = {}
+        dict[CONTENT_TYPE_OCTET_STREAM] = 'GeobufCollection'
+        return dict
+
+    def define_resource_type(self, request, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        res_type_or_default = self.resource_type_or_default_resource_type(request)
+        attrs_funcs_str = self.remove_last_slash(attributes_functions_str)
+        attrs_funcs_arr = attrs_funcs_str.split("/")
+
+        if self.path_has_only_attributes(attributes_functions_str):
+            attrs = attrs_funcs_arr[0].split(',')
+            if self.geometry_field_name() in attrs:
+                if len(attrs) == 1:
+                    return res_type_or_default if res_type_or_default == 'GeobufCollection' else GeometryCollection
+            else:
+                return bytes if res_type_or_default == 'GeobufCollection' else 'Collection'
+
+        elif operation_name in self.operation_controller.collect_operations_dict().keys():
+            if operation_name != self.operation_controller.collect_collection_operation_name:
+                collect_oper_snippet = attrs_funcs_str[attrs_funcs_str.index("*"):]
+            else:
+                collect_oper_snippet = attrs_funcs_str
+            collect_oper_arr = collect_oper_snippet.split("/")
+            attrs_in_collect = collect_oper_arr[1].split("&")
+
+            if collect_oper_arr[2] in BaseOperationController().geometry_operations_dict().keys():
+                if res_type_or_default == 'GeobufCollection':
+                    return res_type_or_default
+                else:
+                    return res_type_or_default if len(attrs_in_collect) > 1 else GeometryCollection
+            else:
+                if self.geometry_field_name() not in attrs_in_collect:
+                    return bytes if res_type_or_default == 'GeobufCollection' else "Collection"
+                else:
+                    return res_type_or_default
+
+        elif self.path_has_operations(attributes_functions_str):
+            type_called = self.get_operation_type_called(attributes_functions_str)
+            if not issubclass(type_called.return_type, GEOSGeometry):
+                if res_type_or_default == 'GeobufCollection':
+                    return bytes
+                else:
+                    if res_type_or_default is None or res_type_or_default == self.default_resource_type():
+                        return res_type_or_default if type_called.return_type == object else type_called.return_type
+
+        return res_type_or_default
 
     #attributes_functions_str == spatial_collection_operations_dict/... Or attributes_functions_str == geom/spatial_collection_operations_dict/....
 
@@ -2497,6 +2559,94 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return self.get_objects_from_spatial_operation(arr)
 
+    def get_objects_from_collect_operation(self, attributes_functions_str, queryset=None):
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
+        objects = self.model_class().objects.all() if queryset is None else queryset
+
+        collect_object_list = []
+        attrs_from_object = attrs_funcs_arr[1].split('&')
+        attrs_out_of_operation = attrs_from_object[:-1]
+        operated_attr = attrs_from_object[-1]
+
+        operation_name = attrs_funcs_arr[2]
+        operation_params = attrs_funcs_arr[3:]
+
+        for obj in objects:
+            obj_attrs_dict = {}
+            for attr in attrs_out_of_operation:
+                if attr == self.geometry_field_name():
+                    obj_attrs_dict[attr] = json.loads(getattr(obj, attr).geojson)
+                else:
+                    obj_attrs_dict[attr] = getattr(obj, attr)
+
+            if operated_attr == self.geometry_field_name():
+                operated_value = self._execute_attribute_or_method(obj, operation_name, operation_params)
+            else:
+                operated_attr_val = getattr(obj, operated_attr)
+                if operated_attr_val is None:
+                    operated_value = None
+                else:
+                    operated_value = self._execute_attribute_or_method(operated_attr_val, operation_name, operation_params)
+
+            if isinstance(operated_value, GEOSGeometry):
+                obj_attrs_dict[operated_attr] = json.loads(operated_value.geojson)
+            else:
+                obj_attrs_dict[operated_attr] = operated_value
+            collect_object_list.append(self.dict_as_geojson(obj_attrs_dict))
+
+        if self.geometry_field_name() in attrs_from_object:
+            if len(attrs_from_object) > 1:
+                collect_object_list = self.dict_list_as_feature_collection(collect_object_list)
+            else:
+                collect_object_list = self.dict_list_as_geometry_collection(collect_object_list)
+        return collect_object_list
+
+
+    """
+    def get_objects_from_collect_operation(self, attributes_functions_str, queryset=None):
+        attrs_func_list = attributes_functions_str.split('/')
+        attrs_func_list = [attr_func for attr_func in attrs_func_list if attr_func != '']
+
+        # requests from 'collect' operation without previous filter operation
+        # will result in a request for all objects for this collection
+        if queryset == None:
+            objects = self.model_class().objects.all()
+        else:
+            objects = queryset
+
+        collect_object_list = []
+        has_geo_field = False
+        attr_from_object = attrs_func_list[1].split('&')
+
+        for obj in objects:
+
+            dic = {}
+            for attr in attr_from_object[:-1]:
+                dic[attr] = getattr(obj, attr)
+
+            attr_val_to_operation = getattr(obj, attr_from_object[-1])
+            operated_value = self._execute_attribute_or_method(attr_val_to_operation, attrs_func_list[2], attrs_func_list[3:])
+            if isinstance(operated_value, GEOSGeometry):
+                has_geo_field = True
+                dic[attr_from_object[-1]] = json.loads(operated_value.geojson)
+
+                if len(attr_from_object) > 1:
+                    collect_object_list.append(self.dict_as_geojson(dic))
+                else:
+                    collect_object_list.append(dic[self.geometry_field_name()] )
+            else:
+                dic[attrs_func_list[2]] = operated_value#json.dumps(operated_value)
+                collect_object_list.append(dic)
+
+        if has_geo_field:
+            if len(attr_from_object) > 1:
+                collect_object_list = self.dict_list_as_feature_collection(collect_object_list)
+            else:
+                collect_object_list = self.dict_list_as_geometry_collection(collect_object_list)
+
+        return collect_object_list
+    """
+
     def get_objects_serialized_by_only_attributes(self, attribute_names_str, objects):
         arr = []
         attribute_names_str_as_array = attribute_names_str.split(',')
@@ -2545,28 +2695,44 @@ class FeatureCollectionResource(SpatialCollectionResource):
         context = {}
         attrs_context = super(FeatureCollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
         context.update(attrs_context)
+        resource_type = self.define_resource_type(request, attributes_functions_str)
 
-        attrs_list = attributes_functions_str.split(',')
-        if self.geometry_field_name() in attrs_list:
-            resource_type = self.resource_type_or_default_resource_type(request) if len(attrs_list) > 1 else GeometryCollection
-            supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-            context.update({"hydra:supportedOperations": supported_operations_list})
-            self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
-        else:
-            self.context_resource.set_context_to_resource_type(request, self.object_model, 'Collection')
+        #attrs_list = attributes_functions_str.split(',')
+        #if self.geometry_field_name() in attrs_list:
+            #if len(attrs_list) > 1:
+                #resource_type = 'FeatureCollection' if res_type_or_default != 'GeobufCollection' else res_type_or_default
+            #else:
+            #    resource_type =  GeometryCollection if res_type_or_default != 'GeobufCollection' else res_type_or_default
+        #else:
+            #attrs_types_list = [self.field_for(attr) for attr in attrs_list]
+            #attrs_types_set = set()
+            #[attrs_types_set.add(attr_type) for attr_type in attrs_types_list]
+            #unique_attrs_types_list = list(attrs_types_set)
+            #resource_type = type(unique_attrs_types_list[0]) if len(unique_attrs_types_list) == 1 else 'Collection'
+            #ENABLE THE CODE ABOVE WHEN IMPLEMENTED COLLECTION OPERATIONS FOR PRIMITIVE
+            #resource_type = 'Collection' if res_type_or_default != 'GeobufCollection' else bytes
 
-        resource_type_context = self.context_resource.get_resource_type_context()
+        self.resource_type = resource_type
+        supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        context.update({"hydra:supportedOperations": supported_operations_list})
+
+        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+        resource_type_context = self.context_resource.get_resource_type_context(resource_type)
         context.update(resource_type_context)
         return context
 
     def get_context_for_operation_in_collect_operation(self, request, collect_operation_str):
+        context = {}
         collect_operation_arr = collect_operation_str.split('/')
         oper_name_in_collect_arr = collect_operation_arr[2]
         attrs_from_collect = collect_operation_arr[1].split('&')
-        resource_type = self.resource_type_or_default_resource_type(request)
+        #resource_type = self.resource_type_or_default_resource_type(request)
+        resource_type = self.define_resource_type(request, collect_operation_str)
 
-        if oper_name_in_collect_arr in self.operation_controller.geometry_operations_dict():
-            oper_ret_type = self.operation_controller.geometry_operations_dict()[oper_name_in_collect_arr].return_type
+        base_oper_dict = BaseOperationController().dict_all_operation_dict()
+
+        if oper_name_in_collect_arr in base_oper_dict.keys():
+            oper_ret_type = base_oper_dict[oper_name_in_collect_arr].return_type
 
             if issubclass(GEOSGeometry, oper_ret_type):
                 self.context_resource.set_context_to_operation(GeometryCollection(), oper_name_in_collect_arr)
@@ -2576,26 +2742,33 @@ class FeatureCollectionResource(SpatialCollectionResource):
                     resource_type = GeometryCollection if resource_type == self.default_resource_type() else resource_type
 
                 self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+                context.update(self.context_resource.dict_context)
             else:
-                self.context_resource.set_context_to_operation(list(), oper_name_in_collect_arr)
-                self.context_resource.set_context_to_resource_type(request, self.object_model, 'Collection')
-        return self.context_resource.dict_context
+                #self.context_resource.set_context_to_operation(oper_ret_type(), oper_name_in_collect_arr)
+                self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+                context.update(self.context_resource.dict_context)
+
+                #self.context_resource.dict_context.update({"hydra:supportedOperations": supp_opers_list})
+                #a_context_dict = { "@id": vocabulary(oper_name_in_collect_arr),"@type": "@id" }
+
+                supp_opers_list =  self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+                self.context_resource.set_context_to_operation(resource_type, oper_name_in_collect_arr)
+                self.context_resource.dict_context["hydra:supportedOperations"] = supp_opers_list
+                context.update(self.context_resource.dict_context)
+                #self.context_resource.dict_context.update(a_context_dict)
+        return context
 
     def set_resource_type_context_by_operation(self, request, oper_name):
         resource_type = self.resource_type_or_default_resource_type(request)
 
-        if resource_type is None:
-            feature_collection_opers = self.operation_controller.feature_collection_operations_dict()
-            feature_collection_opers.update(self.operation_controller.fake_collection_operations_dict())
-            ret_type = feature_collection_opers[oper_name].return_type
+        if resource_type is None or resource_type == self.default_resource_type():
+            all_operations_dict = self._dict_all_operation_dict()
+            oper_ret_type = all_operations_dict[oper_name].return_type
+            ret_type = resource_type if oper_ret_type == object else oper_ret_type
         else:
             ret_type = resource_type
 
-        #if oper_name in self.operation_controller.subcollection_operations_dict() or ret_type == GeometryCollection:
         self.context_resource.set_context_to_resource_type(request, self.object_model, ret_type)
-        #else:
-        #    self.context_resource.set_context_to_resource_type(request, self.object_model, ret_type)
-
         return self.context_resource.get_resource_type_context()
 
     def get_png(self, queryset, request):

@@ -201,8 +201,37 @@ def vocabularyDict():
 
     return dict
 
+def OperationVocabularyDict():
+    dic = {}
+    dic[int] = ["http://172.30.10.86/operations-interface-list/integer-operations-interface/"]
+    dic[AutoField] = ["http://172.30.10.86/operations-interface-list/integer-operations-interface/"]
+    dic[IntegerField] = ["http://172.30.10.86/operations-interface-list/integer-operations-interface/"]
+    dic[str] = ["http://172.30.10.86/operations-interface-list/string-operations-interface/"]
+    dic[CharField] = ["http://172.30.10.86/operations-interface-list/string-operations-interface/"]
+    dic[date] = ["http://172.30.10.86/operations-interface-list/date-operations-interface/"]
+    dic[GEOSGeometry] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[GeometryField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[GeometryCollection] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[PointField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[Point] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[MultiPointField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[MultiPoint] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[LineStringField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[LineString] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[MultiLineStringField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[MultiLineString] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[PolygonField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[Polygon] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[MultiPolygonField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[MultiPolygon] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+
+    return dic
+
 def vocabulary(a_key):
     return vocabularyDict()[a_key] if a_key in vocabularyDict() else None
+
+def operation_vocabulary(a_key):
+    return OperationVocabularyDict()[a_key] if a_key in OperationVocabularyDict() else None
 
 class SupportedProperty():
     def __init__(self, property_name='', required=False, readable=True, writeable=True, is_unique=False, is_identifier=False, is_external=False ):
@@ -246,10 +275,27 @@ class SupportedOperation():
                 "@id": self.link
         }
 
+class SupportedOperator():
+    def __init__(self, operator='', expects='', returns='', link=''):
+        self.operator = operator
+        self.expects = expects
+        self.returns = returns
+        self.link = link
+
+    def context(self):
+        return {
+            "operator": self.operator,
+            "expects": self.expects,
+            "returns": self.returns,
+            "@id": self.link
+        }
+
 def initialize_dict():
     dict = {}
     oc = BaseOperationController()
     dict[GeometryField] = oc.geometry_operations_dict()
+    dict['Feature'] = oc.geometry_operations_dict()
+    dict['Geobuf'] = oc.geometry_operations_dict()
     dict[GEOSGeometry] = oc.geometry_operations_dict()
     dict[Point] = oc.point_operations_dict()
     dict[Polygon] = oc.polygon_operations_dict()
@@ -257,11 +303,14 @@ def initialize_dict():
     dict[MultiPoint] = oc.point_operations_dict()
     dict[MultiPolygon] = oc.polygon_operations_dict()
     dict[MultiLineString] = oc.line_operations_dict()
+    dict[str] = oc.string_operations_dict()
+    dict[CharField] = oc.string_operations_dict()
 
-    #dict[GeometryCollection] = oc.geometry_operations_dict()
     soc = SpatialCollectionOperationController()
     dict[GeometryCollection] = soc.feature_collection_operations_dict()
     dict['FeatureCollection'] = soc.feature_collection_operations_dict()
+    dict['GeobufCollection'] = soc.feature_collection_operations_dict()
+
     coc = CollectionResourceOperationController()
     dict['Collection'] = coc.collection_operations_dict()
     return dict
@@ -295,15 +344,26 @@ class ContextResource:
 
     def attribute_contextualized_dict_for(self, field):
         voc = vocabulary(field.name)
-        #Example: if voc_type is str returns 'http://schema.org/Text'
+        oper_voc_list = operation_vocabulary(field.name)
+
         voc_type = vocabulary(type(field))
-        # 'voc' will be the @id if this is not None, otherwise 'voc_type' will be the @id
+        oper_voc_type_list = operation_vocabulary(type(field))
+
         res_voc = voc if voc is not None else voc_type
-        # if isn't possible to define what is field.name, we consider that field.name is a 'Thing'
+        oper_res_voc_list = voc if oper_voc_list is not None else oper_voc_type_list
+
         if res_voc is None:
             res_voc  = "http://schema.org/Thing"
+        if oper_res_voc_list is None:
+            oper_res_voc_list  = ["http://172.30.10.86/operations-interface-list/"]
+
+        oper_res_voc_dict_list = [{"hydra:Link": oper_res_voc} for oper_res_voc in oper_res_voc_list]
         #return res_voc #{ "@id": res_voc, "@type": "@id"}
-        return {'@id': res_voc, '@type':  voc_type }
+        return {
+            '@id': res_voc,
+            '@type':  voc_type ,
+            'hydra:supportedOperations': oper_res_voc_dict_list
+        }
 
     def attributes_contextualized_dict(self):
         dic_field = {}
@@ -313,16 +373,6 @@ class ContextResource:
         return dic_field
 
     def selectedAttributeContextualized_dict(self, attribute_name_array):
-        """
-        Receives a list of model attributes and return this data in a dict form
-        whose each these attribute is the dict key and his respective value
-        is another dict with the identification of this attribute (@id) and
-        the type of this attribute (@type)
-        :param attribute_name_array:
-        :return:
-        """
-        # list(ContextResource.attributes_contextualized_dict().items()) gets a list whose
-        # each element is a tuple with the model attribute and his respective value
         return {k: v for k, v in list(self.attributes_contextualized_dict().items()) if k in attribute_name_array}
 
     def supportedPropertyFor(self, field):
@@ -382,6 +432,28 @@ class ContextResource:
 
         return [supportedOperation.context() for supportedOperation in arr]
 
+    def supportedOperators(self):#, field_voc_type):
+        arr = []
+        if self.resource is None:
+            return []
+        expr_dict = self.resource.operation_controller.expression_operators_dict()
+        for k, v_typed_called in expr_dict.items():
+            exps = []
+            if v_typed_called.parameters is not None:
+                for param in v_typed_called.parameters:
+                    #if param == object:
+                    #    exps.append( vocabulary(field_voc_type) )
+                    #else:
+                    exps.append( vocabulary(param) )
+
+            if v_typed_called.return_type in vocabularyDict():
+                rets = vocabulary(v_typed_called.return_type)
+            else:
+                rets = "NOT FOUND"
+            link_id = vocabulary(v_typed_called.name)
+            arr.append( SupportedOperator(operator=k, expects=exps, returns=rets, link=link_id))
+        return [supportedOperator.context() for supportedOperator in arr]
+
     def iriTemplates(self):
         iri_templates = []
         dict = {}
@@ -404,7 +476,7 @@ class ContextResource:
         return resource_type_context
 
     def set_context_to_resource_type(self, request, object, object_type=None):
-        resource_type = self.resource.resource_type_or_default_resource_type(request)
+        resource_type = self.resource.resource_type
         if resource_type is None:
             a_type = object_type if object_type is not None else type(object)
         else:
@@ -458,9 +530,37 @@ class ContextResource:
 
         dict [operation_name] = { "@id": vocabulary(operation_name),"@type": "@id" }
         self.dict_context["@context"] = dict
-        isGeometry = isinstance(object, GEOSGeometry)
-        if isGeometry:
-            self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
+        #isGeometry = isinstance(object, GEOSGeometry)
+        #if isGeometry:
+        self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
+
+    """
+    def set_context_to_expression_or_set_none(self, attributes_functions_str):
+        self.dict_context = {}
+        attrs_functs_list = self.resource.remove_last_slash(attributes_functions_str).split('/')
+
+        supp_properties_names = [supp_property_context["hydra:property"] for supp_property_context in self.supportedProperties()]
+        supp_operations_names = [supp_operation_context["hydra:operation"] for supp_operation_context in self.supportedOperations()]
+        type_called_operators_dict = BaseOperationController().expression_operators_dict()
+        operators_names = type_called_operators_dict.keys()
+
+        if attrs_functs_list[-1] in supp_operations_names and len(attrs_functs_list) == 1:
+            self.dict_context["hydra:supportedProperties"] = self.supportedProperties()
+
+        elif attrs_functs_list[-1] in supp_properties_names and len(attrs_functs_list) == 2:
+            field_voc_type = vocabulary( type( self.resource.field_for(attrs_functs_list[-1]) ) )
+            property_field = type( self.resource.field_for( attrs_functs_list[-1] ))
+
+            if issubclass(property_field, GeometryField):
+                self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(None, object_type="FeatureCollection")
+            else:
+                self.dict_context["hydra:supportedOperators"] = self.supportedOperators(field_voc_type)
+
+        else:
+            self.dict_context = None
+        #elif attrs_functs_list[-1] in operators_names and len(attrs_functs_list) == 3:
+        #    self.dict_context = None
+    """
 
     def set_context_to_object(self, object, attribute_name):
         self.dict_context = {}
@@ -483,8 +583,9 @@ class ContextResource:
 
         return self.dict_context
 
-    def context(self, resource_type):
+    def context(self, resource_type=None):
         if self.dict_context is None:
+            resource_type = resource_type if resource_type is not None else self.resource.default_resource_type()
             self.initalize_context(resource_type)
         return self.dict_context
 
