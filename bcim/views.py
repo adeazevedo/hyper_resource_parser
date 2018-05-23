@@ -102,6 +102,23 @@ class APIRoot(APIView):
             response['Link'] += "," + link
         return response
 
+    def add_cors_headers_in_header(self, response):
+        response["access-control-allow-origin"] = "*"
+        access_control_allow_headers_str = ''
+        for value in CORS_ALLOW_HEADERS:
+            access_control_allow_headers_str += ', ' + value
+
+        access_control_expose_headers_str = ''
+        for value in CORS_EXPOSE_HEADERS:
+            access_control_expose_headers_str += ', ' + value
+
+        access_control_allow_methods_str = ''
+        for value in ACCESS_CONTROL_ALLOW_METHODS:
+            access_control_allow_methods_str += ', ' + value
+        response['access-control-allow-headers'] = access_control_allow_headers_str
+        response['access-control-expose-headers'] = access_control_expose_headers_str
+        response['access-control-allow-methods'] = access_control_allow_methods_str
+
     def options(self, request, *args, **kwargs):
         context = self.base_context.getContextData(request)
         root_links = get_root_response(request)
@@ -115,6 +132,7 @@ class APIRoot(APIView):
     def get(self, request, *args, **kwargs):
         root_links = get_root_response(request)
         response = Response(root_links)
+        self.add_cors_headers_in_header(response)
         entry_pointURL = reverse('bcim_v1:api_root', request=request)
         response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
         return self.base_context.addContext(request, response)
