@@ -46,6 +46,7 @@ def vocabularyDict():
     dict[float] = 'http://schema.org/Float'
     dict[ForeignKey] = 'http://schema.org/Integer'
     dict[IntegerField] = 'http://schema.org/Integer'
+    dict[DecimalField] = 'http://schema.org/Float'
     dict[AutoField]= 'http://schema.org/Integer'
     dict[int] = 'http://schema.org/Integer'
     dict[CharField] = 'http://schema.org/Text'
@@ -361,7 +362,7 @@ class ContextResource:
         #return res_voc #{ "@id": res_voc, "@type": "@id"}
         return {
             '@id': res_voc,
-            '@type':  voc_type ,
+            '@type':  ("@id" if isinstance(field, ForeignKey) else voc_type) ,
             'hydra:supportedOperations': oper_res_voc_dict_list
         }
 
@@ -432,7 +433,7 @@ class ContextResource:
 
         return [supportedOperation.context() for supportedOperation in arr]
 
-    def supportedOperators(self):#, field_voc_type):
+    def supportedOperators(self, field_voc_type):
         arr = []
         if self.resource is None:
             return []
@@ -441,10 +442,10 @@ class ContextResource:
             exps = []
             if v_typed_called.parameters is not None:
                 for param in v_typed_called.parameters:
-                    #if param == object:
-                    #    exps.append( vocabulary(field_voc_type) )
-                    #else:
-                    exps.append( vocabulary(param) )
+                    if param == object:
+                        exps.append( vocabulary(field_voc_type) )
+                    else:
+                        exps.append( vocabulary(param) )
 
             if v_typed_called.return_type in vocabularyDict():
                 rets = vocabulary(v_typed_called.return_type)
@@ -534,7 +535,6 @@ class ContextResource:
         #if isGeometry:
         self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
 
-    """
     def set_context_to_expression_or_set_none(self, attributes_functions_str):
         self.dict_context = {}
         attrs_functs_list = self.resource.remove_last_slash(attributes_functions_str).split('/')
@@ -560,7 +560,6 @@ class ContextResource:
             self.dict_context = None
         #elif attrs_functs_list[-1] in operators_names and len(attrs_functs_list) == 3:
         #    self.dict_context = None
-    """
 
     def set_context_to_object(self, object, attribute_name):
         self.dict_context = {}
