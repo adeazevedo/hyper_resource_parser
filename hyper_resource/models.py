@@ -4,6 +4,7 @@ import importlib
 import inspect
 import json
 from datetime import date, datetime, time
+from decimal import Decimal
 import re
 
 import jwt
@@ -165,6 +166,9 @@ class ConverterType():
     def convert_to_float(self, value_as_str):
         return float(value_as_str)
 
+    def convert_to_decimal(self, value_as_str):
+        return Decimal(value_as_str)
+
     def convert_to_date(self, value_as_str):
         return datetime.strptime(value_as_str, "%Y-%m-%d").date()
 
@@ -197,6 +201,9 @@ class ConverterType():
         d[models.IntegerField] = self.convert_to_int
         d[models.AutoField] = self.convert_to_int
         d[models.FloatField] = self.convert_to_float
+
+        d[models.DecimalField] = self.convert_to_decimal
+
         d[models.TimeField] = self.convert_to_time
         d[models.DateTimeField] = self.convert_to_datetime
         d[models.DateField] = self.convert_to_date
