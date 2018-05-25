@@ -1393,6 +1393,7 @@ class NonSpatialResource(AbstractResource):
 class StyleResource(AbstractResource):
     pass
 
+
 class SpatialResource(AbstractResource):
 
     def __init__(self):

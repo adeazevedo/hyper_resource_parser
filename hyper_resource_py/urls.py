@@ -9,6 +9,7 @@ urlpatterns = (
     url(r'^'+ 'ibge/bcim/', include('bcim.urls', namespace='bcim_v1')),
     url(r'^controle_adesao-list/',include('controle_adesao.urls',namespace='controle_adesao')),
     url(r'^controle-list/',include('controle.urls',namespace='controle_v1')),
-     url(r'^user_management-list/',include('user_management.urls',namespace='user_management')),
+    url(r'^user_management-list/',include('user_management.urls',namespace='user_management')),
+    url(r'^expression/',include('expression_interface.urls',namespace='expression_interface')),
 )
 

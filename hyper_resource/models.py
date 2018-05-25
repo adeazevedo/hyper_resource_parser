@@ -58,6 +58,12 @@ def dict_map_geo_field_geometry():
     dic[PolygonField] = Polygon
     return dic
 
+def boolean_operator():
+    return ['neq', 'eq','lt','lte','gt','gte','between','isnull','isnotnull', 'like','notlike','in','notin',
+        '*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','isnotnull','*like','*notlike','*in','*notin']
+def logical_operator():
+    return ['or', 'and', '*or', '*and']
+
 class Type_Called():
     """
     Type_called is a definition type that contains a name,
@@ -326,11 +332,10 @@ class FactoryComplexQuery:
         return [field.name for field in self.fields(mode_class)]
 
     def base_operators(self):
-        return ['neq', 'eq','lt','lte','gt','gte','between','isnull','isnotnull', 'like','notlike','in','notin',
-        '*neq', '*eq','*lt','*lte','*gt','*gte','*between','*isnull','isnotnull','*like','*notlike','*in','*notin']
+        return boolean_operator()
 
     def logical_operators(self):
-        return ['or', 'and', '*or', '*and']
+        return logical_operator()
 
     def is_attribute(self, att_name, model_class):
         return att_name in self.field_names(model_class)
