@@ -7,7 +7,8 @@ from rest_framework.reverse import reverse
 # Create your views here.
 from rest_framework.views import APIView
 
-from hyper_resource.models import boolean_operator
+from expression_interface.contexts import SubBooleanOperatorResourceContext, LogicalOperatorResourceContext
+from hyper_resource.models import boolean_operator, logical_operator
 from hyper_resource.views import AbstractResource, BaseContext
 from rest_framework.response import Response
 
@@ -65,6 +66,7 @@ def get_root_response(request):
     format = None
     root_links = {
         'boolean-operators': reverse('expression_interface:sub_boolean_operator', request=request, format=format),
+        'logical_operator': reverse('expression_interface:logical_operator', request=request, format=format),
     }
     ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
     return ordered_dict_of_link
@@ -120,7 +122,12 @@ class APIRoot(APIView):
         return self.base_context.addContext(request, response)
 
 class SubBooleanOperatorResource(AbstractResource):
-    contextclassname = 'boolean-operators'
+    contextclassname = 'sub-boolean-operators'
+
+    def initialize_context(self):
+        self.context_resource = SubBooleanOperatorResourceContext()
+        self.context_resource.resource = self
+
     def get(self, request, *args, **kwargs):
         dici = {}
         for oper_name in boolean_operator():
@@ -128,3 +135,36 @@ class SubBooleanOperatorResource(AbstractResource):
         return Response(data=dici, content_type='application/json')
 
 
+    def options(self, request, *args, **kwargs):
+        response = super(SubBooleanOperatorResource, self).options( request, *args, **kwargs)
+        #self.basic_get(request, *args, **kwargs)
+        response.data = self.context_resource.context()
+        response['content-type'] = 'application/ld+json'
+        return response
+
+    def supportedOperationsFor(object_model, resource_type):
+        return []
+
+class LogicalOperatorResource(AbstractResource):
+    contextclassname = 'logical-operators'
+
+    def initialize_context(self):
+        self.context_resource = LogicalOperatorResourceContext()
+        self.context_resource.resource = self
+
+    def get(self, request, *args, **kwargs):
+        dici = {}
+        for oper_name in logical_operator():
+            dici[oper_name] = oper_name
+        return Response(data=dici, content_type='application/json')
+
+
+    def options(self, request, *args, **kwargs):
+        response = super(LogicalOperatorResource, self).options( request, *args, **kwargs)
+        #self.basic_get(request, *args, **kwargs)
+        response.data = self.context_resource.context()
+        response['content-type'] = 'application/ld+json'
+        return response
+
+    def supportedOperationsFor(object_model, resource_type):
+        return []
