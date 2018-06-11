@@ -2,7 +2,8 @@
 import random
 import re
 
-from django.http import HttpResponse
+import jwt
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 # Create your views here.
 from rest_framework import status
@@ -1400,10 +1401,7 @@ class SpatialResource(AbstractResource):
         super(SpatialResource, self).__init__()
         self.iri_style = None
 
-    def get_geometry_object(self, object_model):
-        return getattr(object_model, self.geometry_field_name(), None)
-
-    def geometry_field_name(self):
+    def spatial_field_name(self):
         return self.serializer_class.Meta.geo_field
 
     def make_geometrycollection_from_featurecollection(self, feature_collection):
@@ -1440,16 +1438,6 @@ class SpatialResource(AbstractResource):
             return parameters_converted
 
         return self.parametersConverted(parameters)
-
-    def _value_from_objectOLD(self, object, attribute_or_function_name, parameters):
-
-        attribute_or_function_name_striped = attribute_or_function_name.strip()
-        self.name_of_last_operation_executed = attribute_or_function_name_striped
-        if len(parameters):
-            params = self.all_parameters_converted(attribute_or_function_name_striped, parameters)
-            return getattr(object, attribute_or_function_name_striped)(*params)
-
-        return getattr(object, attribute_or_function_name_striped)
 
     def parametersConverted(self, params_as_array):
         paramsConveted = []
@@ -1496,7 +1484,6 @@ class SpatialResource(AbstractResource):
 
         return paramsConveted
 
-
 class FeatureResource(SpatialResource):
 
     def __init__(self):
@@ -1535,7 +1522,7 @@ class FeatureResource(SpatialResource):
                if len(attributes) == 1:
                    return RequiredObject(obj, self.content_type_or_default_content_type(request), geom, 200)
            a_dict[attr_name] = obj
-        if self.geometry_field_name() in attributes:
+        if self.spatial_field_name() in attributes:
             a_dict = self.dict_as_geojson(a_dict)
         self.current_object_state = a_dict
         return RequiredObject(a_dict, CONTENT_TYPE_JSON, self.object_model,  200)
@@ -1651,6 +1638,51 @@ class FeatureResource(SpatialResource):
     def get(self, request, *args, **kwargs):
        self.change_request_if_image_png_into_IRI(request)
        return super(FeatureResource,self).get(request, *args, **self.kwargs)
+
+class RasterResource(SpatialResource):
+
+    def basic_get(self, request, *args, **kwargs):
+        self.object_model = self.get_object(kwargs)
+        self.current_object_state = self.object_model
+        self.set_basic_context_resource(request)
+        # self.request.query_params.
+        attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
+
+        if self.is_simple_path(attributes_functions_str):
+
+            serializer = self.serializer_class(self.object_model, context={'request': self.request})
+            output = (serializer.data, CONTENT_TYPE_JSON, self.object_model, {'status': 200})
+
+        elif self.path_has_only_attributes(attributes_functions_str):
+            output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
+            dict_attribute = output[0]
+            if len(attributes_functions_str.split(',')) > 1:
+                self._set_context_to_attributes(dict_attribute.keys())
+            else:
+                self._set_context_to_only_one_attribute(attributes_functions_str)
+        elif self.path_has_url(attributes_functions_str.lower()):
+            output = self.response_request_attributes_functions_str_with_url( attributes_functions_str)
+            self.context_resource.set_context_to_object(self.current_object_state, self.name_of_last_operation_executed)
+        else:
+            output = self.response_of_request(attributes_functions_str)
+            self._set_context_to_operation(self.name_of_last_operation_executed)
+
+        return output
+
+    def get(self, request, *args, **kwargs):
+
+        self.object_model = self.get_object(kwargs)
+        self.current_object_state = self.object_model
+        self.set_basic_context_resource(request)
+        # self.request.query_params.
+        attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
+        #response = StreamingHttpResponse(self.object_model.get_spatial_object().vsi_buffer, content_type="image/tiff")
+        #vsi_buf = self.object_model.get_spatial_object().bands[0].data()
+        vsi_buf = self.object_model.get_spatial_object()
+        #response = HttpResponse(vsi_buf , "image/tiff")
+        response = StreamingHttpResponse(vsi_buf, content_type="image/tiff")
+        #response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        return response
 
 class AbstractCollectionResource(AbstractResource):
 
@@ -2778,7 +2810,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
         wkt = "GEOMETRYCOLLECTION("
         for i, e in enumerate(queryset):
             if isinstance(e,FeatureModel):
-                wkt += e.get_geometry_object().wkt  # it is need to fix the case that the attribute is not called by geom
+                wkt += e.get_spatial_object().wkt  # it is need to fix the case that the attribute is not called by geom
             else:
                 geome = GEOSGeometry(json.dumps(e['geometry']))
                 wkt +=  geome.wkt
@@ -2788,7 +2820,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
             else:
                 wkt += ")"
         if isinstance(queryset[0], FeatureModel):
-            geom_type = queryset[0].get_geometry_object().geom_type
+            geom_type = queryset[0].get_spatial_object().geom_type
 
 
         config = {'wkt': wkt, 'type': geom_type}
