@@ -391,7 +391,7 @@ class FactoryComplexQuery:
 
         return self.q_object_for_filter_expression(q_object_expression, model_class, expression_as_array[3:])
 
-class BaseOperationController:
+class BaseOperationController(object):
 
     _instance = None
     def __new__(cls, *args, **kwargs):

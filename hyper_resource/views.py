@@ -1679,8 +1679,11 @@ class RasterResource(SpatialResource):
         #response = StreamingHttpResponse(self.object_model.get_spatial_object().vsi_buffer, content_type="image/tiff")
         #vsi_buf = self.object_model.get_spatial_object().bands[0].data()
         vsi_buf = self.object_model.get_spatial_object()
-        #response = HttpResponse(vsi_buf , "image/tiff")
-        response = StreamingHttpResponse(vsi_buf, content_type="image/tiff")
+        vsi_buf.driver = 'GTiff'
+
+        response = HttpResponse(vsi_buf, "image/tiff")
+        #response['Content-Length'] = vsi_buf.width * 8*vsi_buf.height * 8
+        #response = StreamingHttpResponse(vsi_buf, content_type="image/tiff")
         #response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
         return response
 

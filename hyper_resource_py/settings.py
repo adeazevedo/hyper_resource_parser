@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'controle_adesao',
     'controle',
     'bcim',
+    'raster_base',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -140,7 +141,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'OPTIONS': {
-            'options': '-c search_path=ggt,bcim,public,administrativo,user_management',
+            'options': '-c search_path=ggt,bcim,public,administrativo,user_management,raster',
 
         },
 
