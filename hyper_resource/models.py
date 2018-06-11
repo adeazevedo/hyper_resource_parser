@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-import base64
 import importlib
 import inspect
 import json
+import re
 from datetime import date, datetime, time
 from decimal import Decimal
-import re
 
-import jwt
 import requests
-import sys
 from django.contrib.gis.db import models
-from django.contrib.gis.db.models import Q
+from django.contrib.gis.db.models import Q, RasterField
 # Create your models here.
-from django.contrib.gis.db.models import GeometryField
 from django.contrib.gis.gdal import OGRGeometry
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import GeometryCollection
@@ -23,8 +19,6 @@ from django.contrib.gis.geos import MultiPoint
 from django.contrib.gis.geos import MultiPolygon
 from django.contrib.gis.geos import Point
 from django.contrib.gis.geos import Polygon
-from django.contrib.gis.geos.prepared import PreparedGeometry
-
 from django.contrib.gis.db.models import GeometryField
 from django.contrib.gis.db.models import LineStringField
 from django.contrib.gis.db.models import MultiLineStringField
@@ -823,6 +817,8 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
       return name in operation_dict
 
 class BusinessModel(models.Model):
+    class Meta:
+        abstract = True
 
     def id(self):
         return self.pk
@@ -936,36 +932,51 @@ class BusinessModel(models.Model):
         c = getattr(m, class_name)
         return c
 
+class SpatialModel(BusinessModel):
+    spatial_object = None
 
     class Meta:
         abstract = True
 
-class FeatureModel(BusinessModel):
-    geometry_object = None
-
-    class Meta:
-        abstract = True
+    #@abstractmethod #Must be overrided
+    def get_geospatial_type(self):
+        return None
 
     def geo_field(self):
-        return [field for field in self.fields() if isinstance(field, GeometryField)][0]
+        return [field for field in self.fields() if isinstance(field, self.get_geospatial_type())][0]
 
     def geo_field_name(self):
         return self.geo_field().name
 
-    def get_geometry_object(self):
+    def get_spatial_object(self):
         """
-        Returns FeatureModel.geometry_object. If this is None
-        returns the value of GeometryField of the FeatureModel
-        (or sublclass) instance. OBS: the value of
-        FeatureModel.geometry_object and the GeometryField of
-        FeatureModel instance is the same value
-        :return:
+        Returns SpatialObject(Raster for raster object and Gemetry for feature.
         """
-        if self.geometry_object == None:
+        if self.spatial_object == None:
             # FeatureModel.geo_field_name() returns the name of geometric field of FeatureModel instance
             # getattr() gets the value of this geometric field (that is a geometric object containing geometric coordinates)
-            self.geometry_object = getattr(self, self.geo_field_name(), None)
-        return self.geometry_object
+            self.spatial_object = getattr(self, self.geo_field_name(), None)
+        return self.spatial_object
+
+    def srs(self):
+        #Responds the spatial reference system of the spatial object, as a SpatialReference instance.
+        return self.get_spatial_object().srs
+
+    def extent(self):
+        #Responds the extent (boundary values) of the spatial object, as a 4-tuple (xmin, ymin, xmax, ymax) in the spatial reference system of the source.
+        return self.get_spatial_object().extent
+
+    def srid(self):
+        #Responds the Spatial Reference System Identifier (SRID) of the spatial object.
+        return self.get_spatial_object().srid
+
+class FeatureModel(SpatialModel):
+
+    class Meta:
+        abstract = True
+
+    def get_geospatial_type(self):
+        return GeometryField
 
     def _get_type_geometry_object(self):
         """
@@ -975,7 +986,7 @@ class FeatureModel(BusinessModel):
         """
         # FeatureModel.get_geometry_object() returns a
         # geometric object references to the FeatureModel instance
-        geo_object = self.get_geometry_object()
+        geo_object = self.get_spatial_object()
         if geo_object is None:
             return None
         return type(geo_object)
@@ -1004,231 +1015,266 @@ class FeatureModel(BusinessModel):
         return oc.dict_by_type_geometry_operations_dict()[self.get_geometry_type()]
 
     def centroid(self):
-        return self.get_geometry_object().centroid
+        return self.get_spatial_object().centroid
 
     def ring(self):
-        return self.get_geometry_object().ring
+        return self.get_spatial_object().ring
 
     def crs(self):
-        return self.get_geometry_object().crs
+        return self.get_spatial_object().crs
 
     def wkt(self):
-        return self.get_geometry_object().wkt
-
-    def srs(self):
-        return self.get_geometry_object().srs
+        return self.get_spatial_object().wkt
 
     def hexewkb(self):
-        return self.get_geometry_object().hexewkb
+        return self.get_spatial_object().hexewkb
 
     def equals_exact(self, other_GEOSGeometry, tolerance=0):
-        return self.get_geometry_object().equals_exact(other_GEOSGeometry, tolerance)
+        return self.get_spatial_object().equals_exact(other_GEOSGeometry, tolerance)
 
     def set_srid(self, a_srid):
-        return self.get_geometry_object().set_srid(a_srid)
+        return self.get_spatial_object().set_srid(a_srid)
 
     def hex(self):
-        return self.get_geometry_object().hex
+        return self.get_spatial_object().hex
 
     def has_cs(self):
-        return self.get_geometry_object().has_cs
+        return self.get_spatial_object().has_cs
 
     def area(self):
-        return self.get_geometry_object().area
-
-    def extend(self):
-        return self.get_geometry_object().extend
+        return self.get_spatial_object().area
 
     def wkb(self):
-        return self.get_geometry_object().wkb
+        return self.get_spatial_object().wkb
 
     def geojson(self):
-        return self.get_geometry_object().geojson
+        return self.get_spatial_object().geojson
 
     def relate(self, other_GEOSGeometry):
-        return self.get_geometry_object().relate(other_GEOSGeometry)
+        return self.get_spatial_object().relate(other_GEOSGeometry)
 
     def set_coords(self, coords):
-        return self.get_geometry_object().set_coords(coords)
+        return self.get_spatial_object().set_coords(coords)
 
     def simple(self):
-        return self.get_geometry_object().simple
-
-    def simplify(self):
-        return self.get_geometry_object().simplify
-
+        return self.get_spatial_object().simple
 
     def geom_type(self):
-        return self.get_geometry_object().geom_type
+        return self.get_spatial_object().geom_type
 
     def set_y(self, y):
-        return self.get_geometry_object().set_y(y)
+        return self.get_spatial_object().set_y(y)
 
     def normalize(self):
-        return self.get_geometry_object().normalize
+        return self.get_spatial_object().normalize
 
     def sym_difference(self, other_GEOSGeometry):
-        return self.get_geometry_object().sym_difference(other_GEOSGeometry)
+        return self.get_spatial_object().sym_difference(other_GEOSGeometry)
 
     def valid_reason(self):
-        return self.get_geometry_object().valid_reason
+        return self.get_spatial_object().valid_reason
 
     def geom_typeid(self):
-        return self.get_geometry_object().geom_typeid
+        return self.get_spatial_object().geom_typeid
 
     def valid(self):
-        return self.get_geometry_object().valid
+        return self.get_spatial_object().valid
 
     def ogr(self):
-        return self.get_geometry_object().ogr
+        return self.get_spatial_object().ogr
 
     def coords(self):
-        return self.get_geometry_object().coords
+        return self.get_spatial_object().coords
 
     def num_coords(self):
-        return self.get_geometry_object().num_coords
+        return self.get_spatial_object().num_coords
 
     def get_srid(self):
-        return self.get_geometry_object().get_srid
+        return self.get_spatial_object().get_srid
 
     def distance(self, other_GEOSGeometry):
-        return self.get_geometry_object().distance(other_GEOSGeometry)
+        return self.get_spatial_object().distance(other_GEOSGeometry)
 
     def json(self):
-        return self.get_geometry_object().json
+        return self.get_spatial_object().json
 
     def pop(self):
-        return self.get_geometry_object().pop
+        return self.get_spatial_object().pop
 
     def ewkb(self):
-        return self.get_geometry_object().ewkb
+        return self.get_spatial_object().ewkb
 
     def x(self):
-        return self.get_geometry_object().x
+        return self.get_spatial_object().x
 
     def simplify(self, tolerance=0.0, preserve_topology=False):
-        return self.get_geometry_object().simplify(tolerance=0.0, preserve_topology=False)
+        return self.get_spatial_object().simplify(tolerance, preserve_topology)
 
     def set_z(self):
-        return self.get_geometry_object().set_z
+        return self.get_spatial_object().set_z
 
     def buffer(self, width, quadsegs=8):
-        return self.get_geometry_object().buffer(width, quadsegs)
+        return self.get_spatial_object().buffer(width, quadsegs)
 
     def relate_pattern(self, other_GEOSGeometry, pattern):
-        return self.get_geometry_object().relate_pattern(other_GEOSGeometry, pattern)
+        return self.get_spatial_object().relate_pattern(other_GEOSGeometry, pattern)
 
     def z(self):
-        return self.get_geometry_object().z
+        return self.get_spatial_object().z
 
     def num_geom(self):
-        return self.get_geometry_object().num_geom
+        return self.get_spatial_object().num_geom
 
     def coord_seq(self):
-        return self.get_geometry_object().coord_seq
+        return self.get_spatial_object().coord_seq
 
     def dims(self):
-        return self.get_geometry_object().dims
+        return self.get_spatial_object().dims
 
     def get_y(self):
-        return self.get_geometry_object().get_y
+        return self.get_spatial_object().get_y
 
     def tuple(self):
-        return self.get_geometry_object().tuple
+        return self.get_spatial_object().tuple
 
     def y(self):
-        return self.get_geometry_object().y
+        return self.get_spatial_object().y
 
     def convex_hull(self):
-        return self.get_geometry_object().convex_hull
+        return self.get_spatial_object().convex_hull
 
     def get_x(self):
-        return self.get_geometry_object().get_x
+        return self.get_spatial_object().get_x
 
     def index(self):
-        return self.get_geometry_object().index
+        return self.get_spatial_object().index
 
     def boundary(self):
-        return self.get_geometry_object().boundary
+        return self.get_spatial_object().boundary
 
     def kml(self):
-        return self.get_geometry_object().kml
+        return self.get_spatial_object().kml
 
     def touches(self, other_GEOSGeometry):
-        return self.get_geometry_object().touches(other_GEOSGeometry)
+        return self.get_spatial_object().touches(other_GEOSGeometry)
 
     def empty(self):
-        return self.get_geometry_object().empty
-
-    def srid(self):
-        return self.get_geometry_object().srid
+        return self.get_spatial_object().empty
 
     def get_z(self):
-        return self.get_geometry_object().get_z
+        return self.get_spatial_object().get_z
 
     def extent(self):
-        return self.get_geometry_object().extent
+        return self.get_spatial_object().extent
 
     def union(self, other_GEOSGeometry):
-        return self.get_geometry_object().union(other_GEOSGeometry)
+        return self.get_spatial_object().union(other_GEOSGeometry)
 
     def intersects(self, other_GEOSGeometry):
-        return self.get_geometry_object().intersects(other_GEOSGeometry)
+        return self.get_spatial_object().intersects(other_GEOSGeometry)
 
     def contains(self, other_GEOSGeometry):
-        return self.get_geometry_object().contains(other_GEOSGeometry)
+        return self.get_spatial_object().contains(other_GEOSGeometry)
 
     def hasz(self):
-        return self.get_geometry_object().hasz
+        return self.get_spatial_object().hasz
 
     def crosses(self, other_GEOSGeometry):
-        return self.get_geometry_object().crosses(other_GEOSGeometry)
+        return self.get_spatial_object().crosses(other_GEOSGeometry)
 
     def count(self):
-        return self.get_geometry_object().count
+        return self.get_spatial_object().count
 
     def num_points(self):
-        return self.get_geometry_object().num_points
+        return self.get_spatial_object().num_points
 
     def within(self, other_GEOSGeometry):
-        return self.get_geometry_object().within(other_GEOSGeometry)
+        return self.get_spatial_object().within(other_GEOSGeometry)
 
     def intersection(self, other_GEOSGeometry):
-        return self.get_geometry_object().intersection(other_GEOSGeometry)
+        return self.get_spatial_object().intersection(other_GEOSGeometry)
 
     def overlaps(self, other_GEOSGeometry):
-        return self.get_geometry_object().overlaps(other_GEOSGeometry)
+        return self.get_spatial_object().overlaps(other_GEOSGeometry)
 
     def equals(self, other_GeosGeometry):
-        return self.get_geometry_object().equals(other_GeosGeometry)
+        return self.get_spatial_object().equals(other_GeosGeometry)
 
     def point_on_surface(self):
-        return self.get_geometry_object().point_on_surface
+        return self.get_spatial_object().point_on_surface
 
     def difference(self, other_GEOSGeometry):
-        return self.get_geometry_object().difference(other_GEOSGeometry)
-
-    def transform(self, srid, clone=True):
-        return self.get_geometry_object().transform(srid, clone=True)
+        return self.get_spatial_object().difference(other_GEOSGeometry)
 
     def set_x(self, x):
-        return self.get_geometry_object().set_x(x)
+        return self.get_spatial_object().set_x(x)
 
     def get_coords(self):
-        return self.get_geometry_object().get_coords
+        return self.get_spatial_object().get_coords
 
     def envelope(self):
-        return self.get_geometry_object().envelope
+        return self.get_spatial_object().envelope
 
     def prepared(self):
-        return self.get_geometry_object().prepared
+        return self.get_spatial_object().prepared
 
     def ewkt(self):
-        return self.get_geometry_object().ewkt
+        return self.get_spatial_object().ewkt
 
     def length(self):
-        return self.get_geometry_object().length
+        return self.get_spatial_object().length
 
     def disjoint(self, other_GEOSGeometry):
-        return self.get_geometry_object().disjoint(other_GEOSGeometry)
-# Change de secrey key
+        return self.get_spatial_object().disjoint(other_GEOSGeometry)
+
+    def transform(self, srid, clone=True):
+        return self.get_spatial_object().transform(srid, clone=True)
+
+class RasterModel(SpatialModel):
+
+    class Meta:
+        abstract = True
+
+    def get_geospatial_type(self):
+        #Responds the type of the spatial field
+        return RasterField
+
+    def bands(self):
+        #Responds a list of all bands of the source, as GDALBand instances.
+        return self.get_spatial_object().bands
+
+    def geotransfornm(self):
+        """Responds a List of affine transformation matrix used to georeference the source, as a tuple of six coefficients
+        which map pixel/line coordinates into georeferenced space.
+        """
+        return self.get_spatial_object().geotransform
+
+    def height(self):
+        #responds the height of the source in pixels (X-axis).
+        return self.get_spatial_object().height
+
+    def origin(self):
+        #Responds a Coordinates of the top left origin of the raster in the spatial reference system of the source as a point object with x and y members.
+        return self.get_spatial_object().origin
+
+    def scale(self):
+       #Responds a Pixel width and height used for georeferencing the raster, as a as a point object with x and y members.
+        return self.get_spatial_object().scale
+
+    def skew(self):
+        #Responds the Skew coefficients used to georeference the raster, as a point object with x and y members. In case of north up images, these coefficients are both 0.
+        return self.get_spatial_object().skew
+
+    def transform(self, srid, driver=None, name=None, resampling='NearestNeighbour', max_error=0.0):
+        #Returns a transformed version of this raster with the specified SRID.
+        # This function transforms the current raster into a new spatial reference system that can be specified with an srid.
+        return self.get_spatial_object().transform(srid, driver, name, resampling, max_error)
+
+    def warp(self, ds_input, resampling='NearestNeighbour', max_error=0.0):
+        #Responds a warped version of this raster.
+        return self.get_spatial_object().warp(ds_input, resampling, max_error)
+
+    def width(self):
+        #responds the width of the source in pixels (X-axis).
+        return self.get_spatial_object().width
+
