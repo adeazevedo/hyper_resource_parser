@@ -42,7 +42,7 @@ class APIRoot(APIView):
         response = Response(root_links)
         return self.base_context.addContext(request, response)
 
-class ImagemExemplo1List(SpatialCollectionResource):
+class ImagemExemplo1List(TiffCollectionResource):
     queryset = ImagemExemplo1.objects.all()
     serializer_class = ImagemExemplo1Serializer
     contextclassname = 'imagem-exemplo1-list'
@@ -50,14 +50,14 @@ class ImagemExemplo1List(SpatialCollectionResource):
         self.context_resource = ImagemExemplo1ListContext()
         self.context_resource.resource = self
 
-class ImagemExemplo1Detail(RasterResource):
+class ImagemExemplo1Detail(TiffResource):
     serializer_class = ImagemExemplo1Serializer
     contextclassname = 'imagem-exemplo1-list'
     def initialize_context(self):
         self.context_resource = ImagemExemplo1DetailContext()
         self.context_resource.resource = self
 
-class ImagemExemplo2List(SpatialCollectionResource):
+class ImagemExemplo2List(TiffCollectionResource):
     queryset = ImagemExemplo2.objects.all()
     serializer_class = ImagemExemplo2Serializer
     contextclassname = 'imagem-exemplo2-list'
@@ -65,14 +65,14 @@ class ImagemExemplo2List(SpatialCollectionResource):
         self.context_resource = ImagemExemplo2ListContext()
         self.context_resource.resource = self
 
-class ImagemExemplo2Detail(RasterResource):
+class ImagemExemplo2Detail(TiffResource):
     serializer_class = ImagemExemplo2Serializer
     contextclassname = 'imagem-exemplo2-list'
     def initialize_context(self):
         self.context_resource = ImagemExemplo2DetailContext()
         self.context_resource.resource = self
 
-class ImagemExemploTile1List(SpatialCollectionResource):
+class ImagemExemploTile1List(TiffCollectionResource):
     queryset = ImagemExemploTile1.objects.all()
     serializer_class = ImagemExemploTile1Serializer
     contextclassname = 'imagem-exemplo-tile1-list'
@@ -80,14 +80,14 @@ class ImagemExemploTile1List(SpatialCollectionResource):
         self.context_resource = ImagemExemploTile1ListContext()
         self.context_resource.resource = self
 
-class ImagemExemploTile1Detail(RasterResource):
+class ImagemExemploTile1Detail(TiffResource):
     serializer_class = ImagemExemploTile1Serializer
     contextclassname = 'imagem-exemplo-tile1-list'
     def initialize_context(self):
         self.context_resource = ImagemExemploTile1DetailContext()
         self.context_resource.resource = self
 
-class ImagemExemploTile2List(SpatialCollectionResource):
+class ImagemExemploTile2List(TiffCollectionResource):
     queryset = ImagemExemploTile2.objects.all()
     serializer_class = ImagemExemploTile2Serializer
     contextclassname = 'imagem-exemplo-tile2-list'
@@ -95,7 +95,7 @@ class ImagemExemploTile2List(SpatialCollectionResource):
         self.context_resource = ImagemExemploTile2ListContext()
         self.context_resource.resource = self
 
-class ImagemExemploTile2Detail(RasterResource):
+class ImagemExemploTile2Detail(TiffResource):
     serializer_class = ImagemExemploTile2Serializer
     contextclassname = 'imagem-exemplo-tile2-list'
     def initialize_context(self):

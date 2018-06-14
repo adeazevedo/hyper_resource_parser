@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from hyper_resource.models import FeatureModel, BusinessModel, RasterModel
+from hyper_resource.models import FeatureModel, BusinessModel, RasterModel, TiffModel
 # This is an auto-generated Django model module.
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
@@ -10,7 +10,7 @@ from hyper_resource.models import FeatureModel, BusinessModel, RasterModel
 
 from django.contrib.gis.db import models
 
-class ImagemExemplo1(RasterModel):
+class ImagemExemplo1(TiffModel):
     rid = models.AutoField(primary_key=True)
     rast = models.RasterField(blank=True, null=True)  # This field type is a guess.
 
@@ -18,7 +18,7 @@ class ImagemExemplo1(RasterModel):
         managed = False
         db_table = 'imagem1'
 
-class ImagemExemplo2(RasterModel):
+class ImagemExemplo2(TiffModel):
     rid = models.AutoField(primary_key=True)
     rast = models.RasterField(blank=True, null=True)  # This field type is a guess.
 
@@ -26,7 +26,7 @@ class ImagemExemplo2(RasterModel):
         managed = False
         db_table = 'imagem2'
 
-class ImagemExemploTile1(RasterModel):
+class ImagemExemploTile1(TiffModel):
     rid = models.AutoField(primary_key=True)
     rast = models.RasterField(blank=True, null=True)  # This field type is a guess.
 
@@ -34,7 +34,7 @@ class ImagemExemploTile1(RasterModel):
         managed = False
         db_table = 'imagem1_tiles'
 
-class ImagemExemploTile2(RasterModel):
+class ImagemExemploTile2(TiffModel):
     rid = models.AutoField(primary_key=True)
     rast = models.RasterField(blank=True, null=True)  # This field type is a guess.
 

@@ -832,6 +832,9 @@ class BusinessModel(models.Model):
     def model_class(self):
         return type(self)
 
+    def model_class_name(self):
+        return self._meta.model_name
+
     def _key_is_identifier(self, key):
         return key in self.serializer_class.Meta.identifiers
 
@@ -1237,7 +1240,6 @@ class FeatureModel(SpatialModel):
         return self.get_spatial_object().transform(srid, clone=True)
 
 class RasterModel(SpatialModel):
-
     class Meta:
         abstract = True
 
@@ -1283,4 +1285,8 @@ class RasterModel(SpatialModel):
     def width(self):
         #responds the width of the source in pixels (X-axis).
         return self.get_spatial_object().width
+
+class TiffModel(RasterModel):
+    pass
+
 
