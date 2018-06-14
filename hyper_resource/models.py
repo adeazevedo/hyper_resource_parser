@@ -932,6 +932,12 @@ class BusinessModel(models.Model):
         c = getattr(m, class_name)
         return c
 
+    def table_name(self):
+        return self.__class__.objects.model._meta.db_table
+
+    def pk_name(self):
+        return self.__class__.objects.model._meta.pk.name
+
 class SpatialModel(BusinessModel):
     spatial_object = None
 

@@ -10,6 +10,7 @@ class ImagemExemplo1Serializer(GeoBusinessSerializer):
         fields = ['rid','rast']
         identifier = 'rid'
         identifiers = ['pk', 'rid']
+        geo_field = 'rast'
 
 class ImagemExemplo2Serializer(BusinessSerializer):
     class Meta:
@@ -17,6 +18,7 @@ class ImagemExemplo2Serializer(BusinessSerializer):
         fields = ['rid','rast']
         identifier = 'rid'
         identifiers = ['pk', 'rid']
+        geo_field = 'rast'
 
 class ImagemExemploTile1Serializer(BusinessSerializer):
     class Meta:
@@ -24,6 +26,7 @@ class ImagemExemploTile1Serializer(BusinessSerializer):
         fields = ['rid','rast']
         identifier = 'rid'
         identifiers = ['pk', 'rid']
+        geo_field = 'rast'
 
 class ImagemExemploTile2Serializer(BusinessSerializer):
     class Meta:
@@ -31,6 +34,7 @@ class ImagemExemploTile2Serializer(BusinessSerializer):
         fields = ['rid','rast']
         identifier = 'rid'
         identifiers = ['pk', 'rid']
+        geo_field = 'rast'
 
 
 

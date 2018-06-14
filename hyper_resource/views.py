@@ -3,7 +3,9 @@ import random
 import re
 
 import jwt
-from django.http import HttpResponse, StreamingHttpResponse
+from django.contrib.gis.gdal import GDALRaster
+from django.db import connection
+from django.http import HttpResponse, StreamingHttpResponse, FileResponse
 from django.shortcuts import get_object_or_404
 # Create your views here.
 from rest_framework import status
@@ -440,6 +442,12 @@ class AbstractResource(APIView):
 
     def model_class_name(self):
         return self.model_class().__name__
+
+    def table_name(self):
+        return self.model_class().objects.model._meta.db_table
+
+    def pk_name(self):
+        return self.model_class().objects.model._meta.pk.name
 
     def attribute_names_to_web(self):
         return [field.name for field in self.object_model.fields()]
@@ -1641,6 +1649,20 @@ class FeatureResource(SpatialResource):
 
 class RasterResource(SpatialResource):
 
+    def get_object_model_raster(self, kwargs):
+       pk_name = self.pk_name() if self.pk_name() in kwargs else 'pk'
+       #sql_string = "SELECT " + self.pk_name() +  ", ST_AsGDALRaster(" + self.spatial_field_name() +  ", 'GTiff') FROM " + self.table_name() +  " WHERE " + self.pk_name() + "  = " + kwargs[pk_name]
+       sql_string = "SELECT  *  FROM " + self.table_name() +  " WHERE " + self.pk_name() + "  = " + kwargs[pk_name]
+       with connection.cursor() as cursor:
+            cursor.execute(sql_string)
+            row = cursor.fetchone()
+            obj_model = self.model_class()()
+            setattr(obj_model,self.pk_name(), row[0])
+            rst = GDALRaster(row[1])
+            setattr(obj_model,self.spatial_field_name(), rst)
+            return obj_model
+
+
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.get_object(kwargs)
         self.current_object_state = self.object_model
@@ -1670,20 +1692,22 @@ class RasterResource(SpatialResource):
         return output
 
     def get(self, request, *args, **kwargs):
-
-        self.object_model = self.get_object(kwargs)
-        self.current_object_state = self.object_model
-        self.set_basic_context_resource(request)
+        self.object_model = self.get_object_model_raster(kwargs)
+        #self.current_object_state = self.object_model
+        #self.set_basic_context_resource(request)
         # self.request.query_params.
-        attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
+        #attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
         #response = StreamingHttpResponse(self.object_model.get_spatial_object().vsi_buffer, content_type="image/tiff")
         #vsi_buf = self.object_model.get_spatial_object().bands[0].data()
-        vsi_buf = self.object_model.get_spatial_object()
-        vsi_buf.driver = 'GTiff'
+        #vsi_buf = self.object_model.get_spatial_object()
+        #vsi_buf = self.object_model.get_spatial_object().vsi_buffer
+        #vsi_buf.driver = 'GTiff'
 
-        response = HttpResponse(vsi_buf, "image/tiff")
+        response = HttpResponse(self.object_model.rast.vsi_buffer, content_type="image/tiff")
+        response['Content-Disposition'] = 'attachment; filename=raster.tiff'
         #response['Content-Length'] = vsi_buf.width * 8*vsi_buf.height * 8
         #response = StreamingHttpResponse(vsi_buf, content_type="image/tiff")
+        #response = FileResponse(vsi_buf, content_type="image/tiff")
         #response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
         return response
 
