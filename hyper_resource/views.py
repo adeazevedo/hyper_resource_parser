@@ -34,7 +34,8 @@ CONTENT_TYPE_JSON = "application/json"
 CONTENT_TYPE_LD_JSON = "application/ld+json"
 CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
 CONTENT_TYPE_IMAGE_PNG = "image/png"
-SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG)
+CONTENT_TYPE_IMAGE_TIFF = "image/tiff"
+SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG, CONTENT_TYPE_IMAGE_TIFF)
 ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD']
 
 CORS_ALLOW_HEADERS = (
@@ -1409,6 +1410,9 @@ class SpatialResource(AbstractResource):
         super(SpatialResource, self).__init__()
         self.iri_style = None
 
+    def basic_get(self, request, *args, **kwargs):
+        pass
+
     def spatial_field_name(self):
         return self.serializer_class.Meta.geo_field
 
@@ -1491,6 +1495,13 @@ class SpatialResource(AbstractResource):
                 #paramsConveted.append (value)
 
         return paramsConveted
+
+    def options(self, request, *args, **kwargs):
+        self.basic_get(request, *args, **kwargs)
+        #return self.context_resource.context()
+        resp = Response ( data=self.context_resource.context(), content_type='application/ld+json' )
+        self.add_base_headers(request, resp)
+        return resp
 
 class FeatureResource(SpatialResource):
 
@@ -1636,12 +1647,6 @@ class FeatureResource(SpatialResource):
     def default_content_type(self):
         return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
 
-    def options(self, request, *args, **kwargs):
-        self.basic_get(request, *args, **kwargs)
-        #return self.context_resource.context()
-        resp = Response ( data=self.context_resource.context(), content_type='application/ld+json' )
-        self.add_base_headers(request, resp)
-        return resp
 
     def get(self, request, *args, **kwargs):
        self.change_request_if_image_png_into_IRI(request)
@@ -1651,14 +1656,21 @@ class RasterResource(SpatialResource):
     def default_file_name(self):
         return self.object_model.model_class_name() + '_' + str(self.object_model.pk) + '.tiff'
 
+    def default_resource_type(self):
+        return 'Raster'
+
     def get_object_model_raster(self, kwargs):
         pass
 
 class TiffResource(RasterResource):
 
+    def default_content_type(self):
+        return CONTENT_TYPE_IMAGE_TIFF
+
     def get_object_model_raster(self, kwargs):
-       pk_name = self.pk_name() if self.pk_name() in kwargs else 'pk'
-       sql_string = "SELECT " + self.pk_name() +  ", ST_AsGDALRaster(" + self.spatial_field_name() +  ", 'GTiff') FROM " + self.table_name() +  " WHERE " + self.pk_name() + "  = " + kwargs[pk_name]
+       pk_name = self.pk_name() #if self.pk_name() in kwargs else 'pk'
+
+       sql_string = "SELECT " + pk_name +  ", ST_AsGDALRaster(" + self.spatial_field_name() +  ", 'GTiff') FROM " + self.table_name() +  " WHERE " + pk_name + "  = " + kwargs['pk']
        #sql_string = "SELECT  *  FROM " + self.table_name() +  " WHERE " + self.pk_name() + "  = " + kwargs[pk_name]
        with connection.cursor() as cursor:
             cursor.execute(sql_string)
@@ -1669,36 +1681,68 @@ class TiffResource(RasterResource):
             setattr(obj_model,self.spatial_field_name(), rst)
             return obj_model
 
+    def response_of_request(self,  attributes_functions_str):
+        att_funcs = attributes_functions_str.split('/')
+        self.current_object_state = self._execute_attribute_or_method(self.object_model, att_funcs[0], att_funcs[1:])
+        a_value = self.current_object_state
+        if isinstance(a_value, GEOSGeometry):
+            geom = a_value
+            a_value = json.loads(a_value.geojson)
+            return RequiredObject(a_value, CONTENT_TYPE_GEOJSON, self.object_model,  200)
+        elif isinstance(a_value, SpatialReference):
+           a_value = { self.name_of_last_operation_executed: a_value.wkt.strip('\n')}
+        elif isinstance(a_value, memoryview) or isinstance(a_value, buffer):
+           return RequiredObject(a_value.obj, CONTENT_TYPE_IMAGE_TIFF, self.object_model,200)
+        else:
+            a_value = {self.name_of_last_operation_executed: a_value}
+
+        return RequiredObject(a_value, CONTENT_TYPE_JSON, self.object_model, 200)
 
     def basic_get(self, request, *args, **kwargs):
+
         self.object_model = self.get_object_model_raster(kwargs)
         self.current_object_state = self.object_model
         self.set_basic_context_resource(request)
+        self.e_tag = str(hash(self.object_model))
         # self.request.query_params.
         attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
-
         if self.is_simple_path(attributes_functions_str):
-
-            serializer = self.serializer_class(self.object_model, context={'request': self.request})
-            output = (serializer.data, CONTENT_TYPE_JSON, self.object_model, {'status': 200})
+            required_object = RequiredObject(self.object_model.rast.vsi_buffer,  self.content_type_or_default_content_type(request), self.object_model, 200)
 
         elif self.path_has_only_attributes(attributes_functions_str):
-            output = self.response_resquest_with_attributes(attributes_functions_str.replace(" ", ""))
-            dict_attribute = output[0]
-            if len(attributes_functions_str.split(',')) > 1:
-                self._set_context_to_attributes(dict_attribute.keys())
+            str_attribute = attributes_functions_str.replace(" ", "").replace("/","")
+            required_object = self.response_resquest_with_attributes(str_attribute , request)
+
+            att_names = attributes_functions_str.split(',')
+            if len(att_names) > 1:
+                self._set_context_to_attributes(att_names)
             else:
                 self._set_context_to_only_one_attribute(attributes_functions_str)
         elif self.path_has_url(attributes_functions_str.lower()):
-            output = self.response_request_attributes_functions_str_with_url( attributes_functions_str)
+            required_object = self.response_request_attributes_functions_str_with_url(attributes_functions_str, request)
             self.context_resource.set_context_to_object(self.current_object_state, self.name_of_last_operation_executed)
         else:
-            output = self.response_of_request(attributes_functions_str)
+            s = str(attributes_functions_str)
+            if s[-1] == '/':
+               s = s[:-1]
+            required_object = self.response_of_request(s)
             self._set_context_to_operation(self.name_of_last_operation_executed)
-
-        return output
+        self.inject_e_tag()
+        self.temporary_content_type= required_object.content_type
+        return required_object
 
     def get(self, request, *args, **kwargs):
+
+        required_object = self.basic_get(request, *args, **kwargs)
+
+        if required_object.content_type == CONTENT_TYPE_IMAGE_TIFF:
+            response = HttpResponse(required_object.representation_object, required_object.content_type)
+            response['Content-Disposition'] = 'attachment; filename=' + self.default_file_name()
+            return response
+        response = Response(data=required_object.representation_object,status=200, content_type=required_object.content_type)
+        return response
+
+    def get_old(self, request, *args, **kwargs):
         self.object_model = self.get_object_model_raster(kwargs)
         self.current_object_state = self.object_model
         self.set_basic_context_resource(request)

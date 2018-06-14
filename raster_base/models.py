@@ -19,16 +19,16 @@ class ImagemExemplo1(TiffModel):
         db_table = 'imagem1'
 
 class ImagemExemplo2(TiffModel):
-    rid = models.AutoField(primary_key=True)
-    rast = models.RasterField(blank=True, null=True)  # This field type is a guess.
+    rid = models.AutoField(primary_key=True, name='rid')
+    rast = models.RasterField(blank=True, null=True, name='rast')  # This field type is a guess.
 
     class Meta:
         managed = False
         db_table = 'imagem2'
 
 class ImagemExemploTile1(TiffModel):
-    rid = models.AutoField(primary_key=True)
-    rast = models.RasterField(blank=True, null=True)  # This field type is a guess.
+    rid = models.AutoField(primary_key=True, name='rid')
+    rast = models.RasterField(blank=True, null=True, name='rast')  # This field type is a guess.
 
     class Meta:
         managed = False

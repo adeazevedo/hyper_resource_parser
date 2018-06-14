@@ -391,6 +391,12 @@ class FactoryComplexQuery:
 
         return self.q_object_for_filter_expression(q_object_expression, model_class, expression_as_array[3:])
 
+# To execute in python console
+#dir(ie20.rast)
+#arr = ['bands', 'destructor', 'driver', 'extent', ...]
+#s = [ ("self." + i + "_operation_name = " + "'" + i + "'" ) for i in arr]
+#d = [ ("d[self." + i + "_operation_name] = Type_Called(" + "'" + i + "'" + ", [], object)" ) for i in arr]
+
 class BaseOperationController(object):
 
     _instance = None
@@ -649,6 +655,58 @@ class BaseOperationController(object):
         # if 'attr_of_method_name' doesn't represent a operations of 'an_object' type, return False
         return False
 
+class RasterOperationController():
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = object.__new__(cls, *args, **kwargs)
+            cls._instance.initialize()
+        return cls._instance
+    def initialize(self):
+        self.bands_operation_name = 'bands'
+        self.destructor_operation_name = 'destructor'
+        self.driver_operation_name = 'driver'
+        self.extent_operation_name = 'extent'
+        self.geotransform_operation_name = 'geotransform'
+        self.height_operation_name = 'height'
+        self.info_operation_name = 'info'
+        self.metadata_operation_name = 'metadata'
+        self.name_operation_name = 'name'
+        self.origin_operation_name = 'origin'
+        self.ptr_operation_name = 'ptr'
+        self.ptr_type_operation_name = 'ptr_type'
+        self.scale_operation_name = 'scale'
+        self.skew_operation_name = 'skew'
+        self.srid_operation_name = 'srid'
+        self.srs_operation_name = 'srs'
+        self.transform_operation_name = 'transform'
+        self.vsi_buffer_operation_name = 'vsi_buffer'
+        self.warp_operation_name = 'warp'
+        self.width_operation_name = 'width'
+
+    def operation_dict(self):
+        d = {}
+        d[self.bands_operation_name] = Type_Called('bands', [], object)
+        d[self.destructor_operation_name] = Type_Called('destructor', [], object)
+        d[self.driver_operation_name] = Type_Called('driver', [], str)
+        d[self.extent_operation_name] = Type_Called('extent', [], str)
+        d[self.geotransform_operation_name] = Type_Called('geotransform', [], object)
+        d[self.height_operation_name] = Type_Called('height', [], int)
+        d[self.info_operation_name] = Type_Called('info', [], str)
+        d[self.metadata_operation_name] = Type_Called('metadata', [], str)
+        d[self.name_operation_name] = Type_Called('name', [], str)
+        d[self.origin_operation_name] = Type_Called('origin', [], str)
+        d[self.ptr_operation_name] = Type_Called('ptr', [], object)
+        d[self.ptr_type_operation_name] = Type_Called('ptr_type', [], object)
+        d[self.scale_operation_name] = Type_Called('scale', [], list)
+        d[self.skew_operation_name] = Type_Called('skew', [], object)
+        d[self.srid_operation_name] = Type_Called('srid', [], object)
+        d[self.srs_operation_name] = Type_Called('srs', [], object)
+        d[self.transform_operation_name] = Type_Called('transform', [], object)
+        d[self.vsi_buffer_operation_name] = Type_Called('vsi_buffer', [], object)
+        d[self.warp_operation_name] = Type_Called('warp', [], object)
+        d[self.width_operation_name] = Type_Called('width', [], object)
+        return d
 class CollectionResourceOperationController(BaseOperationController):
     _instance = None
     def __new__(cls, *args, **kwargs):
@@ -1287,6 +1345,8 @@ class RasterModel(SpatialModel):
         return self.get_spatial_object().width
 
 class TiffModel(RasterModel):
-    pass
+    class Meta:
+        abstract = True
+
 
 

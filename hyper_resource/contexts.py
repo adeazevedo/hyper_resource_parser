@@ -309,6 +309,9 @@ def initialize_dict():
     dict[str] = oc.string_operations_dict()
     dict[CharField] = oc.string_operations_dict()
 
+    ro = RasterOperationController()
+    dict['Raster'] = ro.operation_dict()
+
     soc = SpatialCollectionOperationController()
     dict[GeometryCollection] = soc.feature_collection_operations_dict()
     dict['FeatureCollection'] = soc.feature_collection_operations_dict()
@@ -316,6 +319,8 @@ def initialize_dict():
 
     coc = CollectionResourceOperationController()
     dict['Collection'] = coc.collection_operations_dict()
+
+
     return dict
 
 class ContextResource:
