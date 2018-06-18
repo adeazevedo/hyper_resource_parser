@@ -609,3 +609,32 @@ class FeatureCollectionResourceContext(FeatureResouceContext):
 
 class AbstractCollectionResourceContext(ContextResource):
     pass
+
+class RasterEntryPointResourceContext(ContextResource):
+
+    def attribute_contextualized_dict_for(self, iri):
+       return {
+            '@id': 'http://schema.org/ImageObject',
+            '@type':  "@id"
+       }
+
+    def attributes_contextualized_dict(self):
+        dic_field = {}
+        fields = self.resource.fields_to_web()
+        for field_model in fields:
+            dic_field[field_model] = self.attribute_contextualized_dict_for(field_model)
+        return dic_field
+
+    def supportedProperties(self):
+        arr_dict = []
+        if self.resource is None:
+            return []
+        fields = self.resource.fields_to_web()
+        for iri in fields:
+            arr_dict.append(SupportedProperty(property_name=iri, required=True, readable=True, writeable=False, is_unique=True, is_identifier=True, is_external=False))
+        #return arr_dict
+        return [supportedAttribute.context() for supportedAttribute in arr_dict]
+
+    def representationName(self):
+
+        return {}

@@ -6,7 +6,6 @@ class BusinessModelCollectionContext(FeatureCollectionResourceContext):
 
 class GastoContext(FeatureResouceContext):
      def attributes_contextualized_dict(self):
-
         dic_context =  {
             "valor": {
                 "@id": "http://schema.org/Float",

@@ -171,8 +171,55 @@ class BaseContext(object):
         contextdata = self.addIriTamplate(contextdata, request, self.serializer_object)
         return contextdata
 
+class BaseModel(object):
 
-class RequiredObject:
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = object.__new__(cls, *args, **kwargs)
+        return cls._instance
+
+    def create_model_object_raster(self, view_resource, row):
+        obj_model = view_resource.model_class()()
+        setattr(obj_model,view_resource.pk_name(), row[0])
+        rst = GDALRaster(row[1].tobytes())
+        setattr(obj_model,view_resource.spatial_field_name(), rst)
+        return obj_model
+
+    def get_model_object_raster(self, view_resource, kwargs):
+       pk_name = view_resource.pk_name()
+       sql_string = "SELECT " + pk_name +  ", ST_AsGDALRaster(" + view_resource.spatial_field_name() +  ", 'GTiff') FROM " + view_resource.table_name() +  " WHERE " + pk_name + "  = " + kwargs['pk']
+       with connection.cursor() as cursor:
+            cursor.execute(sql_string)
+            row = cursor.fetchone()
+            return self.create_model_object_raster(view_resource, row)
+
+    def get_model_objects_raster(self, view_resource, kwargs):
+       pk_name = view_resource.pk_name()
+       sql_string = "SELECT " + pk_name +  ", ST_AsGDALRaster(" + view_resource.spatial_field_name() +  ", 'GTiff') FROM " + view_resource.table_name()
+       with connection.cursor() as cursor:
+            cursor.execute(sql_string)
+            rows = cursor.fetchall()
+            model_raster_collection = []
+            for row in rows:
+                model_raster_collection.append(self.create_model_object_raster(view_resource, row))
+            return model_raster_collection
+
+    def get_iris_raster(self, view_resource, kwargs):
+        pk_name = view_resource.pk_name()
+        sql_string = "SELECT " + pk_name + " FROM " + view_resource.table_name()
+        iri= view_resource.request.build_absolute_uri()
+        with connection.cursor() as cursor:
+            cursor.execute(sql_string)
+            rows = cursor.fetchall()
+            iri_raster_dic = {}
+            name = view_resource.table_name()
+            for row in rows:
+                str_pk = str(row[0])
+                iri_raster_dic[name+ '-' + str_pk ] = (iri + str_pk + '/')
+            return iri_raster_dic
+
+class RequiredObject(object):
     """
     Responds an object with four attributes:
     representation of what was required, content_type, object, dict=>dic[status] = status_code
@@ -211,6 +258,7 @@ class AbstractResource(APIView):
         self.e_tag = None
         self.temporary_content_type = None
         self.resource_type = None
+        self.is_entry_point = False
 
     # indicates wich is the content negotiation class
     content_negotiation_class = IgnoreClientContentNegotiation
@@ -386,6 +434,8 @@ class AbstractResource(APIView):
         # with '.jsonld', the 'rel' is the relationship represented by w3.org url
         self.add_url_in_header(iri_base[:-1] + '.jsonld',response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
         self.add_cors_header_in_header(response)
+        if self.is_entry_point:
+            self.add_url_in_header(iri_base,response, rel='http://schema.org/EntryPoint')
 
     def dispatch(self, request, *args, **kwargs):
         """
@@ -1322,7 +1372,6 @@ class AbstractResource(APIView):
     def execute_complex_request(self, request):
         pass
 
-
 class NonSpatialResource(AbstractResource):
 
     def response_of_request(self,  attributes_functions_str):
@@ -1402,7 +1451,6 @@ class NonSpatialResource(AbstractResource):
 
 class StyleResource(AbstractResource):
     pass
-
 
 class SpatialResource(AbstractResource):
 
@@ -1667,20 +1715,6 @@ class TiffResource(RasterResource):
     def default_content_type(self):
         return CONTENT_TYPE_IMAGE_TIFF
 
-    def get_object_model_raster(self, kwargs):
-       pk_name = self.pk_name() #if self.pk_name() in kwargs else 'pk'
-
-       sql_string = "SELECT " + pk_name +  ", ST_AsGDALRaster(" + self.spatial_field_name() +  ", 'GTiff') FROM " + self.table_name() +  " WHERE " + pk_name + "  = " + kwargs['pk']
-       #sql_string = "SELECT  *  FROM " + self.table_name() +  " WHERE " + self.pk_name() + "  = " + kwargs[pk_name]
-       with connection.cursor() as cursor:
-            cursor.execute(sql_string)
-            row = cursor.fetchone()
-            obj_model = self.model_class()()
-            setattr(obj_model,self.pk_name(), row[0])
-            rst = GDALRaster(row[1].tobytes())
-            setattr(obj_model,self.spatial_field_name(), rst)
-            return obj_model
-
     def response_of_request(self,  attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
         self.current_object_state = self._execute_attribute_or_method(self.object_model, att_funcs[0], att_funcs[1:])
@@ -1700,14 +1734,14 @@ class TiffResource(RasterResource):
 
     def basic_get(self, request, *args, **kwargs):
 
-        self.object_model = self.get_object_model_raster(kwargs)
+        self.object_model = BaseModel().get_model_object_raster(self, kwargs)
         self.current_object_state = self.object_model
         self.set_basic_context_resource(request)
         self.e_tag = str(hash(self.object_model))
         # self.request.query_params.
         attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
         if self.is_simple_path(attributes_functions_str):
-            required_object = RequiredObject(self.object_model.rast.vsi_buffer,  self.content_type_or_default_content_type(request), self.object_model, 200)
+            required_object = RequiredObject(self.object_model.vsi_buffer(),  self.content_type_or_default_content_type(request), self.object_model, 200)
 
         elif self.path_has_only_attributes(attributes_functions_str):
             str_attribute = attributes_functions_str.replace(" ", "").replace("/","")
@@ -2461,9 +2495,68 @@ class SpatialCollectionResource(AbstractCollectionResource):
         pass
 
 class RasterCollectionResource(SpatialCollectionResource):
-    pass
-class TiffCollectionResource(SpatialCollectionResource):
-    pass
+   field_names = []
+
+   def fields_to_web(self):
+       return self.field_names
+
+   def spatial_field_name(self):
+        return self.serializer_class.Meta.geo_field
+
+   def initialize_object(self, request, *args, **kwargs):
+        self.object_model = BaseModel().get_iris_raster(self, kwargs)
+        self.current_object_state = self.object_model
+        self.set_basic_context_resource(request)
+        self.is_entry_point = True
+
+   #response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
+
+class TiffCollectionResource(RasterCollectionResource):
+
+    def default_content_type(self):
+        return CONTENT_TYPE_JSON
+
+
+
+    def basic_get(self, request, *args, **kwargs):
+
+        self.initialize_object(request, *args, **kwargs)
+        #self.e_tag = str(hash(self.object_model))
+        # self.request.query_params.
+        attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
+        if self.is_simple_path(attributes_functions_str):
+
+            required_object = RequiredObject(self.object_model, self.content_type_or_default_content_type(request), self.object_model, 200)
+
+        elif self.path_has_only_attributes(attributes_functions_str):
+            str_attribute = attributes_functions_str.replace(" ", "").replace("/","")
+            required_object = self.response_resquest_with_attributes(str_attribute , request)
+
+            att_names = attributes_functions_str.split(',')
+            if len(att_names) > 1:
+                self._set_context_to_attributes(att_names)
+            else:
+                self._set_context_to_only_one_attribute(attributes_functions_str)
+        elif self.path_has_url(attributes_functions_str.lower()):
+            required_object = self.response_request_attributes_functions_str_with_url(attributes_functions_str, request)
+            self.context_resource.set_context_to_object(self.current_object_state, self.name_of_last_operation_executed)
+        else:
+            s = str(attributes_functions_str)
+            if s[-1] == '/':
+               s = s[:-1]
+            required_object = self.response_of_request(s)
+            self._set_context_to_operation(self.name_of_last_operation_executed)
+        self.inject_e_tag()
+        self.temporary_content_type= required_object.content_type
+        return required_object
+
+    def options(self, request, *args, **kwargs):
+        self.initialize_object(request, *args, **kwargs)
+
+        dic_attrib_key_iri_value = BaseModel().get_iris_raster(self, kwargs)
+        self.field_names = list(dic_attrib_key_iri_value.keys())
+        return super(TiffCollectionResource, self).options(request, *args, **kwargs)
+
 
 class FeatureCollectionResource(SpatialCollectionResource):
     def __init__(self):

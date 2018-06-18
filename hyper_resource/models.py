@@ -1343,6 +1343,9 @@ class RasterModel(SpatialModel):
     def width(self):
         #responds the width of the source in pixels (X-axis).
         return self.get_spatial_object().width
+    def vsi_buffer(self):
+
+        return self.get_spatial_object().vsi_buffer
 
 class TiffModel(RasterModel):
     class Meta:
