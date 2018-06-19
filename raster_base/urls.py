@@ -18,9 +18,9 @@ urlpatterns = format_suffix_patterns((
     url(r'^imagem-exemplo2-list/$', views.ImagemExemplo2List.as_view(), name='ImagemExemplo2_list'),
     url(r'^imagem-exemplo2-list/(?P<attributes_functions>.*)/?$', views.ImagemExemplo2List.as_view(), name='ImagemExemplo2_list_af'),
 
-    url(r'^imagem-exemplo-tile1-list/(?P<pk>[0-9]+)/$', views.ImagemExemploTile1Detail.as_view(), name='ImagemExemploTile1_detail'),
-    url(r'^imagem-exemplo-tile1-list/(?P<pk>[0-9]+)/(?P<attributes_functions>.*)/$', views.ImagemExemploTile1Detail.as_view(), name='ImagemExemploTile1_detail_af'),
-    url(r'^imagem-exemplo-tile1-list/$', views.ImagemExemploTile1List.as_view(), name='ImagemExemploTile1_list'),
+    url(r'^imagem-exemplo-tile1-list/(?P<pk>[0-9]+)/?$', views.ImagemExemploTile1Detail.as_view(), name='ImagemExemploTile1_detail'),
+    url(r'^imagem-exemplo-tile1-list/(?P<pk>[0-9]+)/(?P<attributes_functions>.*)/?$', views.ImagemExemploTile1Detail.as_view(), name='ImagemExemploTile1_detail_af'),
+    url(r'^imagem-exemplo-tile1-list/?$', views.ImagemExemploTile1List.as_view(), name='ImagemExemploTile1_list'),
     url(r'^imagem-exemplo-tile1-list/(?P<attributes_functions>.*)/?$', views.ImagemExemploTile1List.as_view(), name='ImagemExemploTile_list_af'),
 
     url(r'^imagem-exemplo-tile2-list/(?P<pk>[0-9]+)/$', views.ImagemExemploTile2Detail.as_view(), name='ImagemExemploTile2_detail'),

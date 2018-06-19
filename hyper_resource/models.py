@@ -1305,11 +1305,14 @@ class RasterModel(SpatialModel):
         #Responds the type of the spatial field
         return RasterField
 
+    def driver(self):
+        "Responds to the name of the GDAL driver used to handle the input file"
+        return self.get_spatial_object().driver.name
     def bands(self):
         #Responds a list of all bands of the source, as GDALBand instances.
         return self.get_spatial_object().bands
 
-    def geotransfornm(self):
+    def geotransform(self):
         """Responds a List of affine transformation matrix used to georeference the source, as a tuple of six coefficients
         which map pixel/line coordinates into georeferenced space.
         """
@@ -1346,6 +1349,14 @@ class RasterModel(SpatialModel):
     def vsi_buffer(self):
 
         return self.get_spatial_object().vsi_buffer
+
+    def info(self):
+        "Returns a string with a summary of the raster."
+        return self.get_spatial_object().info
+
+    def metadata(self):
+        "Returns a string with a summary of the raster."
+        return self.get_spatial_object().metadata
 
 class TiffModel(RasterModel):
     class Meta:
