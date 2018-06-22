@@ -330,12 +330,108 @@ class CollectionResourceTest(SimpleTestCase):
         self.assertEquals(res.headers['content-type'], 'application/json')
     """
 
+#python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class CollectOperationTest(SimpleTestCase):
+    def setUp(self):
+        self.host = 'luc00557196:8000/'
+        self.base_base_uri = "http://" + self.host + "api/bcim/"
+        self.feature_collection_keys = ["features", "type"]
+        self.geometry_collection_keys = ["geometries", "type"]
+        self.feature_keys = ["geometry", "properties", "type"]
+        self.geometry_keys = ["coordinates", "type"]
+
+    # tests auxiliary functions
+    def aux_get_dict_from_response(self, response):
+        json_response = json.loads(response.text)
+        return dict(json_response)
+
+    def aux_get_list_from_response(self, response):
+        json_response = json.loads(response.text)
+        return list(json_response)
+
+    def aux_get_keys_from_response(self, response):
+        response_dict = self.aux_get_dict_from_response(response)
+        response_dict_keys = list(response_dict.keys())
+        response_dict_keys.sort()
+        return response_dict_keys
+
+    def aux_get_keys_from_first_feature(self, response):
+        response_dict = self.aux_get_dict_from_response(response)
+        first_feature = response_dict["features"][0]
+        first_feature_keys = list(first_feature.keys())
+        first_feature_keys.sort()
+        return first_feature_keys
+
+    def aux_get_keys_from_first_element(self, response):
+        response_list = self.aux_get_list_from_response(response)
+        first_element_keys = list(response_list[0].keys())
+        first_element_keys.sort()
+        return first_element_keys
+
+    def aux_get_keys_from_first_geometry(self, response):
+        response_dict = self.aux_get_dict_from_response(response)
+        first_geometry = response_dict["geometries"][0]
+        first_geometry_keys = list(first_geometry.keys())
+        first_geometry_keys.sort()
+        return first_geometry_keys
+
+    # FeatureCollection return
+    def test_collect_operation_with_feature_collection_return(self):
+        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/nome&geom/buffer/0.2/")
+        self.assertEquals(response.status_code, 200)
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_dict_keys, self.feature_collection_keys)
+
+        first_feature_keys = self.aux_get_keys_from_first_feature(response)
+        self.assertEquals(first_feature_keys, self.feature_keys)
+
+    def test_collect_operation_with_non_spatial_operation_and_feature_collection_return(self):
+        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/geom&nome/upper")
+        self.assertEquals(response.status_code, 200)
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_dict_keys, self.feature_collection_keys)
+
+        first_feature_keys = self.aux_get_keys_from_first_feature(response)
+        self.assertEquals(first_feature_keys, self.feature_keys)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(list(response_dict["features"][0]["properties"].keys()), ["nome"])
+
+    # GeometryCollection
+    def test_collect_operation_with_geomtry_collection_return(self):
+        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/geom/buffer/0.2/")
+        self.assertEquals(response.status_code, 200)
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_dict_keys, self.geometry_collection_keys)
+
+        first_geometry_keys = self.aux_get_keys_from_first_geometry(response)
+        self.assertEquals(first_geometry_keys, self.geometry_keys)
+
+    # list return
+    def test_collection_operation_with_spatial_operation_and_float_return(self):
+        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/nome&geom/area")
+        self.assertEquals(response.status_code, 200)
+
+        first_element_keys = self.aux_get_keys_from_first_element(response)
+        self.assertEquals(first_element_keys, ["geom", "nome"])
+
+    def test_collection_operation_with_alphanumeric_operation(self):
+        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/nome/upper")
+        self.assertEquals(response.status_code, 200)
+
+        first_element_keys = self.aux_get_keys_from_first_element(response)
+        self.assertEquals(first_element_keys, ["nome"])
+
 #python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class RequestOptionsTest(SimpleTestCase):
     def setUp(self):
-        self.host = 'luc00557196.ibge.gov.br:8000/'
+        #self.host = 'luc00557196.ibge.gov.br:8000/'
         #self.host = '192.168.0.10:8000/'
-        self.bcim_base_uri = "http://" + self.host + "ibge/bcim/"
+        self.host = 'luc00557196:8000/'
+        self.bcim_base_uri = "http://" + self.host + "api/bcim/"
         self.controle_base_uri = "http://" + self.host + "controle-list/"
         self.simple_path_options_dict_keys = ['@context', '@id', '@type', 'hydra:iriTemplate', 'hydra:representationName', 'hydra:supportedOperations', 'hydra:supportedProperties']
         self.path_with_geom_attr_dict_keys = ["@context", '@id', '@type', 'hydra:supportedOperations']
