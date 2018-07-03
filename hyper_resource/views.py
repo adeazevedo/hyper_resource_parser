@@ -3,6 +3,7 @@ import random
 import re
 
 import jwt
+from django.contrib.gis.db.models import Extent, Union, MakeLine
 from django.contrib.gis.gdal import GDALRaster
 from django.db import connection
 from django.http import HttpResponse, StreamingHttpResponse, FileResponse
@@ -1027,30 +1028,13 @@ class AbstractResource(APIView):
 
 
     def attributes_functions_splitted_by_url(self, attributes_functions_str_url):
-        """
-        Receive a string with parameters for an url (the addres of requested resource)
-        if this parameters contains another url inside it, return a list with two elements:
-        the second element of the list will be this url and the first element
-        will be the remaining string. If this piece of url doesn't contains another url
-        return a list with one element, the 'attributes_functions_str_url' without changes
-        :param attributes_functions_str_url:
-        :return:
-        """
-        # try to find the 'http:' substring
         res = attributes_functions_str_url.lower().find('http:')
         if res == -1:
-            # if 'http:' wasn't finded, search for 'https:'
             res = attributes_functions_str_url.lower().find('https:')
             if res == -1:
-                # if 'https:' wasn't finded, search for 'www.'
                 res = attributes_functions_str_url.lower().find('www.')
                 if res == -1:
-                    # if no one was finded, return the original 'attributes_functions_str_url' in the list form
                     return [attributes_functions_str_url]
-
-        # Example: received string - /foo/bar/eq/http://192.168.0.25/example
-        # the first element of the list will be: /foo/bar/eq/
-        # the second element of the list will be: http://192.168.0.25/example
         return [attributes_functions_str_url[0:res], attributes_functions_str_url[res:]]
 
     def path_has_url(self, attributes_functions_str_url):
@@ -1759,25 +1743,113 @@ class AbstractCollectionResource(AbstractResource):
 
         return False
 
-    """
-    def path_has_only_attributes(self, attributes_functions_name):
-        attrs_functs_arr = self.remove_last_slash(attributes_functions_name).split('/')
 
+    def path_has_only_attributes(self, attributes_functions_name):
+        if self.path_has_projection(attributes_functions_name):
+            attrs_functs_str = self.remove_projection_from_path(attributes_functions_name, remove_only_name=True)
+        else:
+            attrs_functs_str = attributes_functions_name
+        return super(AbstractCollectionResource, self).path_has_only_attributes(attrs_functs_str)
+
+    def path_has_projection(self, attributes_functions_name):
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_name).split("/")
+        return attrs_funcs_arr[0] == "projection"
+
+    def remove_projection_from_path(self, attributes_functions_str, remove_only_name=False):
+        attrs_functs_arr = self.remove_last_slash(attributes_functions_str).split('/')
         if attrs_functs_arr[0] == "projection":
             attrs_functs_arr.pop(0)
+            if not remove_only_name:
+                attrs_functs_arr.pop(0)
+        return "/".join(attrs_functs_arr)
 
-        attrs_functs_str = "/".join(attrs_functs_arr)
-        return super(AbstractCollectionResource, self).path_has_only_attributes(attrs_functs_str)
-    """
+    def extract_projection_snippet(self, attributes_functions_str, as_string=False):
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
+        projection_snippet = "/".join(attrs_funcs_arr[:2])
+        return projection_snippet
 
+    def extract_projection_attributes(self, attributes_functions_str, as_string=False):
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
+        if as_string:
+            return attrs_funcs_arr[1]
+        else:
+            return attrs_funcs_arr[1].split(",")
+
+    def extract_collect_operation_snippet(self, attributes_functions_str):
+        collect_oper_snippet = self.remove_last_slash(attributes_functions_str)
+        if self.path_has_projection(collect_oper_snippet):
+            collect_oper_snippet = self.remove_projection_from_path(collect_oper_snippet)
+
+        if '/*' + self.operation_controller.collect_collection_operation_name in collect_oper_snippet:
+            collect_oper_snippet = collect_oper_snippet[collect_oper_snippet.index("*")+1:]
+
+        return collect_oper_snippet
+
+    def extract_collect_operation_attributes(self, attributes_functions_str):
+        collect_oper_snippet_arr = self.extract_collect_operation_snippet(attributes_functions_str).split("/")
+        return collect_oper_snippet_arr[1].split("&")
+
+    def extract_offset_limit_operation_snippet(self, attributes_functions_str):
+        offset_limit_oper_snippet = self.remove_last_slash(attributes_functions_str)
+        if self.path_has_projection(attributes_functions_str):
+            offset_limit_oper_snippet = self.remove_projection_from_path(attributes_functions_str)
+
+        if '/*' + self.operation_controller.collect_collection_operation_name in offset_limit_oper_snippet:
+            offset_limit_oper_snippet = offset_limit_oper_snippet[:offset_limit_oper_snippet.index("*")-1]
+
+        return offset_limit_oper_snippet
+
+    def extract_offset_limit_operation_attrs(self, attributes_functions_str, as_string=False):
+        offset_limit_oper_snippet = self.extract_offset_limit_operation_snippet(attributes_functions_str)
+        offset_limit_oper_snippet_arr = offset_limit_oper_snippet.split('/')
+
+        if as_string:
+            if len(offset_limit_oper_snippet_arr) == 3:
+                return offset_limit_oper_snippet_arr[-1]
+            else:
+                return None
+
+        if len(offset_limit_oper_snippet_arr) == 3:
+            return offset_limit_oper_snippet_arr[-1].split(',')
+        else:
+            return None
+
+    def projection_attrs_equals_offset_limit_attributes(self, attributes_functions_str):
+        offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_functions_str)
+        if offset_limit_attrs == None:
+            return True
+
+        projection_attrs = self.extract_projection_attributes(attributes_functions_str)
+        projection_attrs.sort()
+        offset_limit_attrs.sort()
+        return projection_attrs == offset_limit_attrs
+
+    def projection_attrs_equals_collect_attrs(self, attributes_functions_str):
+        projection_attrs = self.extract_projection_attributes(attributes_functions_str)
+        collected_attributes = self.extract_collect_operation_attributes(attributes_functions_str)
+        projection_attrs.sort()
+        collected_attributes.sort()
+        return projection_attrs == collected_attributes
+
+    def offset_limit_attrs_equals_collect_attrs(self, attributes_function_str):
+        offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_function_str)
+        if offset_limit_attrs == None:
+            return True
+
+        collect_attrs = self.extract_collect_operation_attributes(attributes_function_str)
+        offset_limit_attrs.sort()
+        collect_attrs.sort()
+        return offset_limit_attrs == collect_attrs
 
     def path_has_filter_operation(self, attributes_functions_str):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         return len(att_funcs) > 1 and  (att_funcs[0].lower() == self.operation_controller.filter_collection_operation_name)
 
+    """
     def path_has_collect_operation(self, attributes_functions_str):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         return len(att_funcs) > 1 and  (att_funcs[0].lower() == self.operation_controller.collect_collection_operation_name)
+    """
 
     def path_has_groupy_operation(self, attributes_functions_str):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
@@ -1800,6 +1872,7 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = [ele for ele in att_funcs if ele != '']
         return len(att_funcs) == 2 and  (att_funcs[0].lower() == self.operation_controller.offset_limit_collection_operation_name)
 
+    """
     def path_has_collect_operation(self ,attributes_functions_str):
         collect_operation_index = attributes_functions_str.find("collect")
         if collect_operation_index != -1:
@@ -1808,6 +1881,7 @@ class AbstractCollectionResource(AbstractResource):
             att_funcs = [ele for ele in att_funcs if ele != '']
             return len(att_funcs) >= 3 and  (att_funcs[0].lower() == 'collect')
         return False
+    """
 
     #Responds an array of operations name.
     # Shoud be overrided
@@ -1836,7 +1910,7 @@ class AbstractCollectionResource(AbstractResource):
     def get_operation_name_from_path(self, attributes_functions_str):
         attributes_functions_str = attributes_functions_str.lower()
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        first_part_name = arr_att_funcs[0]
+        first_part_name = arr_att_funcs[2] if self.path_has_projection(attributes_functions_str) else arr_att_funcs[0]
         if first_part_name not in self.array_of_operation_name_collection():
             return None
         if (first_part_name == self.operation_controller.offset_limit_collection_operation_name or
@@ -1852,19 +1926,39 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject({"count_resource": self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
 
     def required_object_for_offset_limit_operation(self, request, attributes_functions_str):
-        queryset_or_objects = self.get_objects_from_offset_limit_operation(attributes_functions_str)
-        attrs_funct_splited = attributes_functions_str.split('/') if attributes_functions_str[-1] != '/' else attributes_functions_str.split('/')[:-1]
+        offset_limit_snippet = self.remove_last_slash(attributes_functions_str)
+        offset_limit_snippet_arr = offset_limit_snippet.split("/")
+        if self.path_has_projection(attributes_functions_str):
+            if self.projection_attrs_equals_offset_limit_attributes(attributes_functions_str):
+                offset_limit_snippet = self.remove_projection_from_path(attributes_functions_str) +\
+                    '/' + self.extract_projection_attributes(attributes_functions_str, as_string=True)
+            else:
+                message = "Projection list must be same as offset_limit attributes list"
+                return self.required_object_for_invalid_sintax(attributes_functions_str, message)
 
-        if len(attrs_funct_splited) <= 2:
-             required_object = self.required_object(request, queryset_or_objects)
+        queryset_or_objects = self.get_objects_from_offset_limit_operation(offset_limit_snippet)
+
+        if self.path_has_projection(attributes_functions_str):
+            projection_atts_str = self.extract_projection_attributes(attributes_functions_str, as_string=True)
+            objects = self.get_objects_serialized_by_only_attributes(projection_atts_str, queryset_or_objects)
+            return RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
+        elif len(offset_limit_snippet_arr) == 3:
+            offset_limit_attrs = offset_limit_snippet_arr[2]
+            objects = self.get_objects_serialized_by_only_attributes(offset_limit_attrs, queryset_or_objects)
+            return RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
         else:
-            objects = self.get_objects_serialized_by_only_attributes(attrs_funct_splited[2], queryset_or_objects)
-            required_object = RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
-        return required_object
+            return self.required_object(request, queryset_or_objects)
 
     def required_object_for_distinct_operation(self,request, attributes_functions_str):
-        objects =  self.get_objects_from_distinct_operation(attributes_functions_str)
-        return self.required_object(request, objects)
+        queryset_or_objects =  self.get_objects_from_distinct_operation(attributes_functions_str)
+
+        if self.path_has_projection(attributes_functions_str):
+            projection_attrs = self.extract_projection_attributes(attributes_functions_str, as_string=True)
+            serialized_data = self.get_objects_serialized_by_only_attributes(projection_attrs, queryset_or_objects)
+            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request),
+                                          queryset_or_objects, 200)
+
+        return self.required_object(request, queryset_or_objects)
 
     def required_object_for_group_by_operation(self, request, attributes_functions_str):
         objects =  self.get_objects_from_group_by_operation(attributes_functions_str)
@@ -1876,38 +1970,72 @@ class AbstractCollectionResource(AbstractResource):
 
     def required_object_for_filter_operation(self, request, attributes_functions_str):
         business_objects = self.get_objects_from_filter_operation(attributes_functions_str)
-        serialized_data = self.serializer_class(business_objects, many=True, context={'request': request}).data
+        if self.path_has_projection(attributes_functions_str):
+            attrs_funcs_str = self.extract_projection_attributes(attributes_functions_str, as_string=True)
+            serialized_data = self.get_objects_serialized_by_only_attributes(attrs_funcs_str, business_objects)
+        else:
+            serialized_data = self.serializer_class(business_objects, many=True, context={'request': request}).data
         return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_collect_operation(self, request, attributes_functions_str):
-        business_objects = self.get_objects_from_collect_operation(attributes_functions_str)
+        collect_operation_snippet = self.remove_last_slash(attributes_functions_str)
+        if self.path_has_projection(collect_operation_snippet):
+            if self.projection_attrs_equals_collect_attrs(collect_operation_snippet):
+                collect_operation_snippet = self.remove_projection_from_path(attributes_functions_str)
+            else:
+                message = "Projection attributes list must be the same as collect operation attributes list"
+                return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+
+        business_objects = self.get_objects_from_collect_operation(collect_operation_snippet)
         return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_filter_and_collect_collection_operation(self, request, attributes_functions_str):
-        business_objects = self.get_objects_from_filter_and_collect_operation(attributes_functions_str)
+        filter_and_collect_operation_snippet = self.remove_last_slash(attributes_functions_str)
+        if self.path_has_projection(filter_and_collect_operation_snippet) and not self.projection_attrs_equals_collect_attrs(filter_and_collect_operation_snippet):
+            message = "Projection attributes list must be the same as collect operation attributes list"
+            return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+
+        business_objects = self.get_objects_from_filter_and_collect_operation(filter_and_collect_operation_snippet)
         return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
 
-    """
-    def required_object_for_filter_and_projection_collection_operation(self, request, attributes_functions_str):
-        business_objects = self.get_objects_from_filter_and_projection_operation(attributes_functions_str)
-        attrs_str = attributes_functions_str[attributes_functions_str.index("*")+1:].replace("projection/", "")
-        serialized_data = self.get_objects_serialized_by_only_attributes(attrs_str, business_objects)
-        return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
-    """
-
     def required_object_for_offset_limit_and_collect_collection_operation(self, request, attributes_functions_str):
-        business_objects = self.get_objects_from_offset_limit_and_collect_operation(attributes_functions_str)
+        offset_limit_and_collect_snippet = self.remove_last_slash(attributes_functions_str)
+        if self.path_has_projection(attributes_functions_str):
+            if  not self.projection_attrs_equals_offset_limit_attributes(attributes_functions_str) or\
+                not self.offset_limit_attrs_equals_collect_attrs(attributes_functions_str) or\
+                not self.projection_attrs_equals_collect_attrs(attributes_functions_str):
+                    message = "Projection attributes list and offset_limit attributes list must be the same as collect operation attributes list"
+                    return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+            else:
+                offset_limit_and_collect_snippet = self.remove_projection_from_path(offset_limit_and_collect_snippet)
+
+        else:
+            if not self.offset_limit_attrs_equals_collect_attrs(attributes_functions_str):
+                message = "offset_limit attributes list must be the same as collect operation attributes list"
+                return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+
+        business_objects = self.get_objects_from_offset_limit_and_collect_operation(offset_limit_and_collect_snippet)
         return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_filter_and_count_resource_collection_operation(self, request, attributes_functions_str):
-        filter_operation_params = attributes_functions_str[0:attributes_functions_str.index('/*')]
+        attrs_funcs_str = self.remove_projection_from_path(attributes_functions_str)
+        filter_operation_params = attrs_funcs_str[0:attrs_funcs_str.index('/*')]
         q_object = self.q_object_for_filter_expression(filter_operation_params)
         num_objs = self.model_class().objects.filter(q_object).count()
         return RequiredObject({"count_resource": num_objs}, CONTENT_TYPE_JSON, self.object_model, 200)
 
     def required_object(self, request, business_objects):
-        serialized_data =  self.serializer_class(business_objects, many=True, context={'request': request}).data
+        serialized_data = self.serializer_class(business_objects, many=True, context={'request': request}).data
         required_obj =  RequiredObject(serialized_data,self.content_type_or_default_content_type(request), business_objects, 200)
+        return required_obj
+
+    def required_object_for_invalid_sintax(self, attributes_functions_str, message=None):
+        representation_object = {
+            "This request has invalid attribute or operation: ": attributes_functions_str,
+        }
+        if message is not None:
+            representation_object["Explanation"] = message
+        required_obj =  RequiredObject(representation_object,CONTENT_TYPE_JSON, self, 400)
         return required_obj
 
     def required_object_for_aggregation_operation(self, request, a_dictionary):
@@ -1922,8 +2050,9 @@ class AbstractCollectionResource(AbstractResource):
         return required_object
 
     def required_object_for_only_attributes(self, request, attributes_functions_str):
-        objects = self.get_objects_by_only_attributes(attributes_functions_str)
-        serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, objects)
+        attrs_funcs_str = self.remove_projection_from_path(attributes_functions_str, remove_only_name=True)
+        objects = self.get_objects_by_only_attributes(attrs_funcs_str)
+        serialized_data = self.get_objects_serialized_by_only_attributes(attrs_funcs_str, objects)
         #content_type = self.temporary_content_type if self.temporary_content_type != None else self.content_type_or_default_content_type(request)
         content_type = self.content_type_or_default_content_type(request)
         return RequiredObject(serialized_data, content_type, objects, 200)
@@ -1968,8 +2097,15 @@ class AbstractCollectionResource(AbstractResource):
         return self.model_class().objects.filter(q_object)
 
     def get_objects_from_filter_operation(self, attributes_functions_str):
-        q_object = self.q_object_for_filter_expression(attributes_functions_str)
-        return self.model_class().objects.filter(q_object)
+        if self.path_has_projection(attributes_functions_str):
+            attrs_funcs_str = self.remove_projection_from_path(attributes_functions_str)
+            q_object = self.q_object_for_filter_expression(attrs_funcs_str)
+
+            attrs_arr = self.extract_projection_attributes(attributes_functions_str)
+            return self.model_class().objects.filter(q_object).values(*attrs_arr)
+        else:
+            q_object = self.q_object_for_filter_expression(attributes_functions_str)
+            return self.model_class().objects.filter(q_object)
 
     def get_objects_from_collect_operation(self, attributes_functions_str, queryset=None):
         attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
@@ -1997,21 +2133,16 @@ class AbstractCollectionResource(AbstractResource):
         return collect_object_list
 
     def get_objects_from_filter_and_collect_operation(self, attributes_functions_str):
-        fiter_oper_snippet = attributes_functions_str[:attributes_functions_str.index("*")]
+        filter_oper_snippet = attributes_functions_str[:attributes_functions_str.index("*")]
         collect_oper_snippet = attributes_functions_str[attributes_functions_str.index("*")+1:]
-        filtered_collection = self.get_objects_from_filter_operation(fiter_oper_snippet)
+        filtered_collection = self.get_objects_from_filter_operation(filter_oper_snippet)
         collected_objects = self.get_objects_from_collect_operation(collect_oper_snippet, filtered_collection)
         return collected_objects
 
-    """
-    def get_objects_from_filter_and_projection_operation(self, attributes_functions_str):
-        fiter_oper_snippet = attributes_functions_str[:attributes_functions_str.index("*")]
-        attrs = attributes_functions_str[attributes_functions_str.index("*")+1:].replace("projection/", "").split(",")
-        q_object = self.q_object_for_filter_expression(fiter_oper_snippet)
-        return self.model_class().objects.filter(q_object).values(*attrs)
-    """
-
     def transform_queryset_in_object_model_list(self, queryset):
+        if type(queryset[0]) == self.model_class():
+            return queryset
+
         objs_list = []
         for object in queryset:
             model_object = self.model_class()()
@@ -2022,16 +2153,10 @@ class AbstractCollectionResource(AbstractResource):
         return objs_list
 
     def get_objects_from_offset_limit_and_collect_operation(self, attributes_functions_str):
-        queryset_or_objects = self.get_objects_from_offset_limit_operation(attributes_functions_str[0:attributes_functions_str.index('/*collect')])
-        collect_operation_str = attributes_functions_str[attributes_functions_str.index('/*collect')+2:]
-
-        # queryset_or_objects could be a list of attribute set instead an model object list (queryset)
-        if type(queryset_or_objects[0]) != self.model_class():
-            objects = self.transform_queryset_in_object_model_list(queryset_or_objects)
-        else:
-            objects = queryset_or_objects
-
-        collected_objects = self.get_objects_from_collect_operation(collect_operation_str, queryset=objects)
+        offset_limit_snippet = attributes_functions_str[:attributes_functions_str.index('/*')]
+        queryset_or_objects = self.get_objects_from_offset_limit_operation(offset_limit_snippet)
+        collect_operation_snippet = attributes_functions_str[attributes_functions_str.index('/*')+2:]
+        collected_objects = self.get_objects_from_collect_operation(collect_operation_snippet, queryset=queryset_or_objects)
         return collected_objects
 
     #Todo
@@ -2039,10 +2164,19 @@ class AbstractCollectionResource(AbstractResource):
         pass
 
     def get_objects_from_distinct_operation(self, attributes_functions_str):
-        attributes_functions_list = attributes_functions_str.split('/')
-        attributes_functions_list = [attr_func for attr_func in attributes_functions_list if attr_func != '']
-        parameters = attributes_functions_list[1:]
-        return self.model_class().objects.distinct(*parameters)
+        attrs_funcs_no_projection = self.remove_last_slash(attributes_functions_str)
+
+        if self.path_has_projection(attributes_functions_str):
+            projection_attrs = self.extract_projection_attributes(attributes_functions_str)
+            attrs_funcs_no_projection = self.remove_projection_from_path(attrs_funcs_no_projection)
+
+        attrs_funcs_list = attrs_funcs_no_projection.split('/')
+        distinct_parameters = attrs_funcs_list[1].split('&')
+
+        if self.path_has_projection(attributes_functions_str):
+            return self.model_class().objects.distinct(*distinct_parameters).values(*projection_attrs)
+        else:
+            return self.model_class().objects.distinct(*distinct_parameters)
 
     def get_objects_from_group_by_operation(self, attributes_functions_str):
         attributes_functions_list = attributes_functions_str.split('/')
@@ -2057,24 +2191,27 @@ class AbstractCollectionResource(AbstractResource):
         return self.model_class().objects.values(*parameters).annotate(count=Count(*parameters))
 
     def get_objects_from_offset_limit_operation(self, attributes_functions_str):
-        attributes_functions_list = attributes_functions_str.split('/')
-        attributes_functions_list = [attr_func for attr_func in attributes_functions_list if attr_func != '']
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
+        if self.path_has_projection(attributes_functions_str):
+            num_params = attrs_funcs_arr[3].split('&')
+            selected_attrs = self.extract_projection_attributes(attributes_functions_str)
+        else:
+            num_params = attrs_funcs_arr[1].split('&')
+            selected_attrs = attrs_funcs_arr[2].split(',') if len(attrs_funcs_arr) > 2 else None
 
-        params = attributes_functions_list[1].split('&')
-
-        #converted_params = self.converter_collection_operation_parameters(attributes_functions_list[0], params)
-        #offset = converted_params[0]
-        #limit = converted_params[1]
-        offset = int(params[0])
-        limit = int(params[1])
+        offset = int(num_params[0])
+        limit = int(num_params[1])
         # starting from 0 or 1 has the same effect
         offset = offset if offset == 0 else offset - 1
 
-        if len(attributes_functions_list) > 2:
-            attrs_list = attributes_functions_list[2].split(',')
-            objects = self.model_class().objects.values(*attrs_list)[offset:offset + limit]
+        if self.path_has_projection(attributes_functions_str):
+            objects = self.model_class().objects.values(*selected_attrs)[offset:offset + limit]
         else:
-            objects = self.model_class().objects.all()[offset:offset + limit]
+            if len(attrs_funcs_arr) > 2:
+                objects = self.model_class().objects.values(*selected_attrs)[offset:offset + limit]
+            else:
+                objects = self.model_class().objects.all()[offset:offset + limit]
+
         return objects
 
     # Have to be overrided
@@ -2148,7 +2285,6 @@ class AbstractCollectionResource(AbstractResource):
         d[self.operation_controller.group_by_count_collection_operation_name] = self.required_object_for_group_by_count_operation
         d[self.operation_controller.filter_collection_operation_name] = self.required_object_for_filter_operation
         d[self.operation_controller.collect_collection_operation_name] = self.required_object_for_collect_operation
-
         return d
 
     #Responds a method to be executed.
@@ -2197,7 +2333,6 @@ class AbstractCollectionResource(AbstractResource):
             self._set_context_to_operation()
 
     def basic_get(self, request, *args, **kwargs):
-
         self.object_model = self.model_class()()
         self.current_object_state = self.object_model
         self.set_basic_context_resource(request)
@@ -2214,11 +2349,11 @@ class AbstractCollectionResource(AbstractResource):
             if ENABLE_COMPLEX_REQUESTS:
                 return self.required_object_for_complex_request(request)
             else:
-                return RequiredObject(representation_object={"This request has invalid attribute or operation: ":  attributes_functions_str}, content_type=CONTENT_TYPE_JSON, origin_object=self,status_code=400)
+                return RequiredObject(representation_object={"This request has invalid attribute or operation: ": attributes_functions_str}, content_type=CONTENT_TYPE_JSON, origin_object=self,status_code=400)
 
         res = self.get_requiredObject_from_method_to_execute(request, attributes_functions_str)
         if res is None:
-            return RequiredObject(representation_object={"This request has invalid attribute or operation: ":  attributes_functions_str}, content_type=CONTENT_TYPE_JSON, origin_object=self,status_code=400)
+            return RequiredObject(representation_object={"This request has invalid attribute or operation: ": attributes_functions_str}, content_type=CONTENT_TYPE_JSON, origin_object=self,status_code=400)
         return res
 
     def basic_options(self, request, *args, **kwargs):
@@ -2623,6 +2758,21 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return  (att_funcs[0].lower() in spatial_operation_names)
 
+    def get_operation_name_from_path(self, attributes_functions_str):
+        first_part_name = super(FeatureCollectionResource, self).get_operation_name_from_path(attributes_functions_str)
+        if first_part_name not in self.array_of_operation_name_collection():
+            return None
+        if (first_part_name == self.operation_controller.filter_collection_operation_name or
+            first_part_name == self.operation_controller.offset_limit_collection_operation_name) and '/*extent' in attributes_functions_str:
+            return 'extent'
+        if (first_part_name == self.operation_controller.filter_collection_operation_name or
+            first_part_name == self.operation_controller.offset_limit_collection_operation_name) and '/*union' in attributes_functions_str:
+            return 'union'
+        if (first_part_name == self.operation_controller.filter_collection_operation_name or
+            first_part_name == self.operation_controller.offset_limit_collection_operation_name) and '/*make_line' in attributes_functions_str:
+            return 'make_line'
+        return first_part_name
+
     def is_filter_with_spatial_operation(self, attributes_functions_str):
         att_funcs = attributes_functions_str.split('/')
         return (len(att_funcs) > 1 and (att_funcs[0].lower() in self.geometry_operations().keys())) or self.attributes_functions_str_is_filter_with_spatial_operation(attributes_functions_str)
@@ -2631,8 +2781,14 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return self.operation_controller.feature_collection_operations_dict()
 
     def get_objects_from_spatial_operation(self, array_of_terms):
-        q_object = self.q_object_for_filter_array_of_terms(array_of_terms)
-        return self.model_class().objects.filter(q_object)
+        attributes_functions_str = "/".join(array_of_terms)
+        if self.path_has_projection(attributes_functions_str):
+            attrs = array_of_terms[1].split(",")
+            q_object = self.q_object_for_filter_array_of_terms(array_of_terms[2:])
+            return self.model_class().objects.filter(q_object).values(*attrs)
+        else:
+            q_object = self.q_object_for_filter_array_of_terms(array_of_terms)
+            return self.model_class().objects.filter(q_object)
 
     def q_object_for_filter_array_of_terms(self, array_of_terms):
         fcq = FactoryComplexQuery()
@@ -2705,7 +2861,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
         dicti[self.operation_controller.distance_lt_operation_name] = self.required_object_for_specialized_operation
         dicti[self.operation_controller.distance_lte_operation_name] = self.required_object_for_specialized_operation
         dicti[self.operation_controller.dwithin_operation_name] = self.required_object_for_specialized_operation
-        dicti[self.operation_controller.union_collection_operation_name] = self.required_object_for_specialized_operation
+        dicti[self.operation_controller.union_collection_operation_name] = self.required_object_for_union_operation
+        dicti[self.operation_controller.extent_collection_operation_name] = self.required_object_for_extent_operation
+        dicti[self.operation_controller.make_line_collection_operation_name] = self.required_object_for_make_line_operation
         return dicti
 
     #Responds an array of operations name.
@@ -2714,23 +2872,41 @@ class FeatureCollectionResource(SpatialCollectionResource):
         collection_operations_array.extend(self.operation_controller.feature_collection_operations_dict().keys())
         return collection_operations_array
 
-    def required_object_for_specialized_operation(self,request, attributes_functions_str):
-
+    def required_object_for_specialized_operation(self, request, attributes_functions_str):
         spatial_objects = self.get_objects_from_specialized_operation(attributes_functions_str)
-        return self.required_object(request, spatial_objects)
-
-    def required_object_for_collect_operation(self, request, attributes_functions_str):
-        business_objects = self.get_objects_from_collect_operation(attributes_functions_str)
-        """
-        if "type" not in business_objects:
-            content_type = CONTENT_TYPE_JSON
+        if self.path_has_projection(attributes_functions_str):
+            attrs_arr = self.extract_projection_attributes(attributes_functions_str)
+            attrs_str = ",".join(attrs_arr)
+            serialized_data = self.get_objects_serialized_by_only_attributes(attrs_str, spatial_objects)
+            return RequiredObject(serialized_data,self.content_type_or_default_content_type(request), spatial_objects, 200)
         else:
-            if business_objects["type"] not in ["GeometryCollection", "FeatureCollection"]:
-                content_type = CONTENT_TYPE_JSON
-            else:
-                content_type = self.content_type_or_default_content_type(request)
-        """
+            return self.required_object(request, spatial_objects)
 
+    def required_object_for_extent_operation(self,request, attributes_functions_str):
+        a_dictionary = self.get_objects_from_extent_spatial_operation(attributes_functions_str)
+        return self.required_object_for_aggregation_operation( request, a_dictionary)
+
+    def required_object_for_union_operation(self,request, attributes_functions_str):
+        object = self.get_object_from_union_spatial_operation(attributes_functions_str)
+        a_dictionary = json.loads(object[self.geometry_field_name() + '__union'].geojson)
+        return self.required_object_for_aggregation_operation(request, a_dictionary)
+
+    def required_object_for_make_line_operation(self,request, attributes_functions_str):
+        line = self.get_object_from_make_line_spatial_operation(attributes_functions_str)
+        a_dictionary = json.loads(line[self.geometry_field_name() + '__makeline'].geojson)
+        return self.required_object_for_aggregation_operation(request, a_dictionary)
+
+    #todo: Define header Content-Type depending of wich type is returned (FeatureCollection, bufer, dict, etc)
+    def required_object_for_collect_operation(self, request, attributes_functions_str):
+        collect_operation_snippet = self.remove_last_slash(attributes_functions_str)
+        if self.path_has_projection(collect_operation_snippet):
+            if self.projection_attrs_equals_collect_attrs(collect_operation_snippet):
+                collect_operation_snippet = self.remove_projection_from_path(attributes_functions_str)
+            else:
+                message = "Projection attributes list must be the same as collect operation attributes list"
+                return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+
+        business_objects = self.get_objects_from_collect_operation(collect_operation_snippet)
         return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def get_objects_from_specialized_operation(self, attributes_functions_str):
@@ -2746,21 +2922,63 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return self.get_objects_from_spatial_operation(arr)
 
+    def get_objects_from_extent_spatial_operation(self, attributes_functions_str):
+        first_part_name = super(FeatureCollectionResource, self).get_operation_name_from_path(attributes_functions_str)
+        if first_part_name == self.operation_controller.filter_collection_operation_name:
+            filter_snippet = attributes_functions_str[:attributes_functions_str.index("/*")]
+            queryset_or_model_class = self.get_objects_from_filter_operation(filter_snippet)
+
+        elif first_part_name == self.operation_controller.offset_limit_collection_operation_name:
+            offset_limit_snippet = attributes_functions_str[:attributes_functions_str.index("/*")]
+            queryset_or_model_class = self.get_objects_from_offset_limit_operation(offset_limit_snippet)
+        else:
+            queryset_or_model_class = self.model_class().objects
+
+        return queryset_or_model_class.aggregate(Extent(self.geometry_field_name()))
+
+    def get_object_from_union_spatial_operation(self, attributes_functions_str):
+        first_part_name = super(FeatureCollectionResource, self).get_operation_name_from_path(attributes_functions_str)
+        if first_part_name == self.operation_controller.filter_collection_operation_name:
+            filter_snippet = attributes_functions_str[:attributes_functions_str.index("/*")]
+            queryset_or_model_class = self.get_objects_from_filter_operation(filter_snippet)
+
+        elif first_part_name == self.operation_controller.offset_limit_collection_operation_name:
+            offset_limit_snippet = attributes_functions_str[:attributes_functions_str.index("/*")]
+            queryset_or_model_class = self.get_objects_from_offset_limit_operation(offset_limit_snippet)
+        else:
+            queryset_or_model_class = self.model_class().objects
+
+        return queryset_or_model_class.aggregate(Union(self.geometry_field_name()))
+
+    def get_object_from_make_line_spatial_operation(self, attributes_functions_str):
+        first_part_name = super(FeatureCollectionResource, self).get_operation_name_from_path(attributes_functions_str)
+        if first_part_name == self.operation_controller.filter_collection_operation_name:
+            filter_snippet = attributes_functions_str[:attributes_functions_str.index("/*")]
+            queryset_or_model_class = self.get_objects_from_filter_operation(filter_snippet)
+
+        elif first_part_name == self.operation_controller.offset_limit_collection_operation_name:
+            offset_limit_snippet = attributes_functions_str[:attributes_functions_str.index("/*")]
+            queryset_or_model_class = self.get_objects_from_offset_limit_operation(offset_limit_snippet)
+        else:
+            queryset_or_model_class = self.model_class().objects
+
+        return queryset_or_model_class.aggregate(MakeLine(self.geometry_field_name()))
+
     def get_objects_from_collect_operation(self, attributes_functions_str, queryset=None):
         attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
         objects = self.model_class().objects.all() if queryset is None else queryset
+        obj_model_list_or_queryset = self.transform_queryset_in_object_model_list(objects)
 
         collected_objects_list = []
         operated_value = None
 
-        attrs_from_object = attrs_funcs_arr[1].split('&')
-        attrs_out_of_operation = attrs_from_object[:-1]
-        operated_attr = attrs_from_object[-1]
-
-        operation_name = attrs_funcs_arr[2] # optional parameter
+        collected_attrs = self.extract_collect_operation_attributes(attributes_functions_str)
+        attrs_out_of_operation = collected_attrs[:-1]
+        operated_attr = collected_attrs[-1]
+        operation_name = attrs_funcs_arr[2]
         operation_params = attrs_funcs_arr[3:]
 
-        for obj in objects:
+        for obj in obj_model_list_or_queryset:
             obj_attrs_dict = {}
             # adding unoperated attributes in 'obj_attrs_dict'
             for attr in attrs_out_of_operation:
@@ -2769,7 +2987,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
                 else:
                     obj_attrs_dict[attr] = getattr(obj, attr)
 
-            # executting operation in selected attribute
+            # executing operation in selected attribute
             if operated_attr == self.geometry_field_name():
                 operated_value = self._execute_attribute_or_method(obj, operation_name, operation_params)
             else:
@@ -2783,7 +3001,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
             if operated_attr == self.geometry_field_name():
                 if isinstance(operated_value, GEOSGeometry):
                     obj_attrs_dict[operated_attr] = json.loads(operated_value.geojson)
-                    if len(attrs_from_object) > 1:
+                    if len(collected_attrs) > 1:
                         collected_objects_list.append(self.dict_as_geojson(obj_attrs_dict))
                     else:
                         collected_objects_list.append(obj_attrs_dict[operated_attr])
@@ -2792,7 +3010,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
                     collected_objects_list.append(obj_attrs_dict)
             else:
                 obj_attrs_dict[operated_attr] = operated_value
-                if self.geometry_field_name() in attrs_from_object:
+                if self.geometry_field_name() in collected_attrs:
                     collected_objects_list.append(self.dict_as_geojson(obj_attrs_dict))
                 else:
                     collected_objects_list.append(obj_attrs_dict)
@@ -2800,60 +3018,15 @@ class FeatureCollectionResource(SpatialCollectionResource):
         #handling the entire collection (without handling the objects iside the collection)
         if operated_attr == self.geometry_field_name():
             if isinstance(operated_value, GEOSGeometry):
-                if len(attrs_from_object) > 1:
+                if len(collected_attrs) > 1:
                     collected_objects_list = self.dict_list_as_feature_collection(collected_objects_list)
                 else:
                     collected_objects_list = self.dict_list_as_geometry_collection(collected_objects_list)
         else:
-            if self.geometry_field_name() in attrs_from_object:
+            if self.geometry_field_name() in collected_attrs:
                 collected_objects_list = self.dict_list_as_feature_collection(collected_objects_list)
 
         return collected_objects_list
-
-    """
-    def get_objects_from_collect_operation(self, attributes_functions_str, queryset=None):
-        attrs_func_list = attributes_functions_str.split('/')
-        attrs_func_list = [attr_func for attr_func in attrs_func_list if attr_func != '']
-
-        # requests from 'collect' operation without previous filter operation
-        # will result in a request for all objects for this collection
-        if queryset == None:
-            objects = self.model_class().objects.all()
-        else:
-            objects = queryset
-
-        collect_object_list = []
-        has_geo_field = False
-        attr_from_object = attrs_func_list[1].split('&')
-
-        for obj in objects:
-
-            dic = {}
-            for attr in attr_from_object[:-1]:
-                dic[attr] = getattr(obj, attr)
-
-            attr_val_to_operation = getattr(obj, attr_from_object[-1])
-            operated_value = self._execute_attribute_or_method(attr_val_to_operation, attrs_func_list[2], attrs_func_list[3:])
-            if isinstance(operated_value, GEOSGeometry):
-                has_geo_field = True
-                dic[attr_from_object[-1]] = json.loads(operated_value.geojson)
-
-                if len(attr_from_object) > 1:
-                    collect_object_list.append(self.dict_as_geojson(dic))
-                else:
-                    collect_object_list.append(dic[self.geometry_field_name()] )
-            else:
-                dic[attrs_func_list[2]] = operated_value#json.dumps(operated_value)
-                collect_object_list.append(dic)
-
-        if has_geo_field:
-            if len(attr_from_object) > 1:
-                collect_object_list = self.dict_list_as_feature_collection(collect_object_list)
-            else:
-                collect_object_list = self.dict_list_as_geometry_collection(collect_object_list)
-
-        return collect_object_list
-    """
 
     def get_objects_serialized_by_only_attributes(self, attribute_names_str, objects):
         arr = []

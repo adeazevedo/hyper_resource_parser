@@ -30,6 +30,9 @@ from django.test.runner import DiscoverRunner
 #python manage.py test bcim.test_utils  --testrunner=bcim.test_utils.NoDbTestRunner
 #python manage.py test hyper_resource.tests --testrunner=hyper_resource.tests.NoDbTestRunner
 from django.contrib.gis.db.models import Q
+
+HOST = 'luc00557196:8000/'
+
 class NoDbTestRunner(DiscoverRunner):
    """ A test runner to test without database creation/deletion """
 
@@ -333,8 +336,7 @@ class CollectionResourceTest(SimpleTestCase):
 #python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class CollectOperationTest(SimpleTestCase):
     def setUp(self):
-        self.host = 'luc00557196:8000/'
-        self.base_base_uri = "http://" + self.host + "api/bcim/"
+        self.bcim_base_uri = "http://" + HOST + "api/bcim/"
         self.feature_collection_keys = ["features", "type"]
         self.geometry_collection_keys = ["geometries", "type"]
         self.feature_keys = ["geometry", "properties", "type"]
@@ -377,7 +379,7 @@ class CollectOperationTest(SimpleTestCase):
 
     # FeatureCollection return
     def test_collect_operation_with_feature_collection_return(self):
-        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/nome&geom/buffer/0.2/")
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/collect/nome&geom/buffer/0.2/")
         self.assertEquals(response.status_code, 200)
 
         response_dict_keys = self.aux_get_keys_from_response(response)
@@ -387,7 +389,7 @@ class CollectOperationTest(SimpleTestCase):
         self.assertEquals(first_feature_keys, self.feature_keys)
 
     def test_collect_operation_with_non_spatial_operation_and_feature_collection_return(self):
-        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/geom&nome/upper")
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/collect/geom&nome/upper")
         self.assertEquals(response.status_code, 200)
 
         response_dict_keys = self.aux_get_keys_from_response(response)
@@ -401,7 +403,7 @@ class CollectOperationTest(SimpleTestCase):
 
     # GeometryCollection
     def test_collect_operation_with_geomtry_collection_return(self):
-        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/geom/buffer/0.2/")
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/collect/geom/buffer/0.2/")
         self.assertEquals(response.status_code, 200)
 
         response_dict_keys = self.aux_get_keys_from_response(response)
@@ -411,28 +413,45 @@ class CollectOperationTest(SimpleTestCase):
         self.assertEquals(first_geometry_keys, self.geometry_keys)
 
     # list return
-    def test_collection_operation_with_spatial_operation_and_float_return(self):
-        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/nome&geom/area")
+    def test_collect_operation_with_spatial_operation_and_float_return(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/collect/nome&geom/area")
         self.assertEquals(response.status_code, 200)
 
         first_element_keys = self.aux_get_keys_from_first_element(response)
         self.assertEquals(first_element_keys, ["geom", "nome"])
 
-    def test_collection_operation_with_alphanumeric_operation(self):
-        response = requests.get(self.base_base_uri + "aldeias-indigenas/collect/nome/upper")
+    def test_collect_operation_with_alphanumeric_operation(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/collect/nome/upper")
         self.assertEquals(response.status_code, 200)
 
         first_element_keys = self.aux_get_keys_from_first_element(response)
         self.assertEquals(first_element_keys, ["nome"])
+
+    # projection
+    def test_collect_operation_with_projection(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/projection/nome,geom/collect/nome&geom/buffer/0.5")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_keys, self.feature_collection_keys)
+
+        first_feature_keys = self.aux_get_keys_from_first_feature(response)
+        self.assertListEqual(first_feature_keys, self.feature_keys)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(list(response_dict["features"][0]["properties"].keys()), ["nome"])
+
+    def test_collect_operation_with_projection_diferent_from_collect_attrs(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/projection/geom/collect/nome&geom/buffer/0.5")
+        self.assertEquals(response.status_code, 400)
 
 #python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class RequestOptionsTest(SimpleTestCase):
     def setUp(self):
         #self.host = 'luc00557196.ibge.gov.br:8000/'
         #self.host = '192.168.0.10:8000/'
-        self.host = 'luc00557196:8000/'
-        self.bcim_base_uri = "http://" + self.host + "api/bcim/"
-        self.controle_base_uri = "http://" + self.host + "controle-list/"
+        self.bcim_base_uri = "http://" + HOST + "api/bcim/"
+        self.controle_base_uri = "http://" + HOST + "controle-list/"
         self.simple_path_options_dict_keys = ['@context', '@id', '@type', 'hydra:iriTemplate', 'hydra:representationName', 'hydra:supportedOperations', 'hydra:supportedProperties']
         self.path_with_geom_attr_dict_keys = ["@context", '@id', '@type', 'hydra:supportedOperations']
         self.keys_from_attrs_context = ["@id", "@type", "hydra:supportedOperations"]

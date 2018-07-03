@@ -843,9 +843,9 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         d[self.distance_lte_operation_name] = Type_Called('distance_lte', [GEOSGeometry], GEOSGeometry)
         d[self.dwithin_operation_name] = Type_Called('dwithin', [GEOSGeometry], bool)
 
-        d[self.union_collection_operation_name] = Type_Called('union', [GEOSGeometry], object)
-        d[self.extent_collection_operation_name] = Type_Called('extent', [GEOSGeometry], object)
-        d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], object)
+        d[self.union_collection_operation_name] = Type_Called('union', [GEOSGeometry], GEOSGeometry)
+        d[self.extent_collection_operation_name] = Type_Called('extent', [GEOSGeometry], tuple)
+        d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], GEOSGeometry)
 
         return d
 
@@ -1361,6 +1361,3 @@ class RasterModel(SpatialModel):
 class TiffModel(RasterModel):
     class Meta:
         abstract = True
-
-
-
