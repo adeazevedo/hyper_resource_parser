@@ -344,6 +344,7 @@ class ContextResource:
             return an_object.context()
         if  isinstance(GEOSGeometry, an_object):
             return None
+
     def host_with_path(self):
         return self.host + self.basic_path + "/" + self.complement_path
 
@@ -477,8 +478,8 @@ class ContextResource:
             resource_type_context = {"@id": self.dict_context["@id"], "@type": self.dict_context["@type"]}
         else:
             #resource_type = self.resource.default_resource_type()
-            voc = vocabulary(resource_type)
-            res_voc = voc if voc is not None else "http://schema.org/Thing"
+            resource_type_voc = vocabulary(resource_type)
+            res_voc = resource_type_voc if resource_type_voc is not None else "http://schema.org/Thing"
             resource_type_str = resource_type.__name__ if inspect.isclass(resource_type) else str(resource_type)
             resource_type_context = {'@id': res_voc, '@type': resource_type_str}
         return resource_type_context
@@ -507,28 +508,12 @@ class ContextResource:
         self.dict_context["@context"] = self.selectedAttributeContextualized_dict(attributes_name)
 
     def set_context_to_only_one_attribute(self, object, attribute_name, attribute_type=None):
-        """
-        Receives a object model and a attribute for this, set the context for this attribute
-        and, if this attribute (or his value) is a geometric type, also set a context explaining
-        all the possible operetions for this attribute
-        :param object - a object model:
-        :param attribute_name - a name corresponding a object model attribute:
-        :param attribute_type - the field of object model:
-        :return:
-        """
-        # do the same process for multiple field but this time has only one
         self.set_context_to_attributes([attribute_name])
 
-        # the entire code below has the objective to determinate if this field (or his value) is a geometric object,
-        # if this is True we set a context explining all the possible operation for this field
-        # 'obj' is the value of the model field representated by 'attribute_name' (possibly is another object)
         obj = getattr(object, attribute_name, None)
-        # 'a_type' is the models field if this is not None or the type of the field value otherwise
         a_type = attribute_type if attribute_type is not None else type(obj)
         isGeometry = isinstance(obj, GEOSGeometry) or isinstance(attribute_type, GeometryField)
 
-        # if the field value is a GEOSGeometry or if the field is a GeometryField
-        # sets another index in ContextResource.dict_context
         if isGeometry:
             self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(obj, a_type)
 
@@ -541,32 +526,6 @@ class ContextResource:
         #isGeometry = isinstance(object, GEOSGeometry)
         #if isGeometry:
         self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
-
-    def set_context_to_expression_or_set_none(self, attributes_functions_str):
-        self.dict_context = {}
-        attrs_functs_list = self.resource.remove_last_slash(attributes_functions_str).split('/')
-
-        supp_properties_names = [supp_property_context["hydra:property"] for supp_property_context in self.supportedProperties()]
-        supp_operations_names = [supp_operation_context["hydra:operation"] for supp_operation_context in self.supportedOperations()]
-        type_called_operators_dict = BaseOperationController().expression_operators_dict()
-        operators_names = type_called_operators_dict.keys()
-
-        if attrs_functs_list[-1] in supp_operations_names and len(attrs_functs_list) == 1:
-            self.dict_context["hydra:supportedProperties"] = self.supportedProperties()
-
-        elif attrs_functs_list[-1] in supp_properties_names and len(attrs_functs_list) == 2:
-            field_voc_type = vocabulary( type( self.resource.field_for(attrs_functs_list[-1]) ) )
-            property_field = type( self.resource.field_for( attrs_functs_list[-1] ))
-
-            if issubclass(property_field, GeometryField):
-                self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(None, object_type="FeatureCollection")
-            else:
-                self.dict_context["hydra:supportedOperators"] = self.supportedOperators(field_voc_type)
-
-        else:
-            self.dict_context = None
-        #elif attrs_functs_list[-1] in operators_names and len(attrs_functs_list) == 3:
-        #    self.dict_context = None
 
     def set_context_to_object(self, object, attribute_name):
         self.dict_context = {}

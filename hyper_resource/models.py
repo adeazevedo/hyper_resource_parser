@@ -707,6 +707,7 @@ class RasterOperationController():
         d[self.warp_operation_name] = Type_Called('warp', [], object)
         d[self.width_operation_name] = Type_Called('width', [], object)
         return d
+
 class CollectionResourceOperationController(BaseOperationController):
     _instance = None
     def __new__(cls, *args, **kwargs):

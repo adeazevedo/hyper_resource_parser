@@ -441,6 +441,43 @@ class AbstractResource(APIView):
         self.context_resource = context_class()
         self.context_resource.resource = self
 
+    def required_context_for_simple_path(self, request):
+        resource_type = self.resource_type_or_default_resource_type(request)
+        return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_only_attributes(self, request, attributes_functions_str):
+        context = self.get_context_by_only_attributes(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_operation(self, request, attributes_functions_str):
+        if self.get_operation_name_from_path(attributes_functions_str) is None:
+            return RequiredObject(
+                representation_object={"This request has invalid attribute or operation: ": attributes_functions_str},
+                content_type=CONTENT_TYPE_JSON, origin_object=self, status_code=400)
+
+        context = self.get_context_for_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        attrs_list = self.remove_last_slash(attributes_functions_str).split(",")
+        if len(attrs_list) > 1:
+            self._set_context_to_attributes(attrs_list)
+        else:
+            self._set_context_to_only_one_attribute(attrs_list[0])
+
+        context = self.context_resource.dict_context
+        return context
+
+    def get_context_for_operation(self, request, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        self.context_resource.set_context_to_operation(self.object_model, operation_name)
+        context = self.context_resource.dict_context
+        resource_type = self.define_resource_type_by_operation(request, operation_name)
+        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+        context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+
+        return context
+
     # todo
     def path_request_is_ok(self, a_path):
         return True
@@ -473,28 +510,11 @@ class AbstractResource(APIView):
         return None
 
     def fields_to_web_for_attribute_names(self, attribute_names):
-        """
-        Receives a list of attribute names and compare to the list of models fields.
-        Returns the list of matched models fields or a empty list if none of the fields matches
-        :param attribute_names:
-        :return:
-        """
-        # gets the models fields list
         fields_model = self.object_model.fields()
         return [field for field in fields_model if field.name in attribute_names ]
 
     def fields_to_web(self):
-        """
-        Returns a list of model FIELDS that matches with the list of field names
-        of this model
-        :return:
-        """
-        # AbstractResource.attribute_names_to_web() gets a list of model field names
         return self.fields_to_web_for_attribute_names(self.attribute_names_to_web())
-
-        # OBS: AbstractResource.attribute_names_to_web() calls BusinessModel.fields() and returns names
-        # AbstractResource.fields_to_web() call BusinessModel.fields() and returns the fields
-        # Is realy necessary or can i keep just one of their?
 
     def _base_path(self, full_path):
         arr = full_path.split('/')
@@ -520,22 +540,9 @@ class AbstractResource(APIView):
             self.context_resource.complement_path = ''
 
     def key_is_identifier(self, key):
-        """
-        Verify if the received 'key' is between the
-        AbstractResource.serializer_class identifiers list
-        :param key:
-        :return:
-        """
         return key in self.serializer_class.Meta.identifiers
 
     def dic_with_only_identitier_field(self, dict_params):
-        """
-        Receives a dict of fields and return another dict with
-        only identifier fields (those present in AbstractResource.serializer_class
-        identifiers list) and his respective values
-        :param dict_params:
-        :return:
-        """
         dic = dict_params.copy()
         a_dict = {}
         for key, value in dic.items():
@@ -574,13 +581,6 @@ class AbstractResource(APIView):
         return obj
 
     def serialized_data(self, request, object_or_list_of_object, is_many):
-        """
-        Returns the serialized data from a sigle object or a list of them
-        :param request:
-        :param object_or_list_of_object:
-        :param is_many:
-        :return:
-        """
         return self.serializer_class(object_or_list_of_object, many=is_many, context={'request': request}).data
 
     def default_content_type(self):
@@ -589,8 +589,16 @@ class AbstractResource(APIView):
     def default_resource_type(self):
         return 'Thing'
 
-    # must be overided
+    # must be overrided
     def define_resource_type(self, request, attributes_functions_str):
+        pass
+
+    # must be overrided
+    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
+        pass
+
+    # must be overrided
+    def define_resource_type_by_operation(self, request, operation_name):
         pass
 
     def content_type_or_default_content_type(self, requestOrNone):
@@ -875,15 +883,6 @@ class AbstractResource(APIView):
 
     # Could be overrided
     def put(self, request, *args, **kwargs):
-        """
-        Update the database resource if the request body is valid or
-        return a 400 Response otherwise
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        # return a object from database using the arguments as filter
         obj = self.get_object(kwargs)
         # get the PUT request body and compares to the database resouce to determines if the request body is valid or not
         serializer = self.serializer_class(obj, data=request.data, context={'request': request})
@@ -935,7 +934,7 @@ class AbstractResource(APIView):
 
     def path_has_operations(self, attributes_functions_name):
 
-        attrs_functs = attributes_functions_name.split('/')
+        attrs_functs = self.remove_last_slash(attributes_functions_name).split('/')
 
         operations = self.operation_names_model()
 
@@ -1035,35 +1034,44 @@ class AbstractResource(APIView):
                 res = attributes_functions_str_url.lower().find('www.')
                 if res == -1:
                     return [attributes_functions_str_url]
-        return [attributes_functions_str_url[0:res], attributes_functions_str_url[res:]]
+
+        if '/*' in attributes_functions_str_url:
+            param_inx = attributes_functions_str_url.index('/*')
+            param = attributes_functions_str_url[param_inx+2:]
+            return [attributes_functions_str_url[0:res], attributes_functions_str_url[res:param_inx], param]
+
+        return [attributes_functions_str_url[0:res], attributes_functions_str_url[res:], None]
 
     def path_has_url(self, attributes_functions_str_url):
         return (attributes_functions_str_url.find('http:') > -1) or (attributes_functions_str_url.find('https:') > -1)\
                or (attributes_functions_str_url.find('www.') > -1)
 
+    def get_url_arr_from_arr_of_tuples(self, arr_of_tuples):
+        url_as_arr = []
+        for url_tuple in arr_of_tuples:
+            url_arr = list(url_tuple)
+            url = [self.remove_last_slash(url) for url in url_arr if url != ''][0]
+            url_as_arr.append(url)
+        return url_as_arr
+
     def remove_last_slash(self, url_as_str):
         url = url_as_str.strip()
+        url = url[:-1] if url[-1] == '*' else url
         return url[:-1] if url[-1] == '/' else url
-
 
     def attribute_functions_str_with_url_splitted_by_slash(self, attributes_functions_str_url):
         att_functions_str_url = attributes_functions_str_url
         #exp = r"(?=https{0,1}:.+?\*)https{0,1}:.+?\*"
         exp = r'(?=https{0,1}:.+?\*)(https{0,1}:.+?\*)|(https{0,1}:.+?\/?$)'
         #exp = r'(?=https{0,1}:.+?\*)https{0,1}:.+?[*]|[/]$'
-        url_as_arr = re.findall(exp, att_functions_str_url, re.IGNORECASE)
+        url_as_arr_of_tuples = re.findall(exp, att_functions_str_url, re.IGNORECASE)
 
-        if type(url_as_arr[0]) is tuple:
-            url_without_tuple = []
-            for url_tuple in url_as_arr:
-                url_list = list(url_tuple)
-                url_list = [ele for ele in url_list if ele != ""]
-                url_without_tuple.append(url_list[0])
-            url_as_arr = url_without_tuple
+        url_as_arr = self.get_url_arr_from_arr_of_tuples(url_as_arr_of_tuples)
+        #url_as_arr = [self.remove_last_slash(url_tuple[0]) for url_tuple in url_as_arr_of_tuple]
 
         token = '_*+_TOKEN__$URL-#_Num:'
         for index, url_str in enumerate(url_as_arr):
-            att_functions_str_url = att_functions_str_url.replace(url_str, token + str(index) + '/*', 1)
+            att_functions_str_url = att_functions_str_url.replace(url_str, token + str(index), 1)# + '/*', 1)
         att_functions_str_url_as_array = att_functions_str_url.split('/')
         for idx, url_str in enumerate(url_as_arr):
             att_functions_str_url_as_array[att_functions_str_url_as_array.index(token + str(idx))] = url_str if url_str[-1] not in ['*', '/'] else url_str[:-1]
@@ -1093,6 +1101,18 @@ class AbstractResource(APIView):
             return obj
 
         return self._execute_attribute_or_method(obj, array_of_attribute_or_method_name[0], array_of_attribute_or_method_name[1:])
+
+    def array_of_operation_name(self):
+        collection_operations_array = list(self.operation_controller.dict_all_operation_dict().keys())
+        return collection_operations_array
+
+    def get_operation_name_from_path(self, attributes_functions_str):
+        attributes_functions_str = attributes_functions_str.lower()
+        arr_att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
+        first_part_name = arr_att_funcs[0]
+        if first_part_name not in self.array_of_operation_name():
+            return None
+        return first_part_name
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
         dic = self.operations_with_parameters_type()
@@ -1520,14 +1540,18 @@ class FeatureResource(SpatialResource):
         # r':/+' matches string like: ':' followed by at least 1 occurence of '/'
         # substitute any occurences of ':/' to '://' in 'attributes_functions_str'
         attributes_functions_str = re.sub(r':/+', '://', attributes_functions_str)
-        arr_of_two_url = self.attributes_functions_splitted_by_url(attributes_functions_str)
-        resp = requests.get(arr_of_two_url[1])
+        arr_of_two_url_and_param = self.attributes_functions_splitted_by_url(attributes_functions_str)
+        resp = requests.get(arr_of_two_url_and_param[1])
         if resp.status_code in[400, 401, 404]:
             return RequiredObject({},CONTENT_TYPE_JSON, self.object_model,  resp.status_code)
         if resp.status_code == 500:
             return RequiredObject({},CONTENT_TYPE_JSON, self.object_model,resp.status_code)
         j = resp.text
-        attributes_functions_str = arr_of_two_url[0] + j
+
+        if arr_of_two_url_and_param[2] is not None:
+            attributes_functions_str = arr_of_two_url_and_param[0] + j + arr_of_two_url_and_param[2]
+        else:
+            attributes_functions_str = arr_of_two_url_and_param[0] + j
         #external_etag = resp.headers['etag']
         #self.inject_e_tag(external_etag)
         return self.response_of_request(attributes_functions_str)
@@ -1611,12 +1635,74 @@ class FeatureResource(SpatialResource):
         return required_object
 
     def basic_required_object(self, request, *args, **kwargs):
-
         return self.basic_get(request, *args, **kwargs)
+
+    def basic_options(self, request, *args, **kwargs):
+        self.object_model = self.model_class()()
+        self.set_basic_context_resource(request)
+        attributes_functions_str = self.kwargs.get("attributes_functions", None)
+
+        if self.is_simple_path(attributes_functions_str):
+            return self.required_context_for_simple_path(request)
+        if self.path_has_only_attributes(attributes_functions_str):
+            return self.required_context_for_only_attributes(request, attributes_functions_str)
+        if self.path_has_operations(attributes_functions_str):
+            return self.required_context_for_operation(request, attributes_functions_str)
+
+        return RequiredObject(
+            representation_object={"This request has invalid attribute or operation: ": attributes_functions_str},
+            content_type=CONTENT_TYPE_JSON, origin_object=self, status_code=400)
+
+    def options(self, request, *args, **kwargs):
+        required_object = self.basic_options(request, *args, **kwargs)
+        if required_object.status_code == 200:
+            response = Response(required_object.representation_object, content_type=required_object.content_type,
+                                status=200)
+            self.add_base_headers(request, response)
+        else:
+            response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)},
+                                status=required_object.status_code)
+        return response
+
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        attrs_funcs_str = self.remove_last_slash(attributes_functions_str)
+        super(FeatureResource, self).get_context_by_only_attributes(request, attrs_funcs_str)
+
+        resource_type = self.define_resource_type_by_only_attributes(request, attrs_funcs_str)
+        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+        supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+
+        context = self.context_resource.dict_context
+        context['hydra:supportedOperations'] = supported_operation_dict
+        return context
 
     def default_content_type(self):
         return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
 
+    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
+        attrs_functs_arr = self.remove_last_slash(attributes_functions_str).split(',')
+        r_type = self.resource_type_or_default_resource_type(request)
+        if r_type != self.default_resource_type():
+            return r_type if self.geometry_field_name() in attrs_functs_arr else bytes
+
+        if len(attrs_functs_arr) == 1:
+            # the field type has priority over default resource type
+            return type(self.field_for(attrs_functs_arr[0]))
+
+        return r_type if self.geometry_field_name() in attrs_functs_arr else 'Thing'
+
+    def define_resource_type_by_operation(self, request, operation_name):
+        operation_type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
+        res_type_by_accept = self.resource_type_or_default_resource_type(request)
+
+        if operation_type_called.return_type == GEOSGeometry:
+            return res_type_by_accept
+        elif issubclass(operation_type_called.return_type, GEOSGeometry):
+            return res_type_by_accept if res_type_by_accept != self.default_resource_type() else operation_type_called.return_type
+        else:
+            res_type_by_accept = bytes if res_type_by_accept == 'Geobuf' else res_type_by_accept
+
+        return operation_type_called.return_type if res_type_by_accept == self.default_resource_type() else res_type_by_accept
 
     def get(self, request, *args, **kwargs):
        self.change_request_if_image_png_into_IRI(request)
@@ -1743,6 +1829,30 @@ class AbstractCollectionResource(AbstractResource):
 
         return False
 
+    def split_combined_operation(self, attributes_functions_str):
+        oc = BaseOperationController()
+        operators_list = ['*' + key for key in oc.expression_operators_dict().keys()]
+        operators_list.extend( ['*' + key for key in oc.logical_operators_dict().keys()] )
+
+        attrs_functs_str = self.remove_last_slash(attributes_functions_str)
+        attrs_funcs_arr = attrs_functs_str.split('/')
+        if '/*' in attrs_functs_str:
+            second_oper_init = None
+            for attr_func in attrs_funcs_arr:
+                if attr_func.startswith('*') and attr_func not in operators_list:
+                    second_oper_init = attr_func
+                    break
+
+            if second_oper_init is None:
+                first_oper_snippet = attrs_functs_str
+                second_oper_snippet = None
+            else:
+                first_oper_snippet = attrs_functs_str[:attrs_functs_str.index(second_oper_init)-1]
+                second_oper_snippet = attrs_functs_str[attrs_functs_str.index(second_oper_init)+1:]
+        else:
+            first_oper_snippet = attrs_functs_str
+            second_oper_snippet = None
+        return (first_oper_snippet, second_oper_snippet)
 
     def path_has_only_attributes(self, attributes_functions_name):
         if self.path_has_projection(attributes_functions_name):
@@ -1785,9 +1895,10 @@ class AbstractCollectionResource(AbstractResource):
 
         return collect_oper_snippet
 
-    def extract_collect_operation_attributes(self, attributes_functions_str):
+    def extract_collect_operation_attributes(self, attributes_functions_str, as_string=False):
         collect_oper_snippet_arr = self.extract_collect_operation_snippet(attributes_functions_str).split("/")
-        return collect_oper_snippet_arr[1].split("&")
+        collect_attrs = collect_oper_snippet_arr[1]
+        return collect_attrs.replace('&', ',') if as_string else collect_attrs.split('&')
 
     def extract_offset_limit_operation_snippet(self, attributes_functions_str):
         offset_limit_oper_snippet = self.remove_last_slash(attributes_functions_str)
@@ -1845,12 +1956,6 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         return len(att_funcs) > 1 and  (att_funcs[0].lower() == self.operation_controller.filter_collection_operation_name)
 
-    """
-    def path_has_collect_operation(self, attributes_functions_str):
-        att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        return len(att_funcs) > 1 and  (att_funcs[0].lower() == self.operation_controller.collect_collection_operation_name)
-    """
-
     def path_has_groupy_operation(self, attributes_functions_str):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         return len(att_funcs) == 2 and (att_funcs[0].lower() == self.operation_controller.group_by_collection_operation_name)
@@ -1872,20 +1977,9 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = [ele for ele in att_funcs if ele != '']
         return len(att_funcs) == 2 and  (att_funcs[0].lower() == self.operation_controller.offset_limit_collection_operation_name)
 
-    """
-    def path_has_collect_operation(self ,attributes_functions_str):
-        collect_operation_index = attributes_functions_str.find("collect")
-        if collect_operation_index != -1:
-            collect_operation = attributes_functions_str[collect_operation_index:]
-            att_funcs = collect_operation.split('/')
-            att_funcs = [ele for ele in att_funcs if ele != '']
-            return len(att_funcs) >= 3 and  (att_funcs[0].lower() == 'collect')
-        return False
-    """
-
     #Responds an array of operations name.
     # Shoud be overrided
-    def array_of_operation_name_collection(self):
+    def array_of_operation_name(self):
         collection_operations_array = list(self.operation_controller.collection_operations_dict().keys())
         collection_operations_array.extend(self.operation_controller.internal_collection_operations_dict().keys())
         return collection_operations_array
@@ -1911,7 +2005,7 @@ class AbstractCollectionResource(AbstractResource):
         attributes_functions_str = attributes_functions_str.lower()
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         first_part_name = arr_att_funcs[2] if self.path_has_projection(attributes_functions_str) else arr_att_funcs[0]
-        if first_part_name not in self.array_of_operation_name_collection():
+        if first_part_name not in self.array_of_operation_name():
             return None
         if (first_part_name == self.operation_controller.offset_limit_collection_operation_name or
             first_part_name == self.operation_controller.filter_collection_operation_name) and '/*collect' in attributes_functions_str:
@@ -1996,7 +2090,10 @@ class AbstractCollectionResource(AbstractResource):
             return self.required_object_for_invalid_sintax(attributes_functions_str, message)
 
         business_objects = self.get_objects_from_filter_and_collect_operation(filter_and_collect_operation_snippet)
-        return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
+
+        collect_operation_snippet = self.extract_collect_operation_snippet(filter_and_collect_operation_snippet)
+        serialized_data = self.get_objects_serialized_by_collect_operation(collect_operation_snippet, business_objects)
+        return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_offset_limit_and_collect_collection_operation(self, request, attributes_functions_str):
         offset_limit_and_collect_snippet = self.remove_last_slash(attributes_functions_str)
@@ -2015,7 +2112,9 @@ class AbstractCollectionResource(AbstractResource):
                 return self.required_object_for_invalid_sintax(attributes_functions_str, message)
 
         business_objects = self.get_objects_from_offset_limit_and_collect_operation(offset_limit_and_collect_snippet)
-        return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
+        collect_operation_snippet = self.extract_collect_operation_snippet(offset_limit_and_collect_snippet)
+        serialized_data = self.get_objects_serialized_by_collect_operation(collect_operation_snippet, business_objects)
+        return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_filter_and_count_resource_collection_operation(self, request, attributes_functions_str):
         attrs_funcs_str = self.remove_projection_from_path(attributes_functions_str)
@@ -2061,18 +2160,6 @@ class AbstractCollectionResource(AbstractResource):
         response = self.execute_complex_request(request)
         required_object = RequiredObject(json.loads(response.json), self.content_type_or_default_content_type(request), self, 200)
         return required_object
-
-    def required_context_for_simple_path(self, request):
-        resource_type = self.resource_type_or_default_resource_type(request)
-        return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
-
-    def required_context_for_only_attributes(self, request, attributes_functions_str):
-        context = self.get_context_by_only_attributes(request, attributes_functions_str)
-        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
-
-    def required_context_for_operation_return_type(self, request, attributes_functions_str):
-        context = self.get_context_for_operation(request, attributes_functions_str)
-        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def generics_collection_operation_name(self):
        return self.operation_controller.feature_collection_operations_dict().keys()
@@ -2222,6 +2309,19 @@ class AbstractCollectionResource(AbstractResource):
     def get_objects_serialized_by_only_attributes(self, attributes_functions_str, objects):
         pass
 
+    def get_objects_serialized_by_collect_operation(self, attributes_functions_str, objects):
+        collect_operatiion_snippet = self.remove_last_slash(attributes_functions_str)
+        collect_operation_arr = collect_operatiion_snippet.split('/')
+        operation_name = collect_operation_arr[2]
+        operated_attr = collect_operation_arr[1].split('&')[-1]
+
+        collected_attrs = self.extract_collect_operation_attributes(collect_operatiion_snippet)
+        if operated_attr not in objects[0].keys():
+            collected_attrs[-1] = operation_name
+        collected_attrs_str = ",".join(collected_attrs)
+
+        return self.get_objects_serialized_by_only_attributes(collected_attrs_str, objects)
+
     def converter_collection_operation_parameters(self, operation_name, parameters):
         """
         Receive a operation name for a collection resource and a list of parameters
@@ -2288,14 +2388,6 @@ class AbstractCollectionResource(AbstractResource):
         return d
 
     #Responds a method to be executed.
-    """
-    def get_operation_to_execute(self, request, path):
-        d = self.operation_name_method_dic()
-        key_operation_name = self.get_operation_name_from_path(path)
-        if key_operation_name is None and key_operation_name not in self.operation_controller.feature_collection_operations_dict().keys():
-            return None
-        return d[key_operation_name]
-    """
     def get_operation_to_execute(self, operation_name):
         d = self.operation_name_method_dic()
         if operation_name is None:
@@ -2366,18 +2458,16 @@ class AbstractCollectionResource(AbstractResource):
         elif self.path_has_only_attributes(attributes_functions_str):
             return self.required_context_for_only_attributes(request, attributes_functions_str)
         elif self.path_has_operations(attributes_functions_str):
-            return self.required_context_for_operation_return_type(request, attributes_functions_str)
+            return self.required_context_for_operation(request, attributes_functions_str)
         else:
             return RequiredObject(representation_object={"This request has invalid attribute or operation: ":  attributes_functions_str},
                               content_type=CONTENT_TYPE_JSON, origin_object=self,status_code=400)
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)
+        response = Response(data=required_object.representation_object, content_type=required_object.content_type, status=required_object.status_code)
         if required_object.status_code == 200:
-            response = Response(required_object.representation_object, content_type=required_object.content_type, status=200)
             self.add_base_headers(request, response)
-        else:
-            response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)}, status=required_object.status_code)
         return response
 
     def basic_post(self, request):
@@ -2402,17 +2492,6 @@ class AbstractCollectionResource(AbstractResource):
         arr = []
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
         return self.model_class().objects.values(*attribute_names_str_as_array)
-
-    def get_context_by_only_attributes(self, request, attributes_functions_str):
-        attrs_str = attributes_functions_str if attributes_functions_str[-1] != '/' else attributes_functions_str[:-1]
-        attrs_list = attrs_str.split(",")
-        if len(attrs_list) > 1:
-            self._set_context_to_attributes(attrs_list)
-        else:
-            self._set_context_to_only_one_attribute(attrs_list[0])
-
-        context = self.context_resource.dict_context
-        return context
 
     # se for uma operação derivada de collect, definir supported operations de acordo com a lista de attributos
     def get_context_for_operation(self, request, attributes_functions_str):
@@ -2760,7 +2839,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def get_operation_name_from_path(self, attributes_functions_str):
         first_part_name = super(FeatureCollectionResource, self).get_operation_name_from_path(attributes_functions_str)
-        if first_part_name not in self.array_of_operation_name_collection():
+        if first_part_name not in self.array_of_operation_name():
             return None
         if (first_part_name == self.operation_controller.filter_collection_operation_name or
             first_part_name == self.operation_controller.offset_limit_collection_operation_name) and '/*extent' in attributes_functions_str:
@@ -2781,14 +2860,33 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return self.operation_controller.feature_collection_operations_dict()
 
     def get_objects_from_spatial_operation(self, array_of_terms):
-        attributes_functions_str = "/".join(array_of_terms)
-        if self.path_has_projection(attributes_functions_str):
-            attrs = array_of_terms[1].split(",")
-            q_object = self.q_object_for_filter_array_of_terms(array_of_terms[2:])
-            return self.model_class().objects.filter(q_object).values(*attrs)
-        else:
-            q_object = self.q_object_for_filter_array_of_terms(array_of_terms)
-            return self.model_class().objects.filter(q_object)
+        full_oper_snippet = "/".join(array_of_terms)
+        first_oper_snippet, second_oper_snippet = self.split_combined_operation(full_oper_snippet)
+        arr_to_q_object = array_of_terms
+
+        #defining array to Q object
+        if self.path_has_projection(full_oper_snippet):
+            arr_to_q_object = array_of_terms[2:]
+
+        if second_oper_snippet is not None:
+            second_oper_init = [k for k, v in enumerate(arr_to_q_object) if v.startswith('*collect') or v.startswith('*count_resource')]
+            arr_to_q_object = arr_to_q_object if len(second_oper_snippet) == 0 else arr_to_q_object[:second_oper_init[0]]
+
+        q_object = self.q_object_for_filter_array_of_terms(arr_to_q_object)
+
+        if second_oper_snippet is not None:
+            if second_oper_snippet.startswith('collect'):
+                collect_attrs = self.extract_collect_operation_attributes(second_oper_snippet)
+                queryset = self.model_class().objects.filter(q_object).values(*collect_attrs)
+                return self.get_objects_from_collect_operation(second_oper_snippet, queryset)
+            else: # the only options is 'collect' or 'count_resource'
+                return self.model_class().objects.filter(q_object).count()
+
+        if self.path_has_projection(full_oper_snippet):
+            projection_attrs = self.extract_projection_attributes(full_oper_snippet)
+            return self.model_class().objects.filter(q_object).values(*projection_attrs)
+
+        return self.model_class().objects.filter(q_object)
 
     def q_object_for_filter_array_of_terms(self, array_of_terms):
         fcq = FactoryComplexQuery()
@@ -2867,24 +2965,41 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return dicti
 
     #Responds an array of operations name.
-    def array_of_operation_name_collection(self):
-        collection_operations_array = super(FeatureCollectionResource, self).array_of_operation_name_collection()
+    def array_of_operation_name(self):
+        collection_operations_array = super(FeatureCollectionResource, self).array_of_operation_name()
         collection_operations_array.extend(self.operation_controller.feature_collection_operations_dict().keys())
         return collection_operations_array
 
     def required_object_for_specialized_operation(self, request, attributes_functions_str):
+        first_oper_snippet, second_oper_snippet = self.split_combined_operation(attributes_functions_str)
+
+        if second_oper_snippet is not None:
+            if second_oper_snippet.startswith('collect'):
+                if self.path_has_projection(first_oper_snippet) and not self.projection_attrs_equals_collect_attrs(attributes_functions_str):
+                    message = "Projection attribute list must be the same as collect operation attribute list"
+                    return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+
+                spatial_objects = self.get_objects_from_specialized_operation(attributes_functions_str)
+                serialized_data = self.get_objects_serialized_by_collect_operation(second_oper_snippet, spatial_objects)
+            #if second_oper_snippet.startswith('count_resource'):
+            else:
+                spatial_objects = self.get_objects_from_specialized_operation(attributes_functions_str)
+                serialized_data = {'count_resource': spatial_objects}
+
+            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), spatial_objects, 200)
+
         spatial_objects = self.get_objects_from_specialized_operation(attributes_functions_str)
         if self.path_has_projection(attributes_functions_str):
-            attrs_arr = self.extract_projection_attributes(attributes_functions_str)
-            attrs_str = ",".join(attrs_arr)
+            attrs_str = self.extract_projection_attributes(attributes_functions_str, as_string=True)
             serialized_data = self.get_objects_serialized_by_only_attributes(attrs_str, spatial_objects)
             return RequiredObject(serialized_data,self.content_type_or_default_content_type(request), spatial_objects, 200)
         else:
             return self.required_object(request, spatial_objects)
 
     def required_object_for_extent_operation(self,request, attributes_functions_str):
-        a_dictionary = self.get_objects_from_extent_spatial_operation(attributes_functions_str)
-        return self.required_object_for_aggregation_operation( request, a_dictionary)
+        extent_dict = self.get_objects_from_extent_spatial_operation(attributes_functions_str)
+        extent_dict['extent'] = extent_dict.pop(self.geometry_field_name() + '__extent')
+        return self.required_object_for_aggregation_operation( request, extent_dict)
 
     def required_object_for_union_operation(self,request, attributes_functions_str):
         object = self.get_object_from_union_spatial_operation(attributes_functions_str)
@@ -2907,10 +3022,11 @@ class FeatureCollectionResource(SpatialCollectionResource):
                 return self.required_object_for_invalid_sintax(attributes_functions_str, message)
 
         business_objects = self.get_objects_from_collect_operation(collect_operation_snippet)
-        return RequiredObject(business_objects, self.content_type_or_default_content_type(request), business_objects, 200)
+
+        serialized_data = self.get_objects_serialized_by_collect_operation(collect_operation_snippet, business_objects)
+        return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def get_objects_from_specialized_operation(self, attributes_functions_str):
-
         if self.path_has_url(attributes_functions_str):
             #arr = self.transform_path_with_url_as_array(att_func_arr)
             arr = self.attribute_functions_str_with_url_splitted_by_slash(attributes_functions_str)
@@ -2970,22 +3086,17 @@ class FeatureCollectionResource(SpatialCollectionResource):
         obj_model_list_or_queryset = self.transform_queryset_in_object_model_list(objects)
 
         collected_objects_list = []
-        operated_value = None
 
         collected_attrs = self.extract_collect_operation_attributes(attributes_functions_str)
-        attrs_out_of_operation = collected_attrs[:-1]
+        attrs_out_of_operation = collected_attrs[:-1] # only the last one will be operated
         operated_attr = collected_attrs[-1]
         operation_name = attrs_funcs_arr[2]
         operation_params = attrs_funcs_arr[3:]
 
         for obj in obj_model_list_or_queryset:
-            obj_attrs_dict = {}
-            # adding unoperated attributes in 'obj_attrs_dict'
+            collected_object = {}
             for attr in attrs_out_of_operation:
-                if attr == self.geometry_field_name():
-                    obj_attrs_dict[attr] = json.loads(getattr(obj, attr).geojson)
-                else:
-                    obj_attrs_dict[attr] = getattr(obj, attr)
+                collected_object[attr] = getattr(obj, attr)
 
             # executing operation in selected attribute
             if operated_attr == self.geometry_field_name():
@@ -2997,34 +3108,11 @@ class FeatureCollectionResource(SpatialCollectionResource):
                 else:
                     operated_value = None
 
-            # decides if each object is Feature, Geometry or simply an dict
-            if operated_attr == self.geometry_field_name():
-                if isinstance(operated_value, GEOSGeometry):
-                    obj_attrs_dict[operated_attr] = json.loads(operated_value.geojson)
-                    if len(collected_attrs) > 1:
-                        collected_objects_list.append(self.dict_as_geojson(obj_attrs_dict))
-                    else:
-                        collected_objects_list.append(obj_attrs_dict[operated_attr])
-                else:
-                    obj_attrs_dict[operated_attr] = operated_value
-                    collected_objects_list.append(obj_attrs_dict)
-            else:
-                obj_attrs_dict[operated_attr] = operated_value
-                if self.geometry_field_name() in collected_attrs:
-                    collected_objects_list.append(self.dict_as_geojson(obj_attrs_dict))
-                else:
-                    collected_objects_list.append(obj_attrs_dict)
-
-        #handling the entire collection (without handling the objects iside the collection)
-        if operated_attr == self.geometry_field_name():
             if isinstance(operated_value, GEOSGeometry):
-                if len(collected_attrs) > 1:
-                    collected_objects_list = self.dict_list_as_feature_collection(collected_objects_list)
-                else:
-                    collected_objects_list = self.dict_list_as_geometry_collection(collected_objects_list)
-        else:
-            if self.geometry_field_name() in collected_attrs:
-                collected_objects_list = self.dict_list_as_feature_collection(collected_objects_list)
+                collected_object[operated_attr] = operated_value
+            else:
+                collected_object[operation_name] = operated_value
+            collected_objects_list.append(collected_object)
 
         return collected_objects_list
 
@@ -3077,21 +3165,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
         attrs_context = super(FeatureCollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
         context.update(attrs_context)
         resource_type = self.define_resource_type(request, attributes_functions_str)
-
-        #attrs_list = attributes_functions_str.split(',')
-        #if self.geometry_field_name() in attrs_list:
-            #if len(attrs_list) > 1:
-                #resource_type = 'FeatureCollection' if res_type_or_default != 'GeobufCollection' else res_type_or_default
-            #else:
-            #    resource_type =  GeometryCollection if res_type_or_default != 'GeobufCollection' else res_type_or_default
-        #else:
-            #attrs_types_list = [self.field_for(attr) for attr in attrs_list]
-            #attrs_types_set = set()
-            #[attrs_types_set.add(attr_type) for attr_type in attrs_types_list]
-            #unique_attrs_types_list = list(attrs_types_set)
-            #resource_type = type(unique_attrs_types_list[0]) if len(unique_attrs_types_list) == 1 else 'Collection'
-            #ENABLE THE CODE ABOVE WHEN IMPLEMENTED COLLECTION OPERATIONS FOR PRIMITIVE
-            #resource_type = 'Collection' if res_type_or_default != 'GeobufCollection' else bytes
 
         self.resource_type = resource_type
         supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
