@@ -231,7 +231,7 @@ class RequiredObject(object):
         self.origin_object = origin_object # the resource without serialization
         self.status_code = status_code
         self.etag = etag
-
+'''
 class AbstractResource(APIView):
     """
     AbstractResource is the main view class.
@@ -551,7 +551,7 @@ class AbstractResource(APIView):
 
         return a_dict
 
-    '''
+    """
     def get_object(self, arr_of_term=[]):
         first_term = arr_of_term[0]
         if self.is_attribute(self, first_term):
@@ -561,7 +561,7 @@ class AbstractResource(APIView):
         for term in arr_of_term:
             self.current_object_state = getattr(self.current_object_state, term, None)
         return  self.current_object_state
-    '''
+    """
     def attributes_functions_name_template(self):
         return 'attributes_functions'
 
@@ -3266,3 +3266,4 @@ class FeatureCollectionResource(SpatialCollectionResource):
         absolute_uri = request.build_absolute_uri()
         self.change_request_if_image_png_into_IRI(request)
         return super(FeatureCollectionResource,self).get(request, *args, **self.kwargs)
+'''

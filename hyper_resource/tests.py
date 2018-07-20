@@ -13,7 +13,9 @@ from django.contrib.gis.db import models
 
 from hyper_resource.models import FeatureModel, FactoryComplexQuery
 from hyper_resource.contexts import *
-from hyper_resource.views import AbstractResource, FeatureCollectionResource, AbstractCollectionResource
+from hyper_resource.resources.AbstractResource import AbstractResource
+from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource
+from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource
 from django.contrib.gis.geos import GEOSGeometry
 from django.test import SimpleTestCase
 
@@ -498,13 +500,13 @@ class RequestOptionsTest(SimpleTestCase):
                                         'ewkt', 'extend', 'extent', 'geojson', 'geom_type', 'geom_typeid', 'get_coords', 'get_srid', 'get_x', 'get_y',
                                         'get_z', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'interpolate', 'intersection', 'intersects', 'json', 'kml',
                                         'length', 'normalize', 'num_coords', 'num_geom', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'relate',
-                                        'relate_pattern', 'ring', 'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z', 'simple', 'simplify', 'srid',
+                                        'relate_pattern', 'ring', 'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z', 'simple', 'simplify', 'spatialize', 'srid',
                                         'srs', 'sym_difference', 'touches', 'transform', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
         self.spatial_collection_operation_names = ['bbcontains', 'bboverlaps', 'collect', 'contained', 'contains', 'contains_properly', 'count_resource',
                                                     'covers', 'covers_by', 'crosses', 'disjoint', 'distance_gt', 'distance_gte', 'distance_lt', 'distance_lte',
                                                     'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'intersects', 'isvalid', 'left',
                                                     'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right',
-                                                   'relate', 'right', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
+                                                   'relate', 'right', 'spatialize', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
         self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'offset_limit']
         self.operators_names = ['between', 'eq', 'gt', 'gte', 'in', 'isnotnull', 'isnull', 'like', 'lt', 'lte', 'neq', 'notin', 'notlike']
 

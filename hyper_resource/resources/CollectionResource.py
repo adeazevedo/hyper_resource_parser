@@ -51,6 +51,7 @@ class CollectionResource(AbstractCollectionResource):
         return objects
 
     def get_context_by_only_attributes(self, request, attributes_functions_str):
+        attrs_context = super(CollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
         resource_type = self.resource_type_or_default_resource_type(request)
         self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
 

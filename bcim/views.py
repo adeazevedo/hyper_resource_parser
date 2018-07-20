@@ -8,8 +8,9 @@ from rest_framework import status
 
 from bcim.contexts import *
 from .serializers import *
-from hyper_resource.views import *
-
+from hyper_resource.views import CORS_EXPOSE_HEADERS, CORS_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS, BaseContext # depraced
+from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource
+from hyper_resource.resources.FeatureResource import FeatureResource
 
 def get_root_response(request):
     format = None

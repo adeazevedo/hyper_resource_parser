@@ -5,10 +5,14 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.views import *
+from hyper_resource.views import * # depraced
 from raster_base.models import *
 from raster_base.serializers import *
 from raster_base.contexts import *
+
+from hyper_resource.resources.TiffCollectionResource import TiffCollectionResource
+from hyper_resource.resources.TiffResource import TiffResource
+
 
 def get_root_response(request):
     format = None

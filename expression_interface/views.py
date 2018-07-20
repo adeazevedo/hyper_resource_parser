@@ -9,8 +9,10 @@ from rest_framework.views import APIView
 
 from expression_interface.contexts import SubBooleanOperatorResourceContext, LogicalOperatorResourceContext
 from hyper_resource.models import boolean_operator, logical_operator
-from hyper_resource.views import AbstractResource, BaseContext
+from hyper_resource.views import BaseContext # depraced
 from rest_framework.response import Response
+
+from hyper_resource.resources.AbstractResource import AbstractResource
 
 HTTP_IF_NONE_MATCH = 'HTTP_IF_NONE_MATCH'
 HTTP_IF_MATCH = 'HTTP_IF_MATCH'

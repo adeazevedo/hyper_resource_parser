@@ -1,5 +1,7 @@
 
 import json
+from operator import itemgetter
+
 import requests
 
 from django.core import cache
@@ -210,21 +212,21 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def execute_complex_request(self, request):
         # using request.build_absolute_uri() will cause problems in the case use of GeoJson in request
         absolute_uri = request.scheme + '://' + request.get_host() + request.path
-        absolute_uri = absolute_uri if absolute_uri[-1] != '/' else absolute_uri[:-1]
-        request_list = self.split_complex_uri(absolute_uri)
-        operation = request_list[1]
+        absolute_uri = self.remove_last_slash(absolute_uri)
+        request_tuple = self.split_complex_uri(absolute_uri)
+        operation = request_tuple[1]
         ct = ConverterType()
 
         # requests for FeatureCollectionResource means that the first url request_list[0]
         # is an url that corresponds to an FeatureCollection/GeometryCollection
-        geom_left = ct.get_geos_geometry_from_request(request_list[0])
+        geom_left = ct.get_geos_geometry_from_request(request_tuple[0])
 
-        if self.path_has_url(request_list[2]):
-            response = requests.get(request_list[2])
+        if self.path_has_url(request_tuple[2]):
+            response = requests.get(request_tuple[2])
             response_right = json.dumps(response.json())
 
         else: # if request_list[2] is GeometryCollection (GeoJson) or WKT ...
-            response_right = request_list[2]
+            response_right = request_tuple[2]
 
         result = self._execute_attribute_or_method(geom_left, operation, [response_right])
         return result
@@ -261,7 +263,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
              self.operation_controller.dwithin_operation_name: self.required_object_for_specialized_operation,
              self.operation_controller.union_collection_operation_name: self.required_object_for_union_operation,
              self.operation_controller.extent_collection_operation_name: self.required_object_for_extent_operation,
-             self.operation_controller.make_line_collection_operation_name: self.required_object_for_make_line_operation
+             self.operation_controller.make_line_collection_operation_name: self.required_object_for_make_line_operation,
+            self.operation_controller.spatialize_collection_operation_name: self.required_object_for_spatialize_operation,
         })
 
         return dicti
@@ -331,6 +334,53 @@ class FeatureCollectionResource(SpatialCollectionResource):
         business_objects = self.get_objects_from_collect_operation(collect_operation_snippet)
         serialized_data = self.get_objects_serialized_by_collect_operation(collect_operation_snippet, business_objects)
         return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
+
+    def required_object_for_spatialize_operation(self, request, attributes_functions_str):
+        spatialized_objects_or_None = self.get_objects_from_spatialize_operation(request, attributes_functions_str)
+        if spatialized_objects_or_None:
+            return RequiredObject(spatialized_objects_or_None, self.content_type_or_default_content_type(request), self, 200)
+
+        spatialize_oper_uri = self.split_spatialize_uri(request, attributes_functions_str)
+        message = spatialize_oper_uri[0] + " isn't joinable with " + spatialize_oper_uri[2]
+        return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
+
+    def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
+        two_requests_data_dict = self.get_requested_data_from_spatialize_operation(request, attributes_functions_str)
+        return self.join_feature_collection_on_dict_list(two_requests_data_dict)
+
+    #todo: need to join various alphanumeric dicts to related to the same feature
+    def join_feature_collection_on_dict_list(self, two_requests_data_dict):
+        '''
+        geojson_join_data = two_requests_data_dict["left_join_data"]
+        geojson_join_attr = two_requests_data_dict["left_join_attr"]
+        right_join_data = two_requests_data_dict["right_join_data"]
+        right_join_attr = two_requests_data_dict["rigth_join_attr"]
+
+        #geojson_data_sorted = sorted(geojson_join_data, key=itemgetter( geojson_join_attr ))
+        r_join_data_sorted = sorted(right_join_data, key=itemgetter( right_join_attr ))
+
+        dict_for_join_attr_and_pos_list = {}
+        for position, a_json in enumerate(r_join_data_sorted):
+            a_json[]
+
+        for feature in geojson_join_data:
+            if feature['properties'][geojson_join_attr] in r_join_attr_and_pos_dict.keys():
+                pass
+        '''
+
+        '''
+        if len(geojson_data_sorted) >= len(r_join_data_sorted):
+            for feature in geojson_data_sorted:
+                if feature['properties'][geojson_join_attr] !=
+
+
+        for k, dicti in enumerate(right_join_data):
+            if geojson_join_data['properties'][geojson_join_attr] != dicti[right_join_attr]:
+                return None # the datas isn't 'joinable'
+            geojson_join_data['properties']['joined__' + str(k)] = dicti
+        '''
+
+        #return geojson_join_data
 
     def get_objects_from_specialized_operation(self, attributes_functions_str):
 

@@ -19,10 +19,10 @@ from abc import ABCMeta
 from datetime import datetime
 from django.core.cache import cache
 
-from hyper_resource import views
+#from hyper_resource import views
 from hyper_resource.contexts import *
 from hyper_resource.views import IgnoreClientContentNegotiation, HTTP_ACCEPT, CONTENT_TYPE_JSON, SUPPORTED_CONTENT_TYPES, \
-ACCESS_CONTROL_ALLOW_METHODS, CORS_ALLOW_HEADERS, CORS_EXPOSE_HEADERS
+ACCESS_CONTROL_ALLOW_METHODS, CORS_ALLOW_HEADERS, CORS_EXPOSE_HEADERS, RequiredObject
 from hyper_resource.models import  FactoryComplexQuery, SpatialCollectionOperationController, BaseOperationController, BusinessModel, ConverterType
 
 from image_generator.img_generator import BuilderPNG
@@ -37,7 +37,6 @@ class AbstractResource(APIView):
 
     __metaclass__ = ABCMeta
 
-    # store the serializer_class for this view
     serializer_class = None
     contextclassname = ''
 
@@ -281,6 +280,10 @@ class AbstractResource(APIView):
 
         return context
 
+    # must be overided
+    def required_object_for_simple_path(self, request):
+        pass
+
     # todo
     def path_request_is_ok(self, a_path):
         return True
@@ -501,30 +504,12 @@ class AbstractResource(APIView):
     # Should be overridden
     # Answer a formatted string(iri + accept) which is a key to retrieve an object in the cache
     def get_key_cache(self, request, a_content_type=None):
-        """
-        Mounts a cache key based on the request. If a_content_type is defined
-        the key returned is the absolute uri + a_content_type. Otherwise, the
-        key will be the absolute_uri + the content-type returned by
-        AbstractResource.content_type_or_default_content_type()
-        :param request:
-        :param a_content_type:
-        :return:
-        """
         if a_content_type:
             return self.request.build_absolute_uri() + a_content_type
 
         return self.request.build_absolute_uri() + self.content_type_or_default_content_type(request)
 
     def set_key_with_data_in_cache(self, key, etag, data, seconds=3600):
-        """
-        Sets 'etag' and 'data' in cache as a tuple indexed by 'key'.
-        If 'key' already corresponds a cache key, nothing is done.
-        :param key:
-        :param etag:
-        :param data:
-        :param seconds:
-        :return:
-        """
         if isinstance(data, memoryview) or not self.cache_enabled():
             return
 
@@ -848,14 +833,13 @@ class AbstractResource(APIView):
         absolute_uri = request.scheme + '://' + request.get_host() + request.path
         compx_req_marker_idx = absolute_uri.find('!')
 
-        if compx_req_marker_idx == -1 or absolute_uri.count('!') != 1:
+        if compx_req_marker_idx == -1 or absolute_uri.count('!') != 2:
             return False
 
-        else:
-            uri_after_marker = absolute_uri[compx_req_marker_idx:]
-            operation_name = uri_after_marker[1:uri_after_marker.index('/')]
+        uri_after_marker = absolute_uri[compx_req_marker_idx:]
+        operation_name = uri_after_marker[1:uri_after_marker.index('/')-1]
 
-            return operation_name in self.operation_controller.dict_all_operation_dict()
+        return operation_name in self.operation_controller.dict_all_operation_dict()
 
     def transform_path_with_url_as_array(self, arr_of_term):
         """
@@ -1179,7 +1163,7 @@ class AbstractResource(APIView):
             except (ConnectionError, HTTPError) as err:
                 print('Error: '.format(err))
 
-            return parameters_converted
+        return parameters_converted
 
     def generate_tmp_file(self, suffix='', length_name=10):
         return ''.join([random.choice('0123456789ABCDEF') for i in range(length_name)]) + suffix
@@ -1219,17 +1203,87 @@ class AbstractResource(APIView):
         return builder_png.generate()
 
     def split_complex_uri(self, complex_uri):
-        marker_idx = complex_uri.index('!')
-        uri_before_marker = complex_uri[:marker_idx]
-        uri_after_marker = complex_uri[marker_idx:]
-        operation_name = uri_after_marker[:uri_after_marker.index('/') + 1]
-        uri_after_oper_name = uri_after_marker.replace(operation_name, '')
-        clean_operation_name = operation_name[1:-1]
+        init_marker_idx = complex_uri.index('!')
+        fin_marker_idx = complex_uri.rindex('!')
+        uri_before_operation = complex_uri[:init_marker_idx]
+        uri_after_operation = complex_uri[fin_marker_idx+2:]
+        operation_snippet = complex_uri[init_marker_idx+1:fin_marker_idx]
 
-        uri_arr = [uri_before_marker, clean_operation_name, uri_after_oper_name]
-        return uri_arr
+        return (uri_before_operation, operation_snippet, uri_after_operation)
+
+    def get_absolute_uri(self, request):
+        return request.scheme + '://' + request.get_host() + request.path
 
     # Must be overridden
     def execute_complex_request(self, request):
         pass
+
+    def required_object_for_invalid_sintax(self, attributes_functions_str, message=None):
+        representation_object = {
+            'This request has invalid attribute or operation: ': attributes_functions_str,
+        }
+
+        if message:
+            representation_object['Explanation'] = message
+
+        required_obj =  RequiredObject(representation_object, CONTENT_TYPE_JSON, self, 400)
+
+        return required_obj
+
+    def required_object_for_complex_request(self, request):
+        response = self.execute_complex_request(request)
+        return RequiredObject(json.loads(response.json), self.content_type_or_default_content_type(request), self, 200)
+
+    # must be overrided
+    def required_object_for_spatialize_operation(self, request, attributes_functions_str):
+        pass
+
+    # must be overrided
+    def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
+        pass
+
+    def get_requested_data_from_spatialize_operation(self, request, attributes_functions_str):
+        uri_before_oper, join_attrs, uri_or_data_after_oper = self.split_spatialize_uri(request, attributes_functions_str)
+
+        data_before_oper = requests.get(uri_before_oper).json()
+        if uri_or_data_after_oper.startswith('http://') or\
+                uri_or_data_after_oper.startswith('https://') or\
+                uri_or_data_after_oper.startswith('www.'):
+            data_after_oper = requests.get(uri_or_data_after_oper, headers={'Accept': 'application/json'} ).json()
+        else:
+            data_after_oper = uri_or_data_after_oper
+
+        dicti = {
+                "left_join_data": data_before_oper,
+                "left_join_attr": join_attrs[0],
+                "rigth_join_attr": join_attrs[1],
+                "right_join_data": data_after_oper
+        }
+        return dicti
+
+    def split_spatialize_uri(self, request, attributes_functions_str):
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
+
+        spatialize_oper_snippet = "/".join(attrs_funcs_arr[:2])
+        absolute_uri = self.get_absolute_uri(request)
+        uri_before_oper = absolute_uri[:absolute_uri.find( spatialize_oper_snippet )]
+
+        join_attrs = attrs_funcs_arr[1].split('&')
+
+        uri_after_oper = "/".join(attrs_funcs_arr[2:])
+
+        return (uri_before_oper, join_attrs, uri_after_oper)
+
+    # Responds a method to be executed.
+    def get_operation_to_execute(self, operation_name):
+        d = self.operation_name_method_dic()
+
+        if operation_name is None:
+            return None
+
+        return d[operation_name]
+
+    def operation_name_method_dic(self):
+        pass
+
 

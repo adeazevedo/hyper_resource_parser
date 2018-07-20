@@ -5,10 +5,13 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.views import *
+from hyper_resource.views import BaseContext #depraced
 from controle_adesao.models import *
 from controle_adesao.serializers import *
 from controle_adesao.contexts import *
+
+from hyper_resource.resources.CollectionResource import CollectionResource
+from hyper_resource.resources.NonSpatialResource import NonSpatialResource
 
 def get_root_response(request):
     format = None

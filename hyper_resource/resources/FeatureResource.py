@@ -1,6 +1,8 @@
 
 import re
 import json
+
+from datetime import datetime
 import requests
 
 from django.contrib.gis.geos import GEOSGeometry
@@ -9,7 +11,8 @@ from django.contrib.gis.gdal import SpatialReference
 from rest_framework.response import Response
 
 from hyper_resource.models import buffer
-from hyper_resource.views import RequiredObject
+from hyper_resource.views import RequiredObject, ENABLE_COMPLEX_REQUESTS
+#from hyper_resource import views #depraced
 from hyper_resource.resources.SpatialResource import SpatialResource
 from hyper_resource.views import CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_JSON, CONTENT_TYPE_GEOJSON
 
@@ -27,6 +30,10 @@ class FeatureResource(SpatialResource):
         }
 
         return dict_
+
+    def hashed_value(self, object_):
+        dt = datetime.now()
+        return self.__class__.__name__ + str(dt.microsecond)
 
     # Must be overridden
     def initialize_context(self):
@@ -137,6 +144,189 @@ class FeatureResource(SpatialResource):
 
         return resp
 
+    def get_requiredObject_from_method_to_execute(self, request, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        method_to_execute = self.get_operation_to_execute(operation_name)
+
+        if method_to_execute is None:
+            return None
+
+        #attr_functions_str =  attributes_functions_str.replace(operation_name, self.get_real_operation_name(operation_name))
+        return method_to_execute(*[request, attributes_functions_str])
+
+    def operation_name_method_dic(self):
+        dict = {
+            self.operation_controller.area_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.boundary_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.buffer_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.centroid_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.contains_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.convex_hull_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.coord_seq_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.coords_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.count_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.crosses_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.crs_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.difference_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.dims_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.disjoint_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.distance_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.empty_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.envelope_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.equals_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.equals_exact_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.ewkb_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.ewkt_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.extend_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.extent_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.geojson_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.geom_type_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.geom_typeid_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.get_coords_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.get_srid_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.get_x_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.get_y_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.get_z_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.has_cs_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.hasz_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.hex_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.hexewkb_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.index_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.intersection_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.intersects_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.interpolate_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.json_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.kml_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.length_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.normalize_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.num_coords_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.num_geom_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.num_points_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.ogr_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.overlaps_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.point_on_surface_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.relate_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.relate_pattern_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.ring_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.set_coords_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.set_srid_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.set_x_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.set_y_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.set_z_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.simple_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.simplify_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.srid_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.srs_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.sym_difference_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.touches_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.transform_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.union_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.valid_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.valid_reason_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.within_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.wkb_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.wkt_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.x_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.y_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.z_operation_name: self.required_object_for_spatial_operation,
+            self.operation_controller.spatialize_operation_name: self.required_object_for_spatialize_operation,
+        }
+        return dict
+
+    def required_object_for_simple_path(self, request):
+        serializer = self.serializer_class(self.object_model)
+        return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), self.object_model, 200)
+
+    def required_object_for_only_attributes(self, request, attributes_functions_str):
+        attr_str = self.remove_last_slash(attributes_functions_str)
+        return self.response_request_with_attributes(attr_str, request)
+
+    def required_object_for_spatial_operation(self, request, attributes_functions_str):
+        if self.path_has_url(attributes_functions_str.lower()):
+            return self.response_request_attributes_functions_str_with_url(attributes_functions_str, request)
+        return self.response_of_request(attributes_functions_str)
+
+    def required_object_for_spatialize_operation(self, request, attributes_functions_str):
+        spatialized_object_or_None = self.get_objects_from_spatialize_operation(request, attributes_functions_str)
+        if spatialized_object_or_None is None:
+            spatialize_oper_uri = self.split_spatialize_uri(request, attributes_functions_str)
+            message = spatialize_oper_uri[0] + " isn't joinable with " + spatialize_oper_uri[2]
+            return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
+
+        #serialized_data = self.get_objects_serialized_by_spatialize_operation(attributes_functions_str, spatialized_object)
+        return RequiredObject(spatialized_object_or_None, self.content_type_or_default_content_type(request), self, 200)
+
+    def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
+        '''
+        uri_before_oper, join_attrs, uri_or_data_after_oper = self.split_spatialize_uri(request, attributes_functions_str)
+
+        data_before_oper = requests.get(uri_before_oper).json()
+
+        if uri_or_data_after_oper.startswith('http://') or\
+                uri_or_data_after_oper.startswith('https://') or\
+                uri_or_data_after_oper.startswith('www.'):
+            data_after_oper = requests.get(uri_or_data_after_oper, headers={'Accept': 'application/json'} ).json()
+        else:
+            data_after_oper = uri_or_data_after_oper
+
+        left_join_tuple = data_before_oper, join_attrs[0]
+        right_join_tuple = data_after_oper, join_attrs[1]
+        '''
+
+        two_requests_data_dict = self.get_requested_data_from_spatialize_operation(request, attributes_functions_str)
+
+        if type(two_requests_data_dict['right_join_data']) is list:
+            return self.join_feature_on_list_response(two_requests_data_dict)
+        return self.join_feature_on_dict_response(two_requests_data_dict)
+
+    def join_feature_on_dict_response(self, two_requests_data_dict):
+        left_join_data = two_requests_data_dict["left_join_data"]
+        left_join_attr = two_requests_data_dict["left_join_attr"]
+        right_join_data = two_requests_data_dict["right_join_data"]
+        right_join_attr = two_requests_data_dict["rigth_join_attr"]
+
+        if left_join_data['properties'][ left_join_attr ] != right_join_data[ right_join_attr ]:
+            # the datas isn't 'joinable'
+            return None
+
+        for alfa_attr_name, alfa_attr_val in right_join_data.items():
+            left_join_data['properties']['joined__' + alfa_attr_name] = alfa_attr_val
+        return left_join_data
+
+    def join_feature_on_list_response(self, two_requests_data_dict):
+        left_join_data = two_requests_data_dict["left_join_data"]
+        left_join_attr = two_requests_data_dict["left_join_attr"]
+        right_join_data = two_requests_data_dict["right_join_data"]
+        right_join_attr = two_requests_data_dict["rigth_join_attr"]
+
+        for k, dicti in enumerate(right_join_data):
+            if left_join_data['properties'][left_join_attr] != dicti[right_join_attr]:
+                return None # the datas isn't 'joinable'
+            left_join_data['properties']['joined__' + str(k)] = dicti
+
+        return left_join_data
+
+    def basic_get(self, request, *args, **kwargs):
+        self.object_model = self.get_object(kwargs)
+        self.current_object_state = self.object_model
+        self.set_basic_context_resource(request)
+        self.e_tag = str(hash(self.object_model))
+
+        attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
+
+        if self.is_simple_path(attributes_functions_str):
+            return self.required_object_for_simple_path(request)
+
+        if self.path_has_only_attributes(attributes_functions_str):
+            return self.required_object_for_only_attributes(request, attributes_functions_str)
+
+        res = self.get_requiredObject_from_method_to_execute(request, attributes_functions_str)
+        if res is None:
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
+        return res
+
+
+    """
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.get_object(kwargs)
         self.current_object_state = self.object_model
@@ -178,6 +368,7 @@ class FeatureResource(SpatialResource):
         self.temporary_content_type= required_object.content_type
 
         return required_object
+    """
 
     def basic_required_object(self, request, *args, **kwargs):
         return self.basic_get(request, *args, **kwargs)

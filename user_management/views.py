@@ -5,10 +5,13 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.views import *
+from hyper_resource.views import BaseContext #depraced
 from user_management.models import *
 from user_management.serializers import *
 from user_management.contexts import *
+
+from hyper_resource.resources.CollectionResource import CollectionResource
+from hyper_resource.resources.NonSpatialResource import NonSpatialResource
 
 def get_root_response(request):
     format = None

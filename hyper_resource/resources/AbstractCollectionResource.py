@@ -380,18 +380,6 @@ class AbstractCollectionResource(AbstractResource):
 
         return required_obj
 
-    def required_object_for_invalid_sintax(self, attributes_functions_str, message=None):
-        representation_object = {
-            'This request has invalid attribute or operation: ': attributes_functions_str,
-        }
-
-        if message:
-            representation_object['Explanation'] = message
-
-        required_obj =  RequiredObject(representation_object, views.CONTENT_TYPE_JSON, self, 400)
-
-        return required_obj
-
     def required_object_for_aggregation_operation(self, request, a_dictionary):
         required_obj =  RequiredObject(a_dictionary,self.content_type_or_default_content_type(request), a_dictionary, 200)
 
@@ -412,12 +400,6 @@ class AbstractCollectionResource(AbstractResource):
         content_type = self.content_type_or_default_content_type(request)
 
         return RequiredObject(serialized_data, content_type, objects, 200)
-
-    def required_object_for_complex_request(self, request):
-        response = self.execute_complex_request(request)
-        required_object = RequiredObject(json.loads(response.json), self.content_type_or_default_content_type(request), self, 200)
-
-        return required_object
 
     def required_context_for_simple_path(self, request):
         resource_type = self.resource_type_or_default_resource_type(request)
@@ -681,14 +663,7 @@ class AbstractCollectionResource(AbstractResource):
 
         return d
 
-    # Responds a method to be executed.
-    def get_operation_to_execute(self, operation_name):
-        d = self.operation_name_method_dic()
 
-        if operation_name is None:
-            return None
-
-        return d[operation_name]
 
     # Responds a RequiredObject via execute operation that's depends on path(attributes_functions_str) of the IRI
     def get_requiredObject_from_method_to_execute(self, request, attributes_functions_str):
@@ -741,16 +716,11 @@ class AbstractCollectionResource(AbstractResource):
         if self.is_complex_request(request):
             if views.ENABLE_COMPLEX_REQUESTS:
                 return self.required_object_for_complex_request(request)
-
-            else:
-                return RequiredObject(representation_object={'This request has invalid attribute or operation: ': attributes_functions_str},
-                                      content_type=views.CONTENT_TYPE_JSON, origin_object=self, status_code=400)
+            return self.required_object_for_invalid_sintax(attributes_functions_str, message="Complex requests is not enabled")
 
         res = self.get_requiredObject_from_method_to_execute(request, attributes_functions_str)
-        if res:
-            return RequiredObject(representation_object={'This request has invalid attribute or operation: ': attributes_functions_str},
-                                  content_type=views.CONTENT_TYPE_JSON, origin_object=self,status_code=400)
-
+        if res is None:
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
     def basic_options(self, request, *args, **kwargs):

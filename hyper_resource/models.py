@@ -11,6 +11,7 @@ from django.contrib.gis.db import models
 from django.contrib.gis.db.models import Q, RasterField
 # Create your models here.
 from django.contrib.gis.gdal import OGRGeometry
+from django.contrib.gis.gdal import SpatialReference
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import GeometryCollection
 from django.contrib.gis.geos import LineString
@@ -412,90 +413,162 @@ class BaseOperationController(object):
 
     #Have to be overrided
     def initialize(self):
-        pass
+        self.area_operation_name = 'area'
+        self.boundary_operation_name = 'boundary'
+        self.buffer_operation_name = 'buffer'
+        self.centroid_operation_name = 'centroid'
+        self.contains_operation_name = 'contains'
+        self.convex_hull_operation_name = 'convex_hull'
+        self.coord_seq_operation_name = 'coord_seq'
+        self.coords_operation_name = 'coords'
+        self.count_operation_name = 'count'
+        self.crosses_operation_name = 'crosses'
+        self.crs_operation_name = 'crs'
+        self.difference_operation_name = 'difference'
+        self.dims_operation_name = 'dims'
+        self.disjoint_operation_name = 'disjoint'
+        self.distance_operation_name = 'distance'
+        self.empty_operation_name = 'empty'
+        self.envelope_operation_name = 'envelope'
+        self.equals_operation_name = 'equals'
+        self.equals_exact_operation_name = 'equals_exact'
+        self.ewkb_operation_name = 'ewkb'
+        self.ewkt_operation_name = 'ewkt'
+        self.extend_operation_name = 'extend'
+        self.extent_operation_name = 'extent'
+        self.geojson_operation_name = 'geojson'
+        self.geom_type_operation_name = 'geom_type'
+        self.geom_typeid_operation_name = 'geom_typeid'
+        self.get_coords_operation_name = 'get_coords'
+        self.get_srid_operation_name = 'get_srid'
+        self.get_x_operation_name = 'get_x'
+        self.get_y_operation_name = 'get_y'
+        self.get_z_operation_name = 'get_z'
+        self.has_cs_operation_name = 'has_cs'
+        self.hasz_operation_name = 'hasz'
+        self.hex_operation_name = 'hex'
+        self.hexewkb_operation_name = 'hexewkb'
+        self.index_operation_name = 'index'
+        self.intersection_operation_name = 'intersection'
+        self.intersects_operation_name = 'intersects'
+        self.interpolate_operation_name = 'interpolate'
+        self.json_operation_name = 'json'
+        self.kml_operation_name = 'kml'
+        self.length_operation_name = 'length'
+        self.normalize_operation_name = 'normalize'
+        self.num_coords_operation_name = 'num_coords'
+        self.num_geom_operation_name = 'num_geom'
+        self.num_points_operation_name = 'num_points'
+        self.ogr_operation_name = 'ogr'
+        self.overlaps_operation_name = 'overlaps'
+        self.point_on_surface_operation_name = 'point_on_surface'
+        self.relate_operation_name ='relate'
+        self.relate_pattern_operation_name = 'relate_pattern'
+        self.ring_operation_name = 'ring'
+        self.set_coords_operation_name = 'set_coords'
+        self.set_srid_operation_name = 'set_srid'
+        self.set_x_operation_name = 'set_x'
+        self.set_y_operation_name = 'set_y'
+        self.set_z_operation_name = 'set_z'
+        self.simple_operation_name = 'simple'
+        self.simplify_operation_name = 'simplify'
+        self.srid_operation_name = 'srid'
+        self.srs_operation_name = 'srs'
+        self.sym_difference_operation_name = 'sym_difference'
+        self.touches_operation_name = 'touches'
+        self.transform_operation_name = 'transform'
+        self.union_operation_name = 'union'
+        self.valid_operation_name = 'valid'
+        self.valid_reason_operation_name = 'valid_reason'
+        self.within_operation_name = 'within'
+        self.wkb_operation_name = 'wkb'
+        self.wkt_operation_name = 'wkt'
+        self.x_operation_name = 'x'
+        self.y_operation_name = 'y'
+        self.z_operation_name = 'z'
+        self.spatialize_operation_name = 'spatialize'
 
     #Spatial Operations
     def geometry_operations_dict(self):
         dic = {}
         if len(dic) == 0:
-            dic['area'] = Type_Called('area', [], float)
-            dic['boundary'] = Type_Called('boundary', [], float)
-            dic['buffer'] = Type_Called('buffer', [float], GEOSGeometry)
-            dic['centroid'] = Type_Called('centroid', [], Point)
-            dic['contains'] = Type_Called('contains', [GEOSGeometry], bool)
-            dic['convex_hull'] = Type_Called('convex_hull', [], Polygon)
-            dic['coord_seq'] = Type_Called('coord_seq', [], tuple)
-            dic['coords'] = Type_Called('coords', [], tuple)
-            dic['count'] = Type_Called('count', [], int)
-            dic['crosses'] = Type_Called('crosses', [GEOSGeometry], bool)
-            from django.contrib.gis.gdal import SpatialReference
-
-            dic['crs'] = Type_Called('crs', [], SpatialReference)
-            dic['difference'] = Type_Called('difference', [GEOSGeometry], GEOSGeometry)
-            dic['dims'] = Type_Called('dims', [], int)
-            dic['disjoint'] = Type_Called('disjoint', [GEOSGeometry], bool)
-            dic['distance'] = Type_Called('distance', [GEOSGeometry], float)
-            dic['empty'] = Type_Called('empty', [], bool)
-            dic['envelope'] = Type_Called('envelope', [], GEOSGeometry)
-            dic['equals'] = Type_Called('equals', [GEOSGeometry], bool)
-            dic['equals_exact'] = Type_Called('equals_exact', [GEOSGeometry, float], bool)
-            dic['ewkb'] = Type_Called('ewkb', [], str)
-            dic['ewkt'] = Type_Called('ewkt', [], str)
-            dic['extend'] = Type_Called('extend', [], tuple)
-            dic['extent'] = Type_Called('extent', [], tuple)
-            dic['geojson'] = Type_Called('geojson', [], str)
-            dic['geom_type'] = Type_Called('geom_type', [], str)
-            dic['geom_typeid'] = Type_Called('geom_typeid', [], int)
-            dic['get_coords'] = Type_Called('get_coords', [], tuple)
-            dic['get_srid'] = Type_Called('get_srid', [], str)
-            dic['get_x'] = Type_Called('get_x', [], str)
-            dic['get_y'] = Type_Called('get_y', [], str)
-            dic['get_z'] = Type_Called('get_z', [], str)
-            dic['has_cs'] = Type_Called('has_cs', [], bool)
-            dic['hasz'] = Type_Called('hasz', [], bool)
-            dic['hex'] = Type_Called('hex', [], str)
-            dic['hexewkb'] = Type_Called('hexewkb', [], str)
-            dic['index'] = Type_Called('index', [], int)
-            dic['intersection'] = Type_Called('intersection', [GEOSGeometry], GEOSGeometry)
-            dic['intersects'] = Type_Called('intersects', [GEOSGeometry], bool)
-            dic['interpolate'] = Type_Called('interpolate', [float], Point)
-            dic['json'] = Type_Called('json', [], str)
-            dic['kml'] = Type_Called('kml', [], str)
-            dic['length'] = Type_Called('length', [], float)
-            dic['normalize'] = Type_Called('normalize', [float], Point)
-            dic['num_coords'] = Type_Called('num_coords', [], int)
-            dic['num_geom'] = Type_Called('num_geom', [], int)
-            dic['num_points'] = Type_Called('num_points', [], int)
-            dic['ogr'] = Type_Called('ogr', [], OGRGeometry)
-            dic['overlaps'] = Type_Called('overlaps', [GEOSGeometry], bool)
-            dic['point_on_surface'] = Type_Called('point_on_surface', [], Point)
+            dic[self.area_operation_name] = Type_Called('area', [], float)
+            dic[self.boundary_operation_name] = Type_Called('boundary', [], float)
+            dic[self.buffer_operation_name] = Type_Called('buffer', [float], GEOSGeometry)
+            dic[self.centroid_operation_name] = Type_Called('centroid', [], Point)
+            dic[self.contains_operation_name] = Type_Called('contains', [GEOSGeometry], bool)
+            dic[self.convex_hull_operation_name] = Type_Called('convex_hull', [], Polygon)
+            dic[self.coord_seq_operation_name] = Type_Called('coord_seq', [], tuple)
+            dic[self.coords_operation_name] = Type_Called('coords', [], tuple)
+            dic[self.count_operation_name] = Type_Called('count', [], int)
+            dic[self.crosses_operation_name] = Type_Called('crosses', [GEOSGeometry], bool)
+            dic[self.crs_operation_name] = Type_Called('crs', [], SpatialReference)
+            dic[self.difference_operation_name] = Type_Called('difference', [GEOSGeometry], GEOSGeometry)
+            dic[self.dims_operation_name] = Type_Called('dims', [], int)
+            dic[self.disjoint_operation_name] = Type_Called('disjoint', [GEOSGeometry], bool)
+            dic[self.distance_operation_name] = Type_Called('distance', [GEOSGeometry], float)
+            dic[self.empty_operation_name] = Type_Called('empty', [], bool)
+            dic[self.envelope_operation_name] = Type_Called('envelope', [], GEOSGeometry)
+            dic[self.equals_operation_name] = Type_Called('equals', [GEOSGeometry], bool)
+            dic[self.equals_exact_operation_name] = Type_Called('equals_exact', [GEOSGeometry, float], bool)
+            dic[self.ewkb_operation_name] = Type_Called('ewkb', [], str)
+            dic[self.ewkt_operation_name] = Type_Called('ewkt', [], str)
+            dic[self.extend_operation_name] = Type_Called('extend', [], tuple)
+            dic[self.extent_operation_name] = Type_Called('extent', [], tuple)
+            dic[self.geojson_operation_name] = Type_Called('geojson', [], str)
+            dic[self.geom_type_operation_name] = Type_Called('geom_type', [], str)
+            dic[self.geom_typeid_operation_name] = Type_Called('geom_typeid', [], int)
+            dic[self.get_coords_operation_name] = Type_Called('get_coords', [], tuple)
+            dic[self.get_srid_operation_name] = Type_Called('get_srid', [], str)
+            dic[self.get_x_operation_name] = Type_Called('get_x', [], str)
+            dic[self.get_y_operation_name] = Type_Called('get_y', [], str)
+            dic[self.get_z_operation_name] = Type_Called('get_z', [], str)
+            dic[self.has_cs_operation_name] = Type_Called('has_cs', [], bool)
+            dic[self.hasz_operation_name] = Type_Called('hasz', [], bool)
+            dic[self.hex_operation_name] = Type_Called('hex', [], str)
+            dic[self.hexewkb_operation_name] = Type_Called('hexewkb', [], str)
+            dic[self.index_operation_name] = Type_Called('index', [], int)
+            dic[self.intersection_operation_name] = Type_Called('intersection', [GEOSGeometry], GEOSGeometry)
+            dic[self.intersects_operation_name] = Type_Called('intersects', [GEOSGeometry], bool)
+            dic[self.interpolate_operation_name] = Type_Called('interpolate', [float], Point)
+            dic[self.json_operation_name] = Type_Called('json', [], str)
+            dic[self.kml_operation_name] = Type_Called('kml', [], str)
+            dic[self.length_operation_name] = Type_Called('length', [], float)
+            dic[self.normalize_operation_name] = Type_Called('normalize', [float], Point)
+            dic[self.num_coords_operation_name] = Type_Called('num_coords', [], int)
+            dic[self.num_geom_operation_name] = Type_Called('num_geom', [], int)
+            dic[self.num_points_operation_name] = Type_Called('num_points', [], int)
+            dic[self.ogr_operation_name] = Type_Called('ogr', [], OGRGeometry)
+            dic[self.overlaps_operation_name] = Type_Called('overlaps', [GEOSGeometry], bool)
+            dic[self.point_on_surface_operation_name] = Type_Called('point_on_surface', [], Point)
+            dic[self.relate_operation_name] = Type_Called('relate', [GEOSGeometry], str)
+            dic[self.relate_pattern_operation_name] = Type_Called('relate_pattern', [GEOSGeometry, str], str)
+            dic[self.ring_operation_name] = Type_Called('ring', [], bool)
+            dic[self.set_coords_operation_name] = Type_Called('set_coords', [tuple], None)
+            dic[self.set_srid_operation_name] = Type_Called('set_srid', [str], None)
+            dic[self.set_x_operation_name] = Type_Called('set_x', [float], None)
+            dic[self.set_y_operation_name] = Type_Called('set_y', [float], None)
+            dic[self.set_z_operation_name] = Type_Called('set_z', [float], None)
+            dic[self.simple_operation_name] = Type_Called('simple', [], bool)
+            dic[self.simplify_operation_name] = Type_Called('simplify', [float, bool], GEOSGeometry)
+            dic[self.srid_operation_name] = Type_Called('srid', [], int)
+            dic[self.srs_operation_name] = Type_Called('srs', [], SpatialReference)
+            dic[self.sym_difference_operation_name] = Type_Called('sym_difference', [GEOSGeometry], GEOSGeometry)
+            dic[self.touches_operation_name] = Type_Called('touches', [GEOSGeometry], bool)
+            dic[self.transform_operation_name] = Type_Called('transform', [int, bool], GEOSGeometry)
+            dic[self.union_operation_name] = Type_Called('union', [GEOSGeometry], GEOSGeometry)
+            dic[self.valid_operation_name] = Type_Called('valid', [GEOSGeometry], bool)
+            dic[self.valid_reason_operation_name] = Type_Called('valid_reason', [GEOSGeometry], str)
+            dic[self.within_operation_name] = Type_Called('within', [GEOSGeometry], bool)
+            dic[self.wkb_operation_name] = Type_Called('wkb', [], str)
+            dic[self.wkt_operation_name] = Type_Called('wkt', [], str)
+            dic[self.x_operation_name] = Type_Called('x', [], float)
+            dic[self.y_operation_name] = Type_Called('y', [], float)
+            dic[self.z_operation_name] = Type_Called('z', [], float)
+            dic[self.spatialize_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
+            # dic['tuple'] = Type_Called('tuple', [], tuple)
             # dic['pop'] = Type_Called('pop', [], tuple)
             # dic['prepared'] = Type_Called('prepared', [], PreparedGeometry)
-            dic['relate'] = Type_Called('relate', [GEOSGeometry], str)
-            dic['relate_pattern'] = Type_Called('relate_pattern', [GEOSGeometry, str], str)
-            dic['ring'] = Type_Called('ring', [], bool)
-            dic['set_coords'] = Type_Called('set_coords', [tuple], None)
-            dic['set_srid'] = Type_Called('set_srid', [str], None)
-            dic['set_x'] = Type_Called('set_x', [float], None)
-            dic['set_y'] = Type_Called('set_y', [float], None)
-            dic['set_z'] = Type_Called('set_z', [float], None)
-            dic['simple'] = Type_Called('simple', [], bool)
-            dic['simplify'] = Type_Called('simplify', [float, bool], GEOSGeometry)
-            dic['srid'] = Type_Called('srid', [], int)
-            dic['srs'] = Type_Called('srs', [], SpatialReference)
-            dic['sym_difference'] = Type_Called('sym_difference', [GEOSGeometry], GEOSGeometry)
-            dic['touches'] = Type_Called('touches', [GEOSGeometry], bool)
-            dic['transform'] = Type_Called('transform', [int, bool], GEOSGeometry)
-            # dic['tuple'] = Type_Called('tuple', [], tuple)
-            dic['union'] = Type_Called('union', [GEOSGeometry], GEOSGeometry)
-            dic['valid'] = Type_Called('valid', [GEOSGeometry], bool)
-            dic['valid_reason'] = Type_Called('valid_reason', [GEOSGeometry], str)
-            dic['within'] = Type_Called('within', [GEOSGeometry], bool)
-            dic['wkb'] = Type_Called('wkb', [], str)
-            dic['wkt'] = Type_Called('wkt', [], str)
-            dic['x'] = Type_Called('x', [], float)
-            dic['y'] = Type_Called('y', [], float)
-            dic['z'] = Type_Called('z', [], float)
             return dic
 
     def point_operations_dict(self):
@@ -811,6 +884,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         self.union_collection_operation_name = 'union'
         self.extent_collection_operation_name = 'extent'
         self.make_line_collection_operation_name = 'make_line'
+        self.spatialize_collection_operation_name = 'spatialize'
 
     #Abstract spatial collection Operations
     def spatial_collection_operations_dict(self):
@@ -847,6 +921,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         d[self.union_collection_operation_name] = Type_Called('union', [GEOSGeometry], GEOSGeometry)
         d[self.extent_collection_operation_name] = Type_Called('extent', [GEOSGeometry], tuple)
         d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], GEOSGeometry)
+        d[self.spatialize_collection_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
 
         return d
 

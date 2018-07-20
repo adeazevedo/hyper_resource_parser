@@ -151,10 +151,10 @@ arr_get_for_projection = [
 
 arr_get_for_complex_requests = [
     #("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/ES/*collect/geom/buffer/0.2/!union/(" + SERVER + "api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/geom/buffer/0.2), 200),"
-    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/ES/*collect/geom/buffer/0.2/!union/" + SERVER + "api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/geom/buffer/0.2", 200),
-    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/ES/*collect/nome&geom/buffer/0.2/!union/" + SERVER + "api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2", 200),
-    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2/!union/" + SERVER + "api/bcim/unidades-federativas/MG/envelope/", 200),
-    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2/!union/Polygon((-51.04196101779323 -22.915330279829785, -39.86109832699603 -22.915330279829785, -39.86109832699603 -14.227537498798952, -51.04196101779323 -14.227537498798952, -51.04196101779323 -22.915330279829785))", 200),
+    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/ES/*collect/geom/buffer/0.2/!union!/" + SERVER + "api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/geom/buffer/0.2", 200),
+    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/ES/*collect/nome&geom/buffer/0.2/!union!/" + SERVER + "api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2", 200),
+    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2/!union!/" + SERVER + "api/bcim/unidades-federativas/MG/envelope/", 200),
+    ("api/bcim/aldeias-indigenas/filter/geom/within/" + SERVER + "api/bcim/unidades-federativas/AM/*collect/nome&geom/buffer/0.2/!union!/Polygon((-51.04196101779323 -22.915330279829785, -39.86109832699603 -22.915330279829785, -39.86109832699603 -14.227537498798952, -51.04196101779323 -14.227537498798952, -51.04196101779323 -22.915330279829785))", 200),
 ]
 
 arr_get_for_geometry_collection_operation = [
@@ -174,6 +174,14 @@ arr_get_for_geometry_collection_operation = [
     ("api/bcim/aldeias-indigenas/projection/nome,geom/within/"+ SERVER +"api/bcim/unidades-federativas/ES/*collect/geom&nome/upper", 200),
     ("api/bcim/aldeias-indigenas/projection/nome,geom/within/"+ SERVER +"api/bcim/unidades-federativas/ES/*collect/nome/upper", 400),
     ("api/bcim/aldeias-indigenas/projection/geom/within/"+ SERVER +"api/bcim/unidades-federativas/ES/*collect/geom&nome/upper", 400),
+]
+
+arr_get_for_spatialize_operation = [
+    ("api/bcim/municipios/3304557/spatialize/geocodigo&geocodigo/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 200),
+    ("api/bcim/municipios/3304557/spatialize/geocodigo&cod_municipio/http://172.30.10.86/api/pib-municipio/faturamento-list/filter/cod_municipio/eq/3304557", 200),
+    ("api/bcim/municipios/3304557/spatialize/geocodigo&nome/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 400),
+    ("api/bcim/unidades-federativas/spatialize/geocodigo&cod_municipio/http://172.30.10.86/esporte-list/cond-funcionamento-list/", 200),
+    ("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_municipio/http://172.30.10.86/esporte-list/cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/", 200),
 ]
 
 def test_requests(url_status_code_tuple_list, test_label=''):
@@ -208,5 +216,6 @@ test_requests(arr_get_for_spatial_operations, test_label="Tests for spatial oper
 test_requests(arr_get_for_complex_requests, test_label="Tests for complex requests")
 test_requests(arr_get_for_projection, test_label="Tests for FeatureCollection with and without projection")
 test_requests(arr_get_for_geometry_collection_operation, test_label="Tests for spatial collection operations")
+test_requests(arr_get_for_spatialize_operation, test_label="Tests for spatialize operation")
 
 print("\n\n" + 25 * "X" + "\nX End of all test sets  X\n" + 25 * "X" + "\n\n")
