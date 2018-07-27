@@ -15,7 +15,7 @@ from hyper_resource.views import RequiredObject
 from hyper_resource.resources.SpatialCollectionResource import SpatialCollectionResource
 from hyper_resource.models import SpatialCollectionOperationController, BaseOperationController, FactoryComplexQuery, \
     ConverterType, FeatureModel
-
+from copy import deepcopy
 from image_generator.img_generator import BuilderPNG
 
 
@@ -335,52 +335,22 @@ class FeatureCollectionResource(SpatialCollectionResource):
         serialized_data = self.get_objects_serialized_by_collect_operation(collect_operation_snippet, business_objects)
         return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
 
-    def required_object_for_spatialize_operation(self, request, attributes_functions_str):
-        spatialized_objects_or_None = self.get_objects_from_spatialize_operation(request, attributes_functions_str)
-        if spatialized_objects_or_None:
-            return RequiredObject(spatialized_objects_or_None, self.content_type_or_default_content_type(request), self, 200)
-
-        spatialize_oper_uri = self.split_spatialize_uri(request, attributes_functions_str)
-        message = spatialize_oper_uri[0] + " isn't joinable with " + spatialize_oper_uri[2]
-        return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
-
     def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
-        two_requests_data_dict = self.get_requested_data_from_spatialize_operation(request, attributes_functions_str)
-        return self.join_feature_collection_on_dict_list(two_requests_data_dict)
+        spatialize_operatio = self.build_spatialize_operation(request, attributes_functions_str)
+        return self.join_feature_collection_on_dict_list(spatialize_operatio)
 
-    #todo: need to join various alphanumeric dicts to related to the same feature
-    def join_feature_collection_on_dict_list(self, two_requests_data_dict):
-        '''
-        geojson_join_data = two_requests_data_dict["left_join_data"]
-        geojson_join_attr = two_requests_data_dict["left_join_attr"]
-        right_join_data = two_requests_data_dict["right_join_data"]
-        right_join_attr = two_requests_data_dict["rigth_join_attr"]
+    def join_feature_collection_on_dict_list(self, spatialize_operation):
+        spatialized_data_list = []
+        for original_feature in spatialize_operation.left_join_data['features']:
+            updated_feature = deepcopy(original_feature)
+            for position, dict_to_spatialize in enumerate(spatialize_operation.right_join_data):
+                if updated_feature['properties'][spatialize_operation.left_join_attr] == dict_to_spatialize[spatialize_operation.right_join_attr]:
+                    updated_feature['properties']['joined__' + str(position) ] = deepcopy(dict_to_spatialize)#.pop(position)
 
-        #geojson_data_sorted = sorted(geojson_join_data, key=itemgetter( geojson_join_attr ))
-        r_join_data_sorted = sorted(right_join_data, key=itemgetter( right_join_attr ))
+            if sorted(list(updated_feature['properties'].keys())) != sorted(list(original_feature['properties'].keys())):
+                spatialized_data_list.append(updated_feature)
 
-        dict_for_join_attr_and_pos_list = {}
-        for position, a_json in enumerate(r_join_data_sorted):
-            a_json[]
-
-        for feature in geojson_join_data:
-            if feature['properties'][geojson_join_attr] in r_join_attr_and_pos_dict.keys():
-                pass
-        '''
-
-        '''
-        if len(geojson_data_sorted) >= len(r_join_data_sorted):
-            for feature in geojson_data_sorted:
-                if feature['properties'][geojson_join_attr] !=
-
-
-        for k, dicti in enumerate(right_join_data):
-            if geojson_join_data['properties'][geojson_join_attr] != dicti[right_join_attr]:
-                return None # the datas isn't 'joinable'
-            geojson_join_data['properties']['joined__' + str(k)] = dicti
-        '''
-
-        #return geojson_join_data
+        return {'type': 'FeatureCollection', 'features': spatialized_data_list}
 
     def get_objects_from_specialized_operation(self, attributes_functions_str):
 

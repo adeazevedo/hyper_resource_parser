@@ -178,6 +178,7 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         return len(att_funcs) > 1 and (att_funcs[0].lower() == self.operation_controller.filter_collection_operation_name)
 
+    """
     def path_has_groupy_operation(self, attributes_functions_str):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         return len(att_funcs) == 2 and (att_funcs[0].lower() == self.operation_controller.group_by_collection_operation_name)
@@ -198,6 +199,7 @@ class AbstractCollectionResource(AbstractResource):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         att_funcs = [ele for ele in att_funcs if ele != '']
         return len(att_funcs) == 2 and (att_funcs[0].lower() == self.operation_controller.offset_limit_collection_operation_name)
+    """
 
     # Responds an array of operations name.
     # Should be overridden
@@ -505,10 +507,6 @@ class AbstractCollectionResource(AbstractResource):
 
         return collected_objects
 
-    #Todo
-    def get_objects_from_collect_and_filter_operation(self, attributes_functions_str):
-        pass
-
     def get_objects_from_distinct_operation(self, attributes_functions_str):
         attrs_funcs_no_projection = self.remove_last_slash(attributes_functions_str)
 
@@ -526,15 +524,13 @@ class AbstractCollectionResource(AbstractResource):
             return self.model_class().objects.distinct(*distinct_parameters)
 
     def get_objects_from_group_by_operation(self, attributes_functions_str):
-        attributes_functions_list = attributes_functions_str.split('/')
-        attributes_functions_list = [attr_func for attr_func in attributes_functions_list if attr_func != '']
+        attributes_functions_list = self.remove_last_slash(attributes_functions_str).split('/')
         parameters = attributes_functions_list[1:][0].split(',')
 
         return self.model_class().objects.values(*parameters)
 
     def get_objects_from_group_by_count_operation(self, attributes_functions_str):
-        attributes_functions_list = attributes_functions_str.split('/')
-        attributes_functions_list = [attr_func for attr_func in attributes_functions_list if attr_func != '']
+        attributes_functions_list = self.remove_last_slash(attributes_functions_str).split('/')
         parameters = attributes_functions_list[1:][0].split(',')
 
         return self.model_class().objects.values(*parameters).annotate(count=Count(*parameters))
@@ -659,8 +655,9 @@ class AbstractCollectionResource(AbstractResource):
             self.operation_controller.group_by_collection_operation_name: self.required_object_for_group_by_operation,
             self.operation_controller.group_by_count_collection_operation_name: self.required_object_for_group_by_count_operation,
             self.operation_controller.filter_collection_operation_name: self.required_object_for_filter_operation,
-            self.operation_controller.collect_collection_operation_name: self.required_object_for_collect_operation}
-
+            self.operation_controller.collect_collection_operation_name: self.required_object_for_collect_operation,
+            self.operation_controller.spatialize_collection_operation_name: self.required_object_for_spatialize_operation
+        }
         return d
 
 
@@ -775,6 +772,7 @@ class AbstractCollectionResource(AbstractResource):
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
         return self.model_class().objects.values(*attribute_names_str_as_array)
 
+    '''
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         attrs_str = attributes_functions_str[:-1] if attributes_functions_str.endswith('/') else attributes_functions_str
         attrs_list = attrs_str.split(',')
@@ -786,6 +784,7 @@ class AbstractCollectionResource(AbstractResource):
             self._set_context_to_only_one_attribute(attrs_list[0])
 
         return self.context_resource.dict_context
+    '''
 
     # se for uma operação derivada de collect, definir supported operations de acordo com a lista de attributos
     def get_context_for_operation(self, request, attributes_functions_str):

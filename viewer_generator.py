@@ -63,6 +63,19 @@ def imports_str_as_array(a_name):
     arr.append("from " + a_name + ".models import *\n")
     arr.append("from " + a_name + ".serializers import *\n")
     arr.append("from " + a_name + ".contexts import *\n\n")
+    arr.append("from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource\n")
+    arr.append("from hyper_resource.resources.AbstractResource import AbstractResource\n")
+    arr.append("from hyper_resource.resources.CollectionResource import CollectionResource\n")
+    arr.append("from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource\n")
+    arr.append("from hyper_resource.resources.FeatureResource import FeatureResource\n")
+    arr.append("from hyper_resource.resources.NonSpatialResource import NonSpatialResource\n")
+    arr.append("from hyper_resource.resources.RasterCollectionResource import RasterCollectionResource\n")
+    arr.append("from hyper_resource.resources.RasterResource import RasterResource\n")
+    arr.append("from hyper_resource.resources.SpatialCollectionResource import SpatialCollectionResource\n")
+    arr.append("from hyper_resource.resources.SpatialResource import SpatialResource\n")
+    arr.append("from hyper_resource.resources.StyleResource import StyleResource\n")
+    arr.append("from hyper_resource.resources.TiffCollectionResource import TiffCollectionResource\n")
+    arr.append("from hyper_resource.resources.TiffResource import TiffResource\n\n")
 
     return arr
 

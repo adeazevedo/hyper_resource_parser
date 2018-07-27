@@ -69,6 +69,13 @@ class Type_Called():
         self.parameters = params
         self.return_type = answer
 
+class SpatializeOperation:
+    def __init__(self, left_join_data, left_join_attr, right_join_attr, right_join_data):
+        self.left_join_data = left_join_data
+        self.left_join_attr = left_join_attr
+        self.right_join_attr = right_join_attr
+        self.right_join_data = right_join_data
+
 class ConverterType():
 
     _instance = None
@@ -801,6 +808,7 @@ class CollectionResourceOperationController(BaseOperationController):
         self.filter_and_collect_collection_operation_name = 'filter_and_collect'
         self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
         self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
+        self.spatialize_collection_operation_name = 'spatialize'
 
     # operations that return a subcollection of an collection
     def subcollection_operations_dict(self):
@@ -836,6 +844,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
         dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
         dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
+        dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
         return dict
 
     def dict_all_operation_dict(self):
@@ -884,7 +893,6 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         self.union_collection_operation_name = 'union'
         self.extent_collection_operation_name = 'extent'
         self.make_line_collection_operation_name = 'make_line'
-        self.spatialize_collection_operation_name = 'spatialize'
 
     #Abstract spatial collection Operations
     def spatial_collection_operations_dict(self):
@@ -984,16 +992,6 @@ class BusinessModel(models.Model):
         return inspect.getmembers(self, inspect.ismethod)
 
     def all_operation_name_and_args_length(self):
-        """
-        Return a list af tuples with informations of all methods for this object model (self).
-        Each tuple has the name of object model method as first element
-        and the number of arguments for this method as second element
-        :return:
-        """
-        # - BusinessModel.all_operation_name_and_value() returns a tuple with all methods of BusinessModel instance (self)
-        # the first element of each tuple is the method name, the second element is the method itself
-        # - inspect.getargspec(method).args receives a method (the method itself and not his name)
-        # and return a list with the name of all arguments for this methos
         return [(name, len( inspect.getargspec(method).args)) for name, method in self.all_operation_name_and_value()]
 
     def public_operations_name_and_value(self):
@@ -1006,33 +1004,9 @@ class BusinessModel(models.Model):
         return [ name for name, value in self.public_operations_name_and_value() ]
 
     def operation_has_parameters(self, att_or_method_name):
-        """
-        Return True if 'att_or_method_name' corresponds to a method name of BusinessModel instance
-        and it method has more than 1 argument (the first argument is 'self' for every method
-        and for this reason we con't consider him)
-        :param att_or_method_name:
-        :return:
-        """
-        # - BusinessModel.all_operation_name_and_args_length() returns a list
-        # of tuple in this format (method_name, number_of_arguments) for all methods
-        # of this BusinessModel instance (self)
-        # - next() just iterates through the elements (name and len_args) of the tuple
-        # - next() return False if the iterations ends and no 'True' value was founded
-        # (i.e. 'att_or_method_name' don't corresponds to a method name of BussinesModel instance).
-        # Even if 'att_or_method_name' corresponds to a method name of BussinesModel instance, and
-        # this method hasn't more than 1 argument, the return is 'False'
         return next((True for name, len_args in self.all_operation_name_and_args_length() if name == att_or_method_name and len_args > 1), False)
 
     def attribute_names(self):
-        """
-        Returns a list of all public attributes of the object model
-        :return:
-        """
-        # - dir() returns a list with all object model members (attributes and methods)
-        # - getattr() returns the value of member whose name is specified as a string, if this member is a attribute
-        # if this member is a method, (i.e. a callable) returns it (not his return value)
-        # - if getattr return() a callable, this is not a attribute and must be cutted of the list
-        # - if getattr return() a attribute value, the attribute must be public (verified by BusinessModel.is_not_private())
         return [ attribute for attribute in dir(self) if not callable(getattr(self, attribute)) and self.is_not_private(attribute)]
 
     def fields(self):

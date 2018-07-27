@@ -4,7 +4,7 @@ from hyper_resource.views import RequiredObject
 from hyper_resource.views import CONTENT_TYPE_JSON
 from hyper_resource.models import CollectionResourceOperationController
 from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource
-
+from copy import deepcopy
 
 class CollectionResource(AbstractCollectionResource):
     def __init__(self):
@@ -15,14 +15,29 @@ class CollectionResource(AbstractCollectionResource):
     def operations_with_parameters_type(self):
         return self.operation_controller.collection_operations_dict()
 
+    def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
+        spatialize_operation = self.build_spatialize_operation(request, attributes_functions_str)
+        return self.join_dict_list_on_spatial_collection(spatialize_operation)
+
+    def join_dict_list_on_spatial_collection(self, spatialize_operation):
+        spatialized_data_list = []
+        for original_feature in spatialize_operation.right_join_data['features']:
+            updated_feature = deepcopy(original_feature)
+            for position, dict_to_spatialize in enumerate(spatialize_operation.left_join_data):
+                if updated_feature['properties'][spatialize_operation.right_join_attr] == dict_to_spatialize[spatialize_operation.left_join_attr]:
+                    updated_feature['properties']['joined__' + str(position) ] = deepcopy(dict_to_spatialize)#.pop(position)
+
+            if sorted(list(updated_feature['properties'].keys())) != sorted(list(original_feature['properties'].keys())):
+                spatialized_data_list.append(updated_feature)
+
+        return {'type': 'FeatureCollection', 'features': spatialized_data_list}
+
     def get_objects_serialized(self):
         objects = self.model_class().objects.all()
-
         return self.serializer_class(objects, many=True, context={'request': self.request}).data
 
     def get_objects_by_only_attributes(self, attribute_names_str):
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
-
         return self.model_class().objects.values(*attribute_names_str_as_array)
 
     def get_objects_serialized_by_only_attributes(self, attribute_names_str, query_set):
@@ -51,54 +66,12 @@ class CollectionResource(AbstractCollectionResource):
         return objects
 
     def get_context_by_only_attributes(self, request, attributes_functions_str):
-        attrs_context = super(CollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
+        context = super(CollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
         resource_type = self.resource_type_or_default_resource_type(request)
         self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
 
-        return self.context_resource.dict_context
+        supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        context.update({'hydra:supportedOperations': supported_operations_list})
 
-    def basic_get_OLD(self, request, *args, **kwargs):
-        self.object_model = self.model_class()()
-        self.set_basic_context_resource(request)
-        self.inject_e_tag()
-        attributes_functions_str = self.kwargs.get('attributes_functions', None)
+        return context
 
-        if self.is_simple_path(attributes_functions_str):  # to get query parameters
-            query_set = self.model_class().objects.all()
-            serializer = self.serializer_class(query_set, many=True, context={'request' : request})
-            required_object = RequiredObject(serializer.data, self.content_type_or_default_content_type(request), query_set, 200)
-
-            return required_object
-
-        elif self.path_has_only_attributes(attributes_functions_str):
-            query_set = self.get_objects_by_only_attributes(attributes_functions_str)
-            serialized_data = self.get_objects_serialized_by_only_attributes(attributes_functions_str, query_set)
-
-            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), query_set, 200)
-
-        elif self.path_has_distinct_operation(attributes_functions_str):
-            query_set =  self.get_objects_from_distinct_operation(attributes_functions_str)
-            serializer = self.serializer_class(query_set, many=True, context={"request": request})
-
-            return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), query_set, 200)
-
-        elif self.path_has_countresource_operation(attributes_functions_str):
-            return RequiredObject({'countResource': self.model_class().objects.count()}, views.CONTENT_TYPE_JSON, self.object_model, 200)
-
-        elif self.path_has_offsetlimit_operation(attributes_functions_str):
-            query_set = self.get_objects_from_offset_limit_operation(attributes_functions_str)
-            serializer = self.serializer_class(query_set, many=True, context={'request': request})
-
-            return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), query_set, 200)
-
-        elif self.path_has_operations(attributes_functions_str) and self.path_request_is_ok(attributes_functions_str):
-            query_set = self.get_objects_by_functions(attributes_functions_str)
-            serialized_data = self.serializer_class(query_set, many=True, context={'request': request})
-
-            return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), query_set, 200)
-
-        else:
-            return RequiredObject(representation_object={'This request has invalid attribute or operation'},
-                                  content_type=CONTENT_TYPE_JSON,
-                                  origin_object=self,
-                                  status_code=400)

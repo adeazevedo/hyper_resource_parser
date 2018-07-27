@@ -21,9 +21,8 @@ from django.core.cache import cache
 
 #from hyper_resource import views
 from hyper_resource.contexts import *
-from hyper_resource.views import IgnoreClientContentNegotiation, HTTP_ACCEPT, CONTENT_TYPE_JSON, SUPPORTED_CONTENT_TYPES, \
-ACCESS_CONTROL_ALLOW_METHODS, CORS_ALLOW_HEADERS, CORS_EXPOSE_HEADERS, RequiredObject
-from hyper_resource.models import  FactoryComplexQuery, SpatialCollectionOperationController, BaseOperationController, BusinessModel, ConverterType
+from hyper_resource.views import *
+from hyper_resource.models import  FactoryComplexQuery, SpatialCollectionOperationController, BaseOperationController, BusinessModel, ConverterType, SpatializeOperation
 
 from image_generator.img_generator import BuilderPNG
 
@@ -196,40 +195,20 @@ class AbstractResource(APIView):
             self.add_url_in_header(iri_base, response, rel='http://schema.org/EntryPoint')
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        If the request needs authentication this method
-        verifies the authenticity of token (passed through HTTP_AUTHORIZATION header)
-        and pass the request forward if everything is ok or send a 401 (unauthorized)
-        response otherwise. If the request don't need authentication we simply pass the
-        request forward
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-
-        # if token isn't needed, just call the superclass dispatch method
         if not self.token_is_need():
             return super(AbstractResource, self).dispatch(request, *args, **kwargs)
 
         http_auth = request.META.get(['HTTP_AUTHORIZATION']) or ''
 
-        # the HTTP_AUTHORIZATION header, if this exists in the request, needs to starts with 'Bearer'
         if http_auth.startswith('Bearer'):
-
-            # get the HTTP_AUTHORIZATION header value (without 'Bearer' and edge whitespaces)
             a_token = request.META['HTTP_AUTHORIZATION'][7:].strip()
 
             if self.token_is_ok(a_token):
-                # if token is valid, pass the request forward for APIView dispatch method
                 return super(AbstractResource, self).dispatch(request, *args, **kwargs)
 
-        # if HTTP_AUTHORIZATION header doesn't exists or not starts with 'Bearer',
-        # a response saying 'token is need' is returned with a 401 (unauthorized) code
         resp = HttpResponse(json.dumps({'token': 'token is needed or it is not ok'}), status=401,
                             content_type=CONTENT_TYPE_JSON)
 
-        # plus a WWW-Authenticate header is send informing how to access the resource
         resp['WWW-Authenticate'] = 'Bearer realm="Access to the staging site"'
         return resp
 
@@ -267,7 +246,12 @@ class AbstractResource(APIView):
         else:
             self._set_context_to_only_one_attribute(attrs_list[0])
 
+        resource_type = self.define_resource_type_by_only_attributes(request, attributes_functions_str)
+        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+        supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+
         context = self.context_resource.dict_context
+        context['hydra:supportedOperations'] = supported_operation_dict
         return context
 
     def get_context_for_operation(self, request, attributes_functions_str):
@@ -618,23 +602,13 @@ class AbstractResource(APIView):
 
     # Should be overridden
     def response_base_get(self, request, *args, **kwargs):
-        """
-        Returns a Response for the Request. If the response is in cache
-
-        """
-        # AbstractResource.resource_in_cache() returns the requested resource from cache
-        # if the key formed by absolute uri + accept or absolute uri + default Content-Type
-        # matches one of the cache keys. Returns None otherwise
         resource = self.resource_in_cache(request)
 
         if resource:
-            # returns a response from the cache
             return self.response_base_object_in_cache(request)
 
-        # if the resource is not in cache, use the subclass basic_get() that returns a RequiredObject instance
         required_object = self.basic_get(request, *args, **kwargs)
 
-        # if Required object has some error, return this
         status = required_object.status_code
 
         if status in [400, 401, 404]:
@@ -643,22 +617,16 @@ class AbstractResource(APIView):
         if status in [500]:
             return Response({'Error ': 'The server can not process this request. Status:' + str(status)}, status=status)
 
-        # todo: verify image responses processment
         if self.is_image_content_type(request, **kwargs):
             return self.response_base_get_with_image(request, required_object)
 
-        # if RequiredObject has application/octet-stream Content-Type
-        # the Response is a geobuf (smaller than a regular JSON)
         if self.is_binary_content_type(required_object):
             return self.response_base_get_binary(request, required_object)
 
-        # mounts a cache key with RequiredObject.content_type
         key = self.get_key_cache(request, a_content_type=required_object.content_type)
 
-        # sets the e_tag and data in cache binding to the key
         self.set_key_with_data_in_cache(key, self.e_tag, required_object.representation_object)
 
-        # return the Response with the requested resource representation and Etag header
         resp = Response(data=required_object.representation_object, status=200,
                         content_type=required_object.content_type)
         self.set_etag_in_header(resp, self.e_tag)
@@ -739,27 +707,13 @@ class AbstractResource(APIView):
 
     # Could be overridden
     def put(self, request, *args, **kwargs):
-        """
-        Update the database resource if the request body is valid or
-        return a 400 Response otherwise
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        # return a object from database using the arguments as filter
         obj = self.get_object(kwargs)
-
-        # get the PUT request body and compares to the database resouce to determines if the request body is valid or not
         serializer = self.serializer_class(obj, data=request.data, context={'request': request})
 
         if serializer.is_valid():
-            # if the request data is valid, alter the database resource and returns a 204 response
             serializer.save()
             resp = Response(status=status.HTTP_204_NO_CONTENT)
             return resp
-
-        # if request data isn't valid, return a 400 response status
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # Could be overridden
@@ -1015,31 +969,15 @@ class AbstractResource(APIView):
         return str(attributes_functions_str[-2])
 
     def response_request_with_attributes(self, attributes_functions_name):
-        """
-        Return a response to the requested resource containing
-        only the requested attributes/methods values (not the entire resource)
-        :param attributes_functions_name - the attributes from the request resource
-        :return:
-        """
         a_dict = {}
-
-        # transform the parameters (separated by ',') in a list of arguments
         attributes = attributes_functions_name.strip().split(',')
 
         for attr_name in attributes:
-            # gets the attribute value from the object model of this resource and stores in 'obj'
-            # notice: we consider that 'attr_name' represents a attribute of object model or
-            # a method without parameters ([])
             obj = self._value_from_object(self.object_model, attr_name, [])
-
-            # sets 'a_dict' (the response data) with the name of the attribute/method as the index
-            # and 'obj' as his respective value
             a_dict[attr_name] = obj
 
-        # 'a_dict' turns the AbstractResource.current_object_state
         self.current_object_state = a_dict
 
-        # return 'a_dict' as response body, application/json as Content-Type and 200 as response status code
         return a_dict, CONTENT_TYPE_JSON, self.object_model, {'status': 200}
 
     def all_parameters_converted(self, attribute_or_function_name, parameters):
@@ -1236,13 +1174,19 @@ class AbstractResource(APIView):
 
     # must be overrided
     def required_object_for_spatialize_operation(self, request, attributes_functions_str):
-        pass
+        spatialized_objects_or_None = self.get_objects_from_spatialize_operation(request, attributes_functions_str)
+        if spatialized_objects_or_None:
+            return RequiredObject(spatialized_objects_or_None, self.content_type_or_default_content_type(request), self, 200)
+
+        spatialize_oper_uri = self.split_spatialize_uri(request, attributes_functions_str)
+        message = spatialize_oper_uri[0] + " isn't joinable with " + spatialize_oper_uri[2]
+        return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
 
     # must be overrided
     def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
         pass
 
-    def get_requested_data_from_spatialize_operation(self, request, attributes_functions_str):
+    def build_spatialize_operation(self, request, attributes_functions_str):
         uri_before_oper, join_attrs, uri_or_data_after_oper = self.split_spatialize_uri(request, attributes_functions_str)
 
         data_before_oper = requests.get(uri_before_oper).json()
@@ -1251,15 +1195,17 @@ class AbstractResource(APIView):
                 uri_or_data_after_oper.startswith('www.'):
             data_after_oper = requests.get(uri_or_data_after_oper, headers={'Accept': 'application/json'} ).json()
         else:
-            data_after_oper = uri_or_data_after_oper
+            data_after_oper = json.loads(uri_or_data_after_oper)
 
-        dicti = {
-                "left_join_data": data_before_oper,
-                "left_join_attr": join_attrs[0],
-                "rigth_join_attr": join_attrs[1],
-                "right_join_data": data_after_oper
-        }
-        return dicti
+        return SpatializeOperation(
+            left_join_data=data_before_oper,
+            left_join_attr=join_attrs[0],
+            right_join_attr=join_attrs[1],
+            right_join_data=data_after_oper
+        )
+
+    def filter_spatialize_join_data(self, requests_data_dict):
+        pass
 
     def split_spatialize_uri(self, request, attributes_functions_str):
         attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')

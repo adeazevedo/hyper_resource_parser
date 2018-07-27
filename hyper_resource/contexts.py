@@ -308,6 +308,7 @@ def initialize_dict():
     dict[MultiLineString] = oc.line_operations_dict()
     dict[str] = oc.string_operations_dict()
     dict[CharField] = oc.string_operations_dict()
+    dict['Thing'] = {"spatialize": Type_Called('spatialize', [tuple, object], GEOSGeometry)}
 
     ro = RasterOperationController()
     dict['Raster'] = ro.operation_dict()
@@ -319,7 +320,6 @@ def initialize_dict():
 
     coc = CollectionResourceOperationController()
     dict['Collection'] = coc.collection_operations_dict()
-
 
     return dict
 

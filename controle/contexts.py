@@ -5,6 +5,7 @@ class BusinessModelCollectionContext(FeatureCollectionResourceContext):
     pass
 
 class GastoContext(FeatureResouceContext):
+    """
      def attributes_contextualized_dict(self):
         dic_context =  {
             "valor": {
@@ -38,8 +39,10 @@ class GastoContext(FeatureResouceContext):
         }
 
         return dic_context
+    """
 
 class GastoCollectionContext(FeatureCollectionResourceContext):
+    """
     def attributes_contextualized_dict(self):
 
         dic_context =  {
@@ -74,7 +77,7 @@ class GastoCollectionContext(FeatureCollectionResourceContext):
         },
 
         return dic_context
-
+    """
 
 class TipoGastoContext(FeatureResouceContext):
     pass

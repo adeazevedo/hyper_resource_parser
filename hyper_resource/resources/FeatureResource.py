@@ -246,65 +246,31 @@ class FeatureResource(SpatialResource):
             return self.response_request_attributes_functions_str_with_url(attributes_functions_str, request)
         return self.response_of_request(attributes_functions_str)
 
-    def required_object_for_spatialize_operation(self, request, attributes_functions_str):
-        spatialized_object_or_None = self.get_objects_from_spatialize_operation(request, attributes_functions_str)
-        if spatialized_object_or_None is None:
-            spatialize_oper_uri = self.split_spatialize_uri(request, attributes_functions_str)
-            message = spatialize_oper_uri[0] + " isn't joinable with " + spatialize_oper_uri[2]
-            return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
-
-        #serialized_data = self.get_objects_serialized_by_spatialize_operation(attributes_functions_str, spatialized_object)
-        return RequiredObject(spatialized_object_or_None, self.content_type_or_default_content_type(request), self, 200)
-
     def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
-        '''
-        uri_before_oper, join_attrs, uri_or_data_after_oper = self.split_spatialize_uri(request, attributes_functions_str)
+        spatialize_operation = self.build_spatialize_operation(request, attributes_functions_str)
 
-        data_before_oper = requests.get(uri_before_oper).json()
+        if type(spatialize_operation.right_join_data) is list:
+            return self.join_feature_on_list_response(spatialize_operation)
+        return self.join_feature_on_dict_response(spatialize_operation)
 
-        if uri_or_data_after_oper.startswith('http://') or\
-                uri_or_data_after_oper.startswith('https://') or\
-                uri_or_data_after_oper.startswith('www.'):
-            data_after_oper = requests.get(uri_or_data_after_oper, headers={'Accept': 'application/json'} ).json()
-        else:
-            data_after_oper = uri_or_data_after_oper
-
-        left_join_tuple = data_before_oper, join_attrs[0]
-        right_join_tuple = data_after_oper, join_attrs[1]
-        '''
-
-        two_requests_data_dict = self.get_requested_data_from_spatialize_operation(request, attributes_functions_str)
-
-        if type(two_requests_data_dict['right_join_data']) is list:
-            return self.join_feature_on_list_response(two_requests_data_dict)
-        return self.join_feature_on_dict_response(two_requests_data_dict)
-
-    def join_feature_on_dict_response(self, two_requests_data_dict):
-        left_join_data = two_requests_data_dict["left_join_data"]
-        left_join_attr = two_requests_data_dict["left_join_attr"]
-        right_join_data = two_requests_data_dict["right_join_data"]
-        right_join_attr = two_requests_data_dict["rigth_join_attr"]
-
-        if left_join_data['properties'][ left_join_attr ] != right_join_data[ right_join_attr ]:
+    def join_feature_on_dict_response(self, spatialize_operation):
+        if spatialize_operation.left_join_data['properties'][ spatialize_operation.left_join_attr ] !=\
+                spatialize_operation.right_join_data[ spatialize_operation.right_join_attr ]:
             # the datas isn't 'joinable'
             return None
 
-        for alfa_attr_name, alfa_attr_val in right_join_data.items():
-            left_join_data['properties']['joined__' + alfa_attr_name] = alfa_attr_val
-        return left_join_data
+        for alfa_attr_name, alfa_attr_val in spatialize_operation.right_join_data.items():
+            spatialize_operation.left_join_data['properties']['joined__' + alfa_attr_name] = alfa_attr_val
+        return spatialize_operation.left_join_data
 
-    def join_feature_on_list_response(self, two_requests_data_dict):
-        left_join_data = two_requests_data_dict["left_join_data"]
-        left_join_attr = two_requests_data_dict["left_join_attr"]
-        right_join_data = two_requests_data_dict["right_join_data"]
-        right_join_attr = two_requests_data_dict["rigth_join_attr"]
+    def join_feature_on_list_response(self, spatialize_operation):
+        for k, dicti in enumerate(spatialize_operation.right_join_data):
+            if spatialize_operation.left_join_data['properties'][spatialize_operation.left_join_attr] == dicti[spatialize_operation.right_join_attr]:
+                spatialize_operation.left_join_data['properties']['joined__' + str(k)] = dicti
+                # To avoid insert a dict in Feature properties, you can duplicate the geometry for each
+                # alphanumeric resource whose joined attribute value coincides
 
-        for k, dicti in enumerate(right_join_data):
-            if left_join_data['properties'][left_join_attr] != dicti[right_join_attr]:
-                return None # the datas isn't 'joinable'
-            left_join_data['properties']['joined__' + str(k)] = dicti
-
-        return left_join_data
+        return spatialize_operation.left_join_data
 
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.get_object(kwargs)
@@ -400,6 +366,7 @@ class FeatureResource(SpatialResource):
                                 status=required_object.status_code)
         return response
 
+    '''
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         attrs_funcs_str = self.remove_last_slash(attributes_functions_str)
         super(FeatureResource, self).get_context_by_only_attributes(request, attrs_funcs_str)
@@ -411,6 +378,7 @@ class FeatureResource(SpatialResource):
         context = self.context_resource.dict_context
         context['hydra:supportedOperations'] = supported_operation_dict
         return context
+    '''
 
     def default_content_type(self):
         return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON

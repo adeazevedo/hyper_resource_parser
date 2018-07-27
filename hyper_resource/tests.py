@@ -507,7 +507,8 @@ class RequestOptionsTest(SimpleTestCase):
                                                     'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'intersects', 'isvalid', 'left',
                                                     'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right',
                                                    'relate', 'right', 'spatialize', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
-        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'offset_limit']
+        self.basic_operations_names = ['spatialize']
+        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'offset_limit', 'spatialize']
         self.operators_names = ['between', 'eq', 'gt', 'gte', 'in', 'isnotnull', 'isnull', 'like', 'lt', 'lte', 'neq', 'notin', 'notlike']
 
     def aux_get_dict_from_response(self, response):
@@ -538,6 +539,7 @@ class RequestOptionsTest(SimpleTestCase):
         attrs_context_keys_list = list( context_dict[attr_name].keys() )
         attrs_context_keys_list.sort()
         return attrs_context_keys_list
+
 
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
     # tests for feature/geometry collection simple path
@@ -1029,6 +1031,17 @@ class RequestOptionsTest(SimpleTestCase):
         response_keys = self.aux_get_keys_from_response(response)
         self.assertListEqual(response_keys, self.simple_path_options_dict_keys)
 
+        id_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "id")
+        self.assertListEqual(id_context_keys_list, self.keys_from_attrs_context)
+        data_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "data")
+        self.assertListEqual(data_keys_list, self.keys_from_attrs_context)
+        tipo_gasto_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "tipo_gasto")
+        self.assertListEqual(tipo_gasto_context_keys_list, self.keys_from_attrs_context)
+        usuario_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "usuario")
+        self.assertListEqual(usuario_context_keys_list, self.keys_from_attrs_context)
+        valor_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "valor")
+        self.assertListEqual(valor_context_keys_list, self.keys_from_attrs_context)
+
         operation_name = self.aux_get_supported_operations_names(response)
         self.assertListEqual(operation_name, self.collection_operation_names)
 
@@ -1042,6 +1055,17 @@ class RequestOptionsTest(SimpleTestCase):
         response_keys = self.aux_get_keys_from_response(response)
         self.assertListEqual(response_keys, self.simple_path_options_dict_keys)
 
+        id_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "id")
+        self.assertListEqual(id_context_keys_list, self.keys_from_attrs_context)
+        data_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "data")
+        self.assertListEqual(data_keys_list, self.keys_from_attrs_context)
+        tipo_gasto_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "tipo_gasto")
+        self.assertListEqual(tipo_gasto_context_keys_list, self.keys_from_attrs_context)
+        usuario_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "usuario")
+        self.assertListEqual(usuario_context_keys_list, self.keys_from_attrs_context)
+        valor_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "valor")
+        self.assertListEqual(valor_context_keys_list, self.keys_from_attrs_context)
+
         operation_name = self.aux_get_supported_operations_names(response)
         self.assertListEqual(operation_name, [])
 
@@ -1054,13 +1078,45 @@ class RequestOptionsTest(SimpleTestCase):
         self.assertEquals(response.status_code, 200)
 
         response_keys = self.aux_get_keys_from_response(response)
-        self.assertListEqual(response_keys, ['@context', '@id', '@type'])
+        self.assertListEqual(response_keys, self.context_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
         self.assertListEqual(context_keys, attrs)
 
+        data_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "data")
+        self.assertListEqual(data_context_keys_list, self.keys_from_attrs_context)
+        valor_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "valor")
+        self.assertListEqual(valor_context_keys_list, self.keys_from_attrs_context)
+
+        operation_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operation_names, self.collection_operation_names)
+
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'Collection')
+
+    def test_options_for_collection_only_attributes_with_accept_header(self):
+        attrs = ['data', 'valor']
+        response = requests.options(self.controle_base_uri + 'gasto-list/' + attrs[0] + ',' + attrs[1],
+                                    headers={'Accept': 'application/octet-stream'})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_keys, self.context_dict_keys)
+
+        context_keys = self.aux_get_keys_from_response_context(response)
+        self.assertListEqual(context_keys, attrs)
+
+        data_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "data")
+        self.assertListEqual(data_context_keys_list, self.keys_from_attrs_context)
+        valor_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "valor")
+        self.assertListEqual(valor_context_keys_list, self.keys_from_attrs_context)
+
+        operation_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operation_names, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'bytes')
+
 
     # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
     # tests for feature simple path
@@ -1120,6 +1176,7 @@ class RequestOptionsTest(SimpleTestCase):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'Geobuf')
+
 
     # tests for feature attributes
     def test_options_for_feature_resource_only_attributes(self):
@@ -1184,7 +1241,7 @@ class RequestOptionsTest(SimpleTestCase):
         self.assertListEqual(geocodigo_context_keys_list, self.keys_from_attrs_context)
 
         operations_names = self.aux_get_supported_operations_names(response)
-        self.assertListEqual(operations_names, [])
+        self.assertListEqual(operations_names, self.basic_operations_names)
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'Thing')
@@ -1252,6 +1309,7 @@ class RequestOptionsTest(SimpleTestCase):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'Geobuf')
+
 
     # tests for feature operations
     def test_options_for_feature_resource_operation_with_geometry_return(self):
@@ -1370,3 +1428,99 @@ class RequestOptionsTest(SimpleTestCase):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'Geobuf')
+
+
+    # --------------- TESTS FOR NON SPATIAL RESOURCE ---------------------------------
+    def test_options_for_non_spatial_resource_simple_path(self):
+        response = requests.options(self.controle_base_uri + "usuario-list/1/")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_keys, self.simple_path_options_dict_keys)
+
+        id_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "id")
+        self.assertListEqual(id_context_keys_list, self.keys_from_attrs_context)
+        nome_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "nome")
+        self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
+        nome_usuario_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "nome_usuario")
+        self.assertListEqual(nome_usuario_context_keys_list, self.keys_from_attrs_context)
+        senha_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "senha")
+        self.assertListEqual(senha_context_keys_list, self.keys_from_attrs_context)
+        data_nascimento_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "data_nascimento")
+        self.assertListEqual(data_nascimento_context_keys_list, self.keys_from_attrs_context)
+        email_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "email")
+        self.assertListEqual(email_context_keys_list, self.keys_from_attrs_context)
+        avatar_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "avatar")
+        self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
+
+        operation_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operation_names, self.basic_operations_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'Thing')
+
+    def test_options_for_non_spatial_resource_simple_path_with_accept_header(self):
+        response = requests.options(self.controle_base_uri + "usuario-list/1/",
+                                    headers={'Accept': "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_keys, self.simple_path_options_dict_keys)
+
+        id_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "id")
+        self.assertListEqual(id_context_keys_list, self.keys_from_attrs_context)
+        nome_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "nome")
+        self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
+        nome_usuario_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "nome_usuario")
+        self.assertListEqual(nome_usuario_context_keys_list, self.keys_from_attrs_context)
+        senha_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "senha")
+        self.assertListEqual(senha_context_keys_list, self.keys_from_attrs_context)
+        data_nascimento_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "data_nascimento")
+        self.assertListEqual(data_nascimento_context_keys_list, self.keys_from_attrs_context)
+        email_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "email")
+        self.assertListEqual(email_context_keys_list, self.keys_from_attrs_context)
+        avatar_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "avatar")
+        self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
+
+        operation_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operation_names, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'bytes')
+
+    def test_options_for_non_spatial_resource_only_attributes(self):
+        response = requests.options(self.controle_base_uri + "usuario-list/1/nome,email")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_keys, self.context_dict_keys)
+
+        nome_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "nome")
+        self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
+        email_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "email")
+        self.assertListEqual(email_context_keys_list, self.keys_from_attrs_context)
+
+        operation_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operation_names, self.basic_operations_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'Thing')
+
+    def test_options_for_non_spatial_resource_only_attributes_with_accept_header(self):
+        response = requests.options(self.controle_base_uri + "usuario-list/1/nome,email",
+                                    headers={'Accept': "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_keys, self.context_dict_keys)
+
+        nome_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "nome")
+        self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
+        email_context_keys_list = self.aux_get_attrs_context_keys_list_from_attr(response, "email")
+        self.assertListEqual(email_context_keys_list, self.keys_from_attrs_context)
+
+        operation_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operation_names, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'bytes')
