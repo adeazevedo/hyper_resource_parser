@@ -36,6 +36,8 @@ GEOSGEOMETRY_SUBCLASSES = ['POINT', 'MULTIPOINT', 'LINESTRING', 'MULTILINESTRING
 import sys
 if sys.version_info > (3,):
     buffer = memoryview
+else:
+    buffer = buffer
 
 def dict_map_geo_field_geometry():
     """
@@ -69,7 +71,7 @@ class Type_Called():
         self.parameters = params
         self.return_type = answer
 
-class SpatializeOperation:
+class SpatializeOperation():
     def __init__(self, left_join_data, left_join_attr, right_join_attr, right_join_data):
         self.left_join_data = left_join_data
         self.left_join_attr = left_join_attr
@@ -808,7 +810,7 @@ class CollectionResourceOperationController(BaseOperationController):
         self.filter_and_collect_collection_operation_name = 'filter_and_collect'
         self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
         self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
-        self.spatialize_collection_operation_name = 'spatialize'
+        self.spatialize_operation_name = 'spatialize'
 
     # operations that return a subcollection of an collection
     def subcollection_operations_dict(self):
@@ -844,7 +846,8 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
         dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
         dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
-        dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
+        #dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
+        dict[self.spatialize_operation_name] = Type_Called(self.spatialize_operation_name, [tuple, object], GEOSGeometry)
         return dict
 
     def dict_all_operation_dict(self):
@@ -929,7 +932,8 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         d[self.union_collection_operation_name] = Type_Called('union', [GEOSGeometry], GEOSGeometry)
         d[self.extent_collection_operation_name] = Type_Called('extent', [GEOSGeometry], tuple)
         d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], GEOSGeometry)
-        d[self.spatialize_collection_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
+        #d[self.spatialize_collection_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
+        d[self.spatialize_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
 
         return d
 

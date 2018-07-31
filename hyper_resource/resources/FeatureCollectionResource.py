@@ -131,6 +131,10 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def get_operation_name_from_path(self, attributes_functions_str):
         first_part_name = super(FeatureCollectionResource, self).get_operation_name_from_path(attributes_functions_str)
 
+        # spatialize operation has priority
+        if self.path_has_spatialize_operation(attributes_functions_str):
+            return self.operation_controller.spatialize_operation_name
+
         if first_part_name not in self.array_of_operation_name():
             return None
 
@@ -264,7 +268,6 @@ class FeatureCollectionResource(SpatialCollectionResource):
              self.operation_controller.union_collection_operation_name: self.required_object_for_union_operation,
              self.operation_controller.extent_collection_operation_name: self.required_object_for_extent_operation,
              self.operation_controller.make_line_collection_operation_name: self.required_object_for_make_line_operation,
-            self.operation_controller.spatialize_collection_operation_name: self.required_object_for_spatialize_operation,
         })
 
         return dicti

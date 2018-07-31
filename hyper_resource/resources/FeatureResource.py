@@ -1,4 +1,3 @@
-
 import re
 import json
 
@@ -144,6 +143,7 @@ class FeatureResource(SpatialResource):
 
         return resp
 
+    '''
     def get_requiredObject_from_method_to_execute(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         method_to_execute = self.get_operation_to_execute(operation_name)
@@ -153,9 +153,11 @@ class FeatureResource(SpatialResource):
 
         #attr_functions_str =  attributes_functions_str.replace(operation_name, self.get_real_operation_name(operation_name))
         return method_to_execute(*[request, attributes_functions_str])
+    '''
 
     def operation_name_method_dic(self):
-        dict = {
+        dict = super(FeatureResource, self).operation_name_method_dic()
+        dict.update({
             self.operation_controller.area_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.boundary_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.buffer_operation_name: self.required_object_for_spatial_operation,
@@ -229,8 +231,7 @@ class FeatureResource(SpatialResource):
             self.operation_controller.x_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.y_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.z_operation_name: self.required_object_for_spatial_operation,
-            self.operation_controller.spatialize_operation_name: self.required_object_for_spatialize_operation,
-        }
+        })
         return dict
 
     def required_object_for_simple_path(self, request):

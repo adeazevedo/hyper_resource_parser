@@ -268,6 +268,9 @@ class AbstractResource(APIView):
     def required_object_for_simple_path(self, request):
         pass
 
+    def required_object_for_only_attributes(self, request, attributes_functions_str):
+        pass
+
     # todo
     def path_request_is_ok(self, a_path):
         return True
@@ -394,13 +397,6 @@ class AbstractResource(APIView):
         return obj
 
     def serialized_data(self, request, object_or_list_of_object, is_many):
-        """
-        Returns the serialized data from a sigle object or a list of them
-        :param request:
-        :param object_or_list_of_object:
-        :param is_many:
-        :return:
-        """
         return self.serializer_class(object_or_list_of_object, many=is_many, context={'request': request}).data
 
     def default_content_type(self):
@@ -666,31 +662,15 @@ class AbstractResource(APIView):
 
     # Could be overridden
     def get(self, request, *args, **kwargs):
-        """
-        Receive the request and decide if this will be a regular response
-        or a cached response
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
         if 'HTTP_ETAG' in request.META:
             etag = request.META['HTTP_ETAG']
 
-        # responds with a conditional get if the request has If-None-Match or If-Unmodified-Since header
         if self.is_conditional_get(request):
             resp = self.response_conditional_get(request, *args, **kwargs)
-
         else:
-            # otherwise responds with a regular get (can be responded with cached data)
-            # QUESTION: AbstractResource.response_base_get() must consider cache check?
-            # After all, if AbstractResource.is_conditional_get() return False this means that the Request hasn't
-            # If-None-Match or If-Unmodified-Since headers
             resp = self.response_base_get(request, *args, **kwargs)
 
-        # add the Link header in Response
         self.add_base_headers(request, resp)
-
         return resp
 
     # Could be overridden
@@ -947,17 +927,46 @@ class AbstractResource(APIView):
         return collection_operations_array
 
     def get_operation_name_from_path(self, attributes_functions_str):
-        attributes_functions_str = attributes_functions_str.lower()
-        arr_att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        first_part_name = arr_att_funcs[0]
+        arr_att_funcs = self.remove_last_slash(attributes_functions_str).lower().split('/')
+
+        # spatialize operation has priority
+        if self.path_has_spatialize_operation(attributes_functions_str):
+            return self.operation_controller.spatialize_operation_name
+        else:
+            first_part_name =  arr_att_funcs[0]
+
         if first_part_name not in self.array_of_operation_name():
             return None
         return first_part_name
+
+    # Responds a RequiredObject via execute operation that's depends on path(attributes_functions_str) of the IRI
+    def get_requiredObject_from_method_to_execute(self, request, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        method_to_execute = self.get_operation_to_execute(operation_name)
+
+        if method_to_execute is None:
+            return None
+
+        return method_to_execute(*[request, attributes_functions_str])
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
         dic = self.operations_with_parameters_type()
 
         return (attribute_or_method_name in dic) and len(dic[attribute_or_method_name].parameters)
+
+    def path_has_spatialize_operation(self, attributes_functions_str):
+        arr_att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
+
+        spatialize_counter = arr_att_funcs.count(self.operation_controller.spatialize_operation_name)
+        if spatialize_counter == 0:
+            return False
+
+        for att_func in arr_att_funcs:
+            spatialize_idx = arr_att_funcs.index(self.operation_controller.spatialize_operation_name)
+            if spatialize_idx != -1 and '&' in arr_att_funcs[spatialize_idx+1]:
+                return True
+            arr_att_funcs.pop(spatialize_idx)
+        return False
 
     # method without use
     def function_name(self, attributes_functions_str):
@@ -968,7 +977,7 @@ class AbstractResource(APIView):
 
         return str(attributes_functions_str[-2])
 
-    def response_request_with_attributes(self, attributes_functions_name):
+    def response_request_with_attributes(self, attributes_functions_name, request=None):
         a_dict = {}
         attributes = attributes_functions_name.strip().split(',')
 
@@ -1156,6 +1165,9 @@ class AbstractResource(APIView):
     def execute_complex_request(self, request):
         pass
 
+    def get_objects_by_only_attributes(self, attribute_names_str):
+        pass
+
     def required_object_for_invalid_sintax(self, attributes_functions_str, message=None):
         representation_object = {
             'This request has invalid attribute or operation: ': attributes_functions_str,
@@ -1210,13 +1222,16 @@ class AbstractResource(APIView):
     def split_spatialize_uri(self, request, attributes_functions_str):
         attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
 
-        spatialize_oper_snippet = "/".join(attrs_funcs_arr[:2])
+
+        spatialize_idx = attrs_funcs_arr.index(self.operation_controller.spatialize_operation_name)
+
+        spatialize_oper_snippet = attrs_funcs_arr[spatialize_idx] + '/' + attrs_funcs_arr[spatialize_idx+1]
         absolute_uri = self.get_absolute_uri(request)
         uri_before_oper = absolute_uri[:absolute_uri.find( spatialize_oper_snippet )]
 
-        join_attrs = attrs_funcs_arr[1].split('&')
+        join_attrs = attrs_funcs_arr[spatialize_idx+1].split('&')
 
-        uri_after_oper = "/".join(attrs_funcs_arr[2:])
+        uri_after_oper = "/".join(attrs_funcs_arr[spatialize_idx+2:])
 
         return (uri_before_oper, join_attrs, uri_after_oper)
 
@@ -1229,7 +1244,6 @@ class AbstractResource(APIView):
 
         return d[operation_name]
 
+    # Must be overrided
     def operation_name_method_dic(self):
-        pass
-
-
+        return {self.operation_controller.spatialize_operation_name: self.required_object_for_spatialize_operation}

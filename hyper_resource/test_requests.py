@@ -182,23 +182,34 @@ arr_get_for_geometry_collection_operation = [
 ]
 
 arr_get_for_spatialize_operation = [
+        # NonSpatialResource (1 resource) join FeatureResource (1 resource) (Not joinable)
+    ("controle-list/usuario-list/1/spatialize/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/ES", 400),
+
+        # NonSpatialResource (1 resource) join FeatureResource (n resources) (Not joinable)
+    ("controle-list/usuario-list/1/spatialize/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/", 400),
+
         # FeatureResource (1 resource) join NonSpatialResource (1 resource)
     ("api/bcim/municipios/3304557/spatialize/geocodigo&geocodigo/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 200),
     ('api/bcim/unidades-federativas/ES/spatialize/geocodigo&uf_geocodigo/{"uf_geocodigo":"32","pib_estimado":1000000000}', 200),
     #("api/bcim/unidades-federativas/ES/spatialize/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/2/", 200),
+
         # FeatureResource (1 resource) join CollectionResource (n resources)
     ("api/bcim/municipios/3304557/spatialize/geocodigo&cod_municipio/http://172.30.10.86/api/pib-municipio/faturamento-list/filter/cod_municipio/eq/3304557", 200),
     #("api/bcim/unidades-federativas/ES/spatialize/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/", 200),
+
         # FeatureResource join NonSpatialResource (Not joinable)
     ("api/bcim/municipios/3304557/spatialize/geocodigo&nome/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 400),
     #("api/bcim/unidades-federativas/ES/spatialize/geocodigo&nome/http://gabriel:8880/estados-list/unidade-federativa-list/2/", 400),
+
         # FeatureCollection (n resources) join CollectionResource (n resources)
     ("api/bcim/unidades-federativas/spatialize/geocodigo&cod_estado/http://172.30.10.86/esporte-list/cond-funcionamento-list/", 200),
     #("api/bcim/unidades-federativas/spatialize/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/", 200),
+
         # CollectionResource (n resources) join FeatureCollection (n resources)
     #("esporte-list/cond-funcionamento-list/spatialize/cod_estado&geocodigo/http://172.30.10.86/api/bcim/unidades-federativas/offset_limit/0&2/geocodigo,nome,geom", 200),
-    # FeatureCollection (n resources) join CollectionResource (n resources) - complex request
-    ("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_municipio/http://172.30.10.86/esporte-list/cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/", 200),
+
+        # FeatureCollection (n resources) join CollectionResource (n resources) - complex request
+    ("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/http://172.30.10.86/esporte-list/cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/", 200),
 ]
 
 def test_requests(url_status_code_tuple_list, test_label=''):
