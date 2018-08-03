@@ -535,8 +535,7 @@ class RequestOptionsTest(SimpleTestCase):
     def aux_get_keys_from_acontext_attrs(self, response, attr_name):
         response_dict = self.aux_get_dict_from_response(response)
         context_dict = response_dict["@context"]
-        attrs_context_keys_list = list( context_dict[attr_name].keys() )
-        attrs_context_keys_list.sort()
+        attrs_context_keys_list = sorted( list( context_dict[attr_name].keys() ) )
         return attrs_context_keys_list
 
 
@@ -1538,3 +1537,65 @@ class RequestOptionsTest(SimpleTestCase):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'bytes')
+
+    # tests for EntryPoints
+    def test_options_for_feature_entrypoint(self):
+        response = requests.options(self.bcim_base_uri)
+        self.assertEquals(response.status_code, 200)
+
+        #self.assertEqual(response.headers['Link'],
+        #'<http://luc00557196:8000/api/bcim/>; rel="http://schema.org/EntryPoint" , <http://luc00557196:8000/api/bcim.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"')
+
+        a_context_keys = self.aux_get_keys_from_response_context(response)
+        self.assertListEqual(a_context_keys, ['aglomerados rurais de extensao urbana', 'aglomerados rurais isolado',
+                                              'aldeias indigenas', 'areas de desenvolvimento de controle', 'areas edificadas',
+                                              'bancos de areia', 'barragens', 'brejos e pantanos', 'capitais', 'cidades',
+                                              'corredeiras', 'curvas batimetricas', 'curvas de nivel', 'dunas', 'eclusas',
+                                              'edificacoes agropecuarias de extracao vegetal e pesca',
+                                              'edificacoes de construcao aeroportuaria', 'edificacoes de construcao portuaria',
+                                              'edificacoes de metro ferroviaria', 'edificacoes industrial', 'edificacoes publica militar',
+                                              'edificacoes religiosa', 'elementos fisiografico natural',
+                                              'estacoes geradoras de energia eletrica', 'extracoes minerais', 'fozes maritima',
+                                              'fundeadouros', 'hidreletricas', 'ilhas', 'mangues', 'marcos de limite', 'massas dagua',
+                                              'municipios', 'outros limites oficiais', 'paises', 'picos', 'pistas de ponto pouso',
+                                              'pontes', 'pontos cotados altimetricos', 'pontos cotados batimetricos', 'postos fiscais',
+                                              'quedas dagua', 'recifes', 'rochas em agua', 'sinalizacoes', 'sumidouros vertedouros',
+                                              'termeletricas', 'terras indigenas', 'terrenos sujeito a inundacao',
+                                              'torres de energia', 'travessias', 'trechos de drenagem', 'trechos de massa dagua',
+                                              'trechos dutos', 'trechos ferroviarios', 'trechos hidroviarios', 'trechos rodoviarios',
+                                              'tuneis', 'unidades de conservacao nao snuc', 'unidades de protecao integral',
+                                              'unidades de uso sustentavel', 'unidades federativas', 'vegetacoes de restinga', 'vilas'])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals("http://geojson.org/geojson-ld/vocab.html#FeatureCollection",
+                          response_dict["@context"]['aglomerados rurais de extensao urbana']["@id"])
+
+    def test_options_for_raster_entrypoint(self):
+        pass
+
+    def test_options_for_non_spatial_entypoint(self):
+        pass
+
+#python manage.py test hyper_resource.tests.GetRequestContextTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class GetRequestContextTest(SimpleTestCase):
+    def setUp(self):
+        self.bcim_base_uri = "http://" + HOST + "api/bcim/"
+        self.controle_base_uri = "http://" + HOST + "controle-list/"
+
+    def test_suffixed_request_to_feature_resource(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/ES.jsonld")
+        self.assertEquals(response.status_code, 200)
+
+    def test_suffixed_request_to_feature_collection_resource(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas.jsonld")
+        self.assertEquals(response.status_code, 200)
+
+    def test_suffixed_request_to_non_spatial_resource(self):
+        response = requests.get(self.controle_base_uri + "usuario-list/1.jsonld")
+        self.assertEquals(response.status_code, 200)
+
+    def test_suffixed_request_to_collection_resource(self):
+        response = requests.get(self.controle_base_uri + "usuario-list.jsonld")
+        self.assertEquals(response.status_code, 200)
+
+

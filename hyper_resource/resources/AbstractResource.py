@@ -76,16 +76,6 @@ class AbstractResource(APIView):
 
     # Should be overridden
     def inject_e_tag(self, etag=None):
-        """
-        If the 'object_model' attribute of this view is not None
-        and the 'e_tag' attribute is None, this method attributes
-        a Etag for the 'e_tag' attribute.
-        If the 'object_model' is not None and the 'e_tag' is not None
-        this method just append the received 'etag' to the 'e_tag' attribute
-        of this view
-        :param etag:
-        :return:
-        """
 
         # ATTENTION: if self.object_model is None we can have a e_tag without a object_model
         if self.e_tag is None and self.object_model is not None:
@@ -163,30 +153,17 @@ class AbstractResource(APIView):
         response['access-control-expose-headers'] = self.access_control_expose_headers_str()
 
     def add_base_headers(self, request, response):
-        """
-        Adds the 'Link' header in the Response object containing
-        a url representing the father url for this request and
-        a url representing a context for the requested resource
-        :param request:
-        :param response:
-        :return:
-        """
-        iri_base = request.build_absolute_uri()  # the absolute iri for this request
+        iri_base = request.build_absolute_uri()
 
-        if self.contextclassname not in iri_base:  # if the context class name isn't in the absolute iri ...
+        if self.contextclassname not in iri_base:
             return
 
         idx = iri_base.index(self.contextclassname)
 
-        # gets the absolute iri from the begin until the context class name
         iri_father = iri_base[:idx]
 
-        # adds 'Link' header in the Response object,
-        # relating the father iri from this request with a 'up' relationship
         self.add_url_in_header(iri_father, response, 'up')
 
-        # the second url appended to 'Link' header is the absolute url minus the bar
-        # with '.jsonld', the 'rel' is the relationship represented by w3.org url
         self.add_url_in_header(iri_base[:-1] + '.jsonld', response,
                                rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
         self.add_cors_header_in_header(response)
@@ -304,23 +281,11 @@ class AbstractResource(APIView):
         return None
 
     def fields_to_web_for_attribute_names(self, attribute_names):
-        """
-        Receives a list of attribute names and compare to the list of models fields.
-        Returns the list of matched models fields or a empty list if none of the fields matches
-        :param attribute_names:
-        :return:
-        """
         # gets the models fields list
         fields_model = self.object_model.fields()
         return [field for field in fields_model if field.name in attribute_names]
 
     def fields_to_web(self):
-        """
-        Returns a list of model FIELDS that matches with the list of field names
-        of this model
-        :return:
-        """
-        # AbstractResource.attribute_names_to_web() gets a list of model field names
         return self.fields_to_web_for_attribute_names(self.attribute_names_to_web())
 
         # OBS: AbstractResource.attribute_names_to_web() calls BusinessModel.fields() and returns names
@@ -354,22 +319,9 @@ class AbstractResource(APIView):
             self.context_resource.complement_path = ''
 
     def key_is_identifier(self, key):
-        """
-        Verify if the received 'key' is between the
-        AbstractResource.serializer_class identifiers list
-        :param key:
-        :return:
-        """
         return key in self.serializer_class.Meta.identifiers
 
     def dic_with_only_identitier_field(self, dict_params):
-        """
-        Receives a dict of fields and return another dict with
-        only identifier fields (those present in AbstractResource.serializer_class
-        identifiers list) and his respective values
-        :param dict_params:
-        :return:
-        """
         dic = dict_params.copy()
         a_dict = {}
 
@@ -383,15 +335,7 @@ class AbstractResource(APIView):
         return 'attributes_functions'
 
     def get_object(self, a_dict):
-        """
-        Receives a_dict, get only the identifier fields
-        and use them to query the instances in the database
-        that matches with the identifiers dict
-        :param a_dict:
-        :return:
-        """
         dicti = self.dic_with_only_identitier_field(a_dict)
-
         obj = get_object_or_404(self.model_class(), **dicti)
 
         return obj
@@ -497,19 +441,10 @@ class AbstractResource(APIView):
             cache.set(key, (etag, data), seconds)
 
     def resource_in_cache(self, request):
-        """
-        Return the cached resource if the generated request key
-        (generated through AbstractResource.get_key_cache()) and the
-        If-None-Match header value matches with the cache key and cached
-        etag respectivitly. Return False otherwise
-        :param request:
-        :return: resource in cache or None if not found
-        """
         if not self.cache_enabled():
             return
 
         key = self.get_key_cache(request)
-
         return cache.get(key)
 
     def is_image_content_type(self, request, **kwargs):
@@ -631,23 +566,11 @@ class AbstractResource(APIView):
 
     # Should be overridden
     def response_conditional_get(self, request, *args, **kwargs):
-        """
-        Return a 304 Response, if If-None-Math header matches with
-        the cached Etag, or a regular Response otherwise
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        # 'a_content_type' is the Accept Request header of a default Content-Type
         a_content_type = self.content_type_or_default_content_type(request)
 
-        # verify if the Request If-None-Match header match with cached Etag
-        # if matches, a 304 (Not modified) Response is returns
         if self.conditional_etag_match(request):
             return Response(data={}, status=304, content_type=a_content_type)
 
-        # if not matches return a regular Response (with database requests)
         return self.response_base_get(request, *args, **kwargs)
 
     # If client request .png into IRI chance header's accept to image/png and removes .png from IRI. Affordance for user.
@@ -661,7 +584,7 @@ class AbstractResource(APIView):
         pass
 
     # Could be overridden
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         if 'HTTP_ETAG' in request.META:
             etag = request.META['HTTP_ETAG']
 
@@ -1037,21 +960,10 @@ class AbstractResource(APIView):
         return getattr(object, attribute_or_function_name_striped)()
 
     def parametersConverted(self, params_as_array):
-        """
-        Convert each string in 'params_as_array' to one of this type:
-        bool, int, float, GEOSGeometry or if the string is an url, try to
-        request this url and convert the response data to GEOSGeometry.
-        If the request fails or return a status code representing a error,
-        raise ConnectionError or HTTPError
-        :param params_as_array - a array of strings (probably pieces from url):
-        :return:
-        """
         parameters_converted = []
 
         for value in params_as_array:
 
-            # if the parameter is 'true' or 'false'
-            # convert it to bool and append to list
             if value.lower() == 'true':
                 parameters_converted.append(True)
                 continue
@@ -1060,10 +972,6 @@ class AbstractResource(APIView):
                 parameters_converted.append(False)
                 continue
 
-            # if parameter is not 'true' nor 'false'
-            # we try to convert to int, if it fails,
-            # we try to convert to float, if it still fails,
-            # we try to convert to GEOSGeometry
             try:
                 parameters_converted.append(int(value))
                 continue

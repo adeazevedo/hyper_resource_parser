@@ -409,6 +409,9 @@ class FeatureResource(SpatialResource):
 
         return operation_type_called.return_type if res_type_by_accept == self.default_resource_type() else res_type_by_accept
 
-    def get(self, request, *args, **kwargs):
-       self.change_request_if_image_png_into_IRI(request)
-       return super(FeatureResource,self).get(request, *args, **self.kwargs)
+    def get(self, request, format=None, *args, **kwargs):
+        if format == 'jsonld':
+            return self.options(request, *args, **kwargs)
+
+        self.change_request_if_image_png_into_IRI(request)
+        return super(FeatureResource,self).get(request, format, *args, **self.kwargs)

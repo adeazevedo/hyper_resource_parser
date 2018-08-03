@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.views import BaseContext # depraced
+from hyper_resource.contexts import BaseContext
 from controle.models import *
 from controle.serializers import *
 from controle.contexts import *
@@ -47,7 +47,7 @@ class APIRoot(APIView):
             response['Link'] += "," + link
         return response
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         root_links = get_root_response(request)
         response = Response(root_links)
         entry_pointURL = reverse('controle_v1:api_root', request=request)

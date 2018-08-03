@@ -15,9 +15,12 @@ from time import *
 
 from django.contrib.gis.geos.prepared import PreparedGeometry
 from django.db.models import *
+from rest_framework import status
+from rest_framework.response import Response
 
 from hyper_resource.models import *
 from hyper_resource.views import *
+from hyper_resource.resources.AbstractResource import AbstractResource
 
 
 class Reflection:
@@ -200,33 +203,34 @@ def vocabularyDict():
     dict['coveredby'] = 'http://opengis.org/operations/coveredby'
     dict['strictly_above'] = 'http://opengis.org/operations/strictly_above'
 
-
-
     return dict
 
 def OperationVocabularyDict():
     dic = {}
-    dic[int] = ["http://172.30.10.86/operations-interface-list/integer-operations-interface/"]
-    dic[AutoField] = ["http://172.30.10.86/operations-interface-list/integer-operations-interface/"]
-    dic[IntegerField] = ["http://172.30.10.86/operations-interface-list/integer-operations-interface/"]
-    dic[str] = ["http://172.30.10.86/operations-interface-list/string-operations-interface/"]
-    dic[CharField] = ["http://172.30.10.86/operations-interface-list/string-operations-interface/"]
-    dic[date] = ["http://172.30.10.86/operations-interface-list/date-operations-interface/"]
-    dic[GEOSGeometry] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[GeometryField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[GeometryCollection] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[PointField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[Point] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[MultiPointField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[MultiPoint] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[LineStringField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[LineString] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[MultiLineStringField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[MultiLineString] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[PolygonField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[Polygon] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[MultiPolygonField] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
-    dic[MultiPolygon] = ["http://172.30.10.86/operations-interface-list/spatial-operations-interface/"]
+    dic[int] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
+    dic[AutoField] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
+    dic[IntegerField] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
+
+    dic[str] = ["http://172.30.10.86/api/operations-list/string-operation-interface-list"]
+    dic[CharField] = ["http://172.30.10.86/api/operations-list/string-operation-interface-list"]
+
+    dic[date] = ["http://172.30.10.86/api/operations-list/date-operation-interface-list"]
+
+    dic[GEOSGeometry] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[GeometryField] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[GeometryCollection] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[PointField] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[Point] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[MultiPointField] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[MultiPoint] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[LineStringField] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[LineString] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[MultiLineStringField] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[MultiLineString] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[PolygonField] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[Polygon] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[MultiPolygonField] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
+    dic[MultiPolygon] = ["http://172.30.10.86/api/operations-list/spatial-operation-interface-list"]
 
     return dic
 
@@ -248,7 +252,7 @@ class SupportedProperty():
 
     def context(self):
         return {
-            "@type": "SupportedProperty",
+            "@type": "hydra:SupportedProperty",
             "hydra:property": self.property_name,
             "hydra:writeable": self.writeable,
             "hydra:readable": self.readable,
@@ -399,7 +403,7 @@ class ContextResource:
     def representationName(self):
         ide_field = self.identifier_field_or_None()
         if ide_field is not None:
-            return  {"hydra:property":ide_field.name , "@type": "SupportedProperty"}
+            return  {"hydra:property":ide_field.name , "@type": "hydra:SupportedProperty"}
         return {}
 
     def supportedProperties(self):
@@ -595,5 +599,102 @@ class RasterEntryPointResourceContext(ContextResource):
         return [supportedAttribute.context() for supportedAttribute in arr_dict]
 
     def representationName(self):
-
         return {}
+
+
+class BaseContext(object):
+
+    def __init__(self, contextclassname, serializer_object=None):
+        self.serializer_object = serializer_object
+        self.contextclassname = contextclassname
+
+    def options(self, request):
+        response = Response(self.getContextData(request), status=status.HTTP_200_OK, content_type="application/ld+json")
+        response = self.createLinkOfContext(request, response)
+        return response
+
+    def addContext(self, request, response):
+        return self.createLinkOfContext(request, response)
+
+    def createLinkOfContext(self, request, response, properties=None):
+        # if properties is None:
+        #     url = reverse('context:detail', args=[self.contextclassname], request=request)
+        # else:
+        #     url = reverse('context:detail-property', args=[self.contextclassname, ",".join(properties)], request=request)
+
+        url = request.build_absolute_uri()
+        url = url if url[-1] != '/' else url[:-1]
+        url = url + ".jsonld"
+
+        context_link = ' <'+url+'>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\" '
+        if "Link" not in response:
+            response['Link'] = context_link
+        else:
+            response['Link'] += "," + context_link
+
+        return response
+
+    def getHydraData(self, request):
+        #classobject = Class.objects.get(name=self.contextclassname)
+        #serializerHydra = HydraSerializer(classobject, request)
+        return {}
+
+    def addIriTamplate(self, context, request, serializer_object):
+        url = request.build_absolute_uri()
+        iriTemplate = {
+            "@context": "http://www.w3.org/ns/hydra/context.jsonld",
+            "@type": "IriTemplate",
+            "template": url if url[-1] != '/' else url[:-1] +"{/attribute}",
+            "variableRepresentation": "BasicRepresentation",
+            "mapping": []
+        }
+        if serializer_object is not None:
+            for attr in serializer_object.Meta.identifiers:
+                iriTemplate['mapping'].append({
+                    "@type": "IriTemplateMapping",
+                    "variable": "attribute",
+                    "property": attr,
+                    "required": True
+                })
+        else:
+            iriTemplate['mapping'].append({
+                "@type": "IriTemplateMapping",
+                "variable": "attribute",
+                "property": "hydra:property",
+                "required": True
+            })
+
+        context['iriTemplate'] = iriTemplate
+        return context
+
+    def addRootLinks(self, context, root_links):
+        context['hydra:supportedProperties'] = []
+        for link_name in root_links.keys():
+            context['hydra:supportedProperties'].append(
+                {
+                    "@type": "hydra:SupportedProperty",#"hydra:Link",
+                    "hydra:required": "true",
+                    "isExternal": "false",
+                    "hydra:writeable": "false",
+                    "isIdentifier": "false",
+                    "hydra:readable": "true",
+                    "isUnique": "true",
+                    "hydra:property": link_name
+                }
+            )
+
+
+    def getContextData(self, request):
+        try:
+            classobject = None #Class.objects.get(name=self.contextclassname)
+        except:
+            return ""
+        serializer = None #ContextSerializer(classobject)
+        contextdata = {} #serializer.data
+        hydradata = self.getHydraData(request)
+        if "@context" in hydradata:
+            hydradata["@context"].update(contextdata["@context"])
+        contextdata.update(hydradata)
+        #contextdata = self.addIriTamplate(contextdata, request, self.serializer_object)
+        contextdata["@id"] = "https://www.hydra-cg.com/spec/latest/core/#hydra:entrypoint"
+        return contextdata

@@ -78,7 +78,7 @@ class TiffResource(RasterResource):
 
         return required_object
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         required_object = self.basic_get(request, *args, **kwargs)
 
         if required_object.content_type == CONTENT_TYPE_IMAGE_TIFF:

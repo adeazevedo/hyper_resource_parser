@@ -596,7 +596,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return resp
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         self.change_request_if_image_png_into_IRI(request)
 
-        return super(FeatureCollectionResource,self).get(request, *args, **self.kwargs)
+        return super(FeatureCollectionResource,self).get(request, format=None, *args, **self.kwargs)

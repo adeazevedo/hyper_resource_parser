@@ -1,17 +1,14 @@
 from collections import OrderedDict
-from rest_framework.response import Response
+
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
-from rest_framework import permissions
-from rest_framework import generics
-from rest_framework import status
-from hyper_resource.views import * # depraced
-from raster_base.models import *
-from raster_base.serializers import *
-from raster_base.contexts import *
 
 from hyper_resource.resources.TiffCollectionResource import TiffCollectionResource
 from hyper_resource.resources.TiffResource import TiffResource
+from hyper_resource.views import * # depraced
+from raster_base.contexts import *
+from raster_base.serializers import *
+from hyper_resource.contexts import BaseContext
 
 
 def get_root_response(request):
@@ -41,7 +38,7 @@ class APIRoot(APIView):
         response = self.base_context.addContext(request, response)
         return response
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         root_links = get_root_response(request)
         response = Response(root_links)
         return self.base_context.addContext(request, response)

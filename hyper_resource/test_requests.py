@@ -208,7 +208,7 @@ arr_get_for_spatialize_operation = [
         # CollectionResource (n resources) join FeatureCollection (n resources)
     #("esporte-list/cond-funcionamento-list/spatialize/cod_estado&geocodigo/http://172.30.10.86/api/bcim/unidades-federativas/offset_limit/0&2/geocodigo,nome,geom", 200),
 
-        # FeatureCollection (n resources) join CollectionResource (n resources) - complex request
+        # FeatureCollection (n resources) join CollectionResource (n resources)
     ("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/http://172.30.10.86/esporte-list/cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/", 200),
 ]
 

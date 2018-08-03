@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from expression_interface.contexts import SubBooleanOperatorResourceContext, LogicalOperatorResourceContext
 from hyper_resource.models import boolean_operator, logical_operator
-from hyper_resource.views import BaseContext # depraced
+from hyper_resource.contexts import BaseContext
 from rest_framework.response import Response
 
 from hyper_resource.resources.AbstractResource import AbstractResource
@@ -115,7 +115,7 @@ class APIRoot(APIView):
         response = self.base_context.addContext(request, response)
         return response
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         root_links = get_root_response(request)
         response = Response(root_links)
         self.add_cors_headers_in_header(response)
@@ -130,7 +130,7 @@ class SubBooleanOperatorResource(AbstractResource):
         self.context_resource = SubBooleanOperatorResourceContext()
         self.context_resource.resource = self
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         dici = {}
         for oper_name in boolean_operator():
             dici[oper_name] = oper_name
@@ -154,7 +154,7 @@ class LogicalOperatorResource(AbstractResource):
         self.context_resource = LogicalOperatorResourceContext()
         self.context_resource.resource = self
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         dici = {}
         for oper_name in logical_operator():
             dici[oper_name] = oper_name

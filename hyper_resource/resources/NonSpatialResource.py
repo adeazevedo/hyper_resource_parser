@@ -128,7 +128,10 @@ class NonSpatialResource(AbstractResource):
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
+        if format == 'jsonld':
+            return self.options(request, *args, **kwargs)
+
         required_object = self.basic_get(request, *args, **kwargs)
         status = required_object.status_code
 

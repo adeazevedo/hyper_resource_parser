@@ -1,25 +1,10 @@
 # -*- coding: utf-8 -*-
-import random
-import re
 
-import jwt
-from django.contrib.gis.db.models import Extent, Union, MakeLine
-from django.contrib.gis.gdal import GDALRaster
-from django.db import connection
-from django.http import HttpResponse, StreamingHttpResponse, FileResponse
-from django.shortcuts import get_object_or_404
 # Create your views here.
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from hyper_resource.contexts import *
 from rest_framework.negotiation import BaseContentNegotiation
-from abc import ABCMeta
-from datetime import datetime
-from django.core.cache import cache
-from hyper_resource.models import  FactoryComplexQuery, SpatialCollectionOperationController, BaseOperationController, BusinessModel, ConverterType
-from image_generator.img_generator import BuilderPNG
-import geobuf
+from django.db import connection
+from django.contrib.gis.gdal import GDALRaster
+from hyper_resource.contexts import *
 
 SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
 
@@ -93,84 +78,6 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
         """
         return (renderers[0], renderers[0].media_type)
 
-class BaseContext(object):
-
-    def __init__(self, contextclassname, serializer_object=None):
-        self.serializer_object = serializer_object
-        self.contextclassname = contextclassname
-
-    def options(self, request):
-        response = Response(self.getContextData(request), status=status.HTTP_200_OK, content_type="application/ld+json")
-        response = self.createLinkOfContext(request, response)
-        return response
-
-    def addContext(self, request, response):
-        return self.createLinkOfContext(request, response)
-
-    def createLinkOfContext(self, request, response, properties=None):
-        # if properties is None:
-        #     url = reverse('context:detail', args=[self.contextclassname], request=request)
-        # else:
-        #     url = reverse('context:detail-property', args=[self.contextclassname, ",".join(properties)], request=request)
-
-        url = request.build_absolute_uri()
-        url = url if url[-1] != '/' else url[:-1]
-        url = url + ".jsonld"
-
-        context_link = ' <'+url+'>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\" '
-        if "Link" not in response:
-            response['Link'] = context_link
-        else:
-            response['Link'] += "," + context_link
-
-        return response
-
-    def getHydraData(self, request):
-        #classobject = Class.objects.get(name=self.contextclassname)
-        #serializerHydra = HydraSerializer(classobject, request)
-        return {}
-
-    def addIriTamplate(self, context, request, serializer_object):
-        url = request.build_absolute_uri()
-        iriTemplate = {
-            "@context": "http://www.w3.org/ns/hydra/context.jsonld",
-            "@type": "IriTemplate",
-            "template": url if url[-1] != '/' else url[:-1] +"{/attribute}",
-            "variableRepresentation": "BasicRepresentation",
-            "mapping": []
-        }
-        if serializer_object is not None:
-            for attr in serializer_object.Meta.identifiers:
-                iriTemplate['mapping'].append({
-                    "@type": "IriTemplateMapping",
-                    "variable": "attribute",
-                    "property": attr,
-                    "required": True
-                })
-        else:
-            iriTemplate['mapping'].append({
-                "@type": "IriTemplateMapping",
-                "variable": "attribute",
-                "property": "hydra:supportedProperties",
-                "required": True
-            })
-
-        context['iriTemplate'] = iriTemplate
-        return context
-
-    def getContextData(self, request):
-        try:
-            classobject = None #Class.objects.get(name=self.contextclassname)
-        except:
-            return ""
-        serializer = None #ContextSerializer(classobject)
-        contextdata = {} #serializer.data
-        hydradata = self.getHydraData(request)
-        if "@context" in hydradata:
-            hydradata["@context"].update(contextdata["@context"])
-        contextdata.update(hydradata)
-        contextdata = self.addIriTamplate(contextdata, request, self.serializer_object)
-        return contextdata
 
 class BaseModel(object):
 

@@ -8,7 +8,8 @@ from rest_framework import status
 
 from bcim.contexts import *
 from .serializers import *
-from hyper_resource.views import CORS_EXPOSE_HEADERS, CORS_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS, BaseContext # depraced
+from hyper_resource.views import CORS_EXPOSE_HEADERS, CORS_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS  # depraced
+from hyper_resource.contexts import BaseContext
 from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource
 from hyper_resource.resources.FeatureResource import FeatureResource
 
@@ -120,17 +121,26 @@ class APIRoot(APIView):
         response['access-control-expose-headers'] = access_control_expose_headers_str
         response['access-control-allow-methods'] = access_control_allow_methods_str
 
+    def create_context_as_dict(self, dict_of_name_link):
+        a_context = {}
+        dicti = {"@context": a_context}
+        for key in dict_of_name_link.keys():
+            a_context[key] = {"@id": "http://geojson.org/geojson-ld/vocab.html#FeatureCollection", "@type": "@id" }
+
+        return dicti
+
     def options(self, request, *args, **kwargs):
         context = self.base_context.getContextData(request)
         root_links = get_root_response(request)
-        context.update(root_links)
+        #self.base_context.addRootLinks(context, root_links)
+        context.update( self.create_context_as_dict(root_links) )
         response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")
         entry_pointURL = reverse('bcim_v1:api_root', request=request)
         response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
         response = self.base_context.addContext(request, response)
         return response
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
         root_links = get_root_response(request)
         response = Response(root_links)
         self.add_cors_headers_in_header(response)
@@ -148,11 +158,14 @@ class UnidadeFederacaoDetail(FeatureResource):
         self.context_resource = UnidadeFederacaoDetailContext()
         self.context_resource.resource= self
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, format=None, *args, **kwargs):
+        if format == 'jsonld':
+            return self.options(request, *args, **kwargs)
+
         if kwargs.get('sigla') is not None:
             kwargs['sigla'] = kwargs.get('sigla').upper()
             self.kwargs['sigla'] = kwargs.get('sigla').upper()
-        return super(UnidadeFederacaoDetail, self).get(request, *args, **self.kwargs)
+        return super(UnidadeFederacaoDetail, self).get(request, format, *args, **self.kwargs)
 
     def options(self, request, *args, **kwargs):
         if kwargs.get('sigla') is not None:
