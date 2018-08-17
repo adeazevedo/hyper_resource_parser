@@ -10,8 +10,8 @@ from django.contrib.gis.geos import GeometryCollection, GEOSGeometry
 
 from rest_framework.response import Response
 
-from hyper_resource import views
-from hyper_resource.views import RequiredObject
+from hyper_resource.resources.AbstractResource import *
+from hyper_resource.resources.AbstractResource import RequiredObject
 from hyper_resource.resources.SpatialCollectionResource import SpatialCollectionResource
 from hyper_resource.models import SpatialCollectionOperationController, BaseOperationController, FactoryComplexQuery, \
     ConverterType, FeatureModel
@@ -54,14 +54,38 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return {'type': 'GeometryCollection', 'geometries': dict_list}
 
     def default_content_type(self):
-        return self.temporary_content_type if self.temporary_content_type is not None else views.CONTENT_TYPE_GEOJSON
+        return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
 
     def dict_by_accept_resource_type(self):
-        dict_ = {
-            views.CONTENT_TYPE_OCTET_STREAM: 'GeobufCollection'
+        dict = {
+            CONTENT_TYPE_OCTET_STREAM: 'GeobufCollection'
         }
 
-        return dict_
+        return dict
+
+    def define_resource_type_by_operation(self, request, operation_name):
+        #operation_type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
+        return self.resource_type_or_default_resource_type(request)
+
+    #todo: need prioritize in unity tests
+    def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
+        collected_attrs = self.extract_collect_operation_attributes(attributes_functions_str)
+
+        res_type_by_accept = self.resource_type_or_default_resource_type(request)
+        if res_type_by_accept != self.default_resource_type():
+            if self.geometry_field_name() in collected_attrs:
+                return res_type_by_accept
+            return 'bytes'
+
+        # at this point 'res_type_by_accept' current value is 'FeatureCollection'
+        if self.geometry_field_name() not in collected_attrs:
+            return "Collection"
+
+        # at this point collect operation has geometric attribute
+        if len(collected_attrs) == 1:
+            return GeometryCollection
+
+        return res_type_by_accept
 
     def define_resource_type(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
@@ -238,7 +262,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def operation_name_method_dic(self):
         dicti = super(FeatureCollectionResource, self).operation_name_method_dic()
         dicti.update({
-            self.operation_controller.bbcontaining_operation_name: self.required_object_for_specialized_operation,
+             self.operation_controller.bbcontaining_operation_name: self.required_object_for_specialized_operation,
              self.operation_controller.contained_operation_name: self.required_object_for_specialized_operation,
              self.operation_controller.containing_operation_name: self.required_object_for_specialized_operation,
              self.operation_controller.containing_properly_operation_name: self.required_object_for_specialized_operation,
@@ -270,6 +294,42 @@ class FeatureCollectionResource(SpatialCollectionResource):
              self.operation_controller.make_line_collection_operation_name: self.required_object_for_make_line_operation,
         })
 
+        return dicti
+
+    def operation_name_context_dic(self):
+        dicti = super(FeatureCollectionResource, self).operation_name_context_dic()
+        dicti.update({
+             self.operation_controller.bbcontaining_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.contained_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.containing_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.containing_properly_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.covering_by_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.covering_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.crossing_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.disjointing_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.intersecting_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.isvalid_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.overlaping_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.relating_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.touching_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.within_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.on_left_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.on_right_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.overlaping_left_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.overlaping_right_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.overlaping_above_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.overlaping_below_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.strictly_above_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.strictly_below_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.distance_gt_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.distance_gte_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.distance_lt_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.distance_lte_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.dwithin_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.union_collection_operation_name: self.required_context_for_union_operation,
+             self.operation_controller.extent_collection_operation_name: self.required_context_for_extent_operation,
+             self.operation_controller.make_line_collection_operation_name: self.required_context_for_make_line_operation,
+        })
         return dicti
 
     # Responds an array of operations name.
@@ -304,7 +364,23 @@ class FeatureCollectionResource(SpatialCollectionResource):
         else:
             return self.required_object(request, spatial_objects)
 
-    def required_object_for_extent_operation(self,request, attributes_functions_str):
+    def required_context_for_specialized_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_specialized_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_union_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_union_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_extent_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_extent_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_make_line_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_make_line_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_object_for_extent_operation(self, request, attributes_functions_str):
         extent_dict = self.get_objects_from_extent_spatial_operation(attributes_functions_str)
         extent_dict['extent'] = extent_dict.pop(self.geometry_field_name() + '__extent')
         return self.required_object_for_aggregation_operation( request, extent_dict)
@@ -477,7 +553,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
             else:
                 arr = self.dict_list_as_geometry_collection(arr)
         else:
-            self.temporary_content_type = views.CONTENT_TYPE_JSON
+            self.temporary_content_type = CONTENT_TYPE_JSON
         return arr
 
     def get_objects_from_within_operation(self, attributes_functions_str):
@@ -490,6 +566,33 @@ class FeatureCollectionResource(SpatialCollectionResource):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
 
         return objects
+
+
+    def get_context_for_collect_operation(self, request, attributes_functions_str):
+        resource_type = self.define_resource_type_by_collect_operation(request, attributes_functions_str)
+        context = self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        context["@context"] = self.get_context_for_attr_and_operation_in_collect(request, attributes_functions_str)
+        return context
+
+    def get_context_for_specialized_operation(self, request, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        resource_type = self.define_resource_type_by_operation(request, operation_name)
+        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+
+    def get_context_for_union_operation(self, request, attributes_functions_str):
+        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
+        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else 'Feature'
+        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+
+    def get_context_for_extent_operation(self, request, attributes_functions_str):
+        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
+        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else 'Thing'
+        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+
+    def get_context_for_make_line_operation(self, request, attributes_functions_str):
+        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
+        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else LineString
+        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
 
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         attrs_context = super(FeatureCollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
@@ -587,16 +690,15 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def basic_response(self, request, objects):
         serialized_data =  self.serializer_class(objects, many=True, context={'request': request}).data
-        resp = Response(data= serialized_data,status=200, content_type=views.CONTENT_TYPE_JSON)
+        resp = Response(data= serialized_data,status=200, content_type=CONTENT_TYPE_JSON)
         local_hash = self.hashed_value(None)
 
-        self.add_key_value_in_header(resp, views.ETAG, local_hash)
-        iri_with_content_type = request.build_absolute_uri() + request.META[views.HTTP_ACCEPT]
+        self.add_key_value_in_header(resp, ETAG, local_hash)
+        iri_with_content_type = request.build_absolute_uri() + request.META[HTTP_ACCEPT]
         cache.set(iri_with_content_type,(local_hash, serialized_data), 3600)
 
         return resp
 
     def get(self, request, format=None, *args, **kwargs):
         self.change_request_if_image_png_into_IRI(request)
-
-        return super(FeatureCollectionResource,self).get(request, format=None, *args, **self.kwargs)
+        return super(FeatureCollectionResource,self).get(request, *args, **self.kwargs)

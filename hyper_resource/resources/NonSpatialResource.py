@@ -1,11 +1,7 @@
-
-from django.db.models import QuerySet, OneToOneField, Model
-
-from rest_framework.response import Response
-
-from hyper_resource.views import *
-from hyper_resource.resources.AbstractResource import AbstractResource
 from copy import deepcopy
+
+from hyper_resource.resources.AbstractResource import AbstractResource, RequiredObject
+from rest_framework.response import Response
 
 
 class NonSpatialResource(AbstractResource):
@@ -123,16 +119,14 @@ class NonSpatialResource(AbstractResource):
         elif self.path_has_only_attributes(attributes_functions_str):
             return self.required_object_for_only_attributes(request, attributes_functions_str)
 
-        res = self.get_requiredObject_from_method_to_execute(request, attributes_functions_str)
+        res = self.get_required_object_from_method_to_execute(request, attributes_functions_str)
         if res is None:
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
+    '''
     def get(self, request, format=None, *args, **kwargs):
-        if format == 'jsonld':
-            return self.options(request, *args, **kwargs)
-
-        required_object = self.basic_get(request, *args, **kwargs)
+        required_object = super(NonSpatialResource, self).get(request, format, *args, **kwargs)
         status = required_object.status_code
 
         if status == 400:
@@ -148,6 +142,7 @@ class NonSpatialResource(AbstractResource):
         self.add_base_headers(request, response)
 
         return response
+    '''
 
     def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
         r_type = self.resource_type_or_default_resource_type(request)

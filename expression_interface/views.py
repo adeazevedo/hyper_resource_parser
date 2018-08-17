@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from expression_interface.contexts import SubBooleanOperatorResourceContext, LogicalOperatorResourceContext
 from hyper_resource.models import boolean_operator, logical_operator
-from hyper_resource.contexts import BaseContext
+from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot
 from rest_framework.response import Response
 
 from hyper_resource.resources.AbstractResource import AbstractResource
@@ -63,19 +63,17 @@ ENABLE_COMPLEX_REQUESTS = True
 
 GEOSGEOMETRY_SUBCLASSES = ['POINT', 'MULTIPOINT', 'LINESTRING', 'MULTILINESTRING', 'POLYGON', 'MULTIPOLYGON', 'GEOMETRYCOLLECTION']
 
+class APIRoot(NonSpatialAPIRoot):
 
-def get_root_response(request):
-    format = None
-    root_links = {
-        'boolean-operators': reverse('expression_interface:sub_boolean_operator', request=request, format=format),
-        'logical_operator': reverse('expression_interface:logical_operator', request=request, format=format),
-    }
-    ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
-    return ordered_dict_of_link
+    def get_root_response(self, request, format=None):
+        root_links = {
+            'boolean-operators': reverse('expression_interface:sub_boolean_operator', request=request, format=format),
+            'logical_operator': reverse('expression_interface:logical_operator', request=request, format=format),
+        }
+        ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
+        return ordered_dict_of_link
 
-
-class APIRoot(APIView):
-
+    '''
     def __init__(self):
         super(APIRoot, self).__init__()
         self.base_context = BaseContext('api-root')
@@ -122,6 +120,7 @@ class APIRoot(APIView):
         entry_pointURL = reverse('bcim_v1:api_root', request=request)
         response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
         return self.base_context.addContext(request, response)
+    '''
 
 class SubBooleanOperatorResource(AbstractResource):
     contextclassname = 'sub-boolean-operators'

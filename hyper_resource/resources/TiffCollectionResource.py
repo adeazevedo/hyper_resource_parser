@@ -1,5 +1,5 @@
-
-from hyper_resource.views import BaseModel, RequiredObject, CONTENT_TYPE_JSON
+from hyper_resource.resources.AbstractResource import *
+from hyper_resource.resources.BaseModel import BaseModel
 from hyper_resource.resources.RasterCollectionResource import RasterCollectionResource
 
 

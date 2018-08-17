@@ -1,5 +1,4 @@
-
-from hyper_resource.views import BaseModel
+from hyper_resource.resources.BaseModel import BaseModel
 from hyper_resource.resources.SpatialCollectionResource import SpatialCollectionResource
 
 

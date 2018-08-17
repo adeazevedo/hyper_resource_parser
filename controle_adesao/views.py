@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.contexts import BaseContext
+from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot
 from controle_adesao.models import *
 from controle_adesao.serializers import *
 from controle_adesao.contexts import *
@@ -13,20 +13,20 @@ from controle_adesao.contexts import *
 from hyper_resource.resources.CollectionResource import CollectionResource
 from hyper_resource.resources.NonSpatialResource import NonSpatialResource
 
-def get_root_response(request):
-    format = None
-    root_links = {
+class APIRoot(NonSpatialAPIRoot):
 
-      'ator-list': reverse('controle_adesao:Ator_list' , request=request, format=format),
-      'publicacaoinformacaogeoespacial-list': reverse('controle_adesao:Publicacaoinformacaogeoespacial_list' , request=request, format=format),
-      'representante-list': reverse('controle_adesao:Representante_list' , request=request, format=format),
-    }
+    def get_root_response(self, request, format=None):
+        root_links = {
 
-    ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
-    return ordered_dict_of_link
+          'ator-list': reverse('controle_adesao:Ator_list' , request=request, format=format),
+          'publicacaoinformacaogeoespacial-list': reverse('controle_adesao:Publicacaoinformacaogeoespacial_list' , request=request, format=format),
+          'representante-list': reverse('controle_adesao:Representante_list' , request=request, format=format),
+        }
 
-class APIRoot(APIView):
+        ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
+        return ordered_dict_of_link
 
+    '''
     def __init__(self):
         super(APIRoot, self).__init__()
         self.base_context = BaseContext('api-root')
@@ -43,6 +43,7 @@ class APIRoot(APIView):
         root_links = get_root_response(request)
         response = Response(root_links)
         return self.base_context.addContext(request, response)
+    '''
 
 class AtorList(CollectionResource):
     queryset = Ator.objects.all()

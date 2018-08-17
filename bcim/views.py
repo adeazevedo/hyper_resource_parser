@@ -8,90 +8,88 @@ from rest_framework import status
 
 from bcim.contexts import *
 from .serializers import *
-from hyper_resource.views import CORS_EXPOSE_HEADERS, CORS_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS  # depraced
-from hyper_resource.contexts import BaseContext
+from hyper_resource.contexts import BaseContext, FeatureAPIRoot
 from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource
 from hyper_resource.resources.FeatureResource import FeatureResource
 
-def get_root_response(request):
-    format = None
-    root_links = {
-        'unidades federativas': reverse('bcim_v1:uf_list', request=request, format=format),
-        'municipios': reverse('bcim_v1:municipio_list', request=request, format=format),
-        #'outras unidades protegidas': reverse('bcim_v1:outras_unid_protegidas_list', request=request, format=format),
-        'outros limites oficiais': reverse('bcim_v1:outros_limites_oficiais_list', request=request, format=format),
-        'paises': reverse('bcim_v1:pais_list', request=request, format=format),
-        'terras indigenas': reverse('bcim_v1:terra_indigena_list', request=request, format=format),
-        'unidades de conservacao nao snuc': reverse('bcim_v1:unidade_conservacao_nao_snuc_list', request=request, format=format),
-        'unidades de protecao integral': reverse('bcim_v1:unidade_protecao_integral_list', request=request, format=format),
-        'unidades de uso sustentavel': reverse('bcim_v1:unidade_uso_sustentavel_list', request=request, format=format),
-        'aglomerados rurais de extensao urbana': reverse('bcim_v1:aglomerado_rural_de_extensao_urbana_list', request=request, format=format),
-        'aglomerados rurais isolado': reverse('bcim_v1:aglomerado_rural_isolado_list', request=request, format=format),
-        'aldeias indigenas': reverse('bcim_v1:aldeia_indigena_list', request=request, format=format),
-        'areas edificadas': reverse('bcim_v1:area_edificada_list', request=request, format=format),
-        'capitais': reverse('bcim_v1:capital_list', request=request, format=format),
-        'cidades': reverse('bcim_v1:cidade_list', request=request, format=format),
-        'vilas': reverse('bcim_v1:vila_list', request=request, format=format),
-        'curvas batimetricas': reverse('bcim_v1:curva_batimetrica_list', request=request, format=format),
-        #'curvas de nivel': reverse('bcim_v1:curva_nivel_list', request=request, format=format),
-        'curvas de nivel': reverse('bcim_v1:curva_nivel_list', request=request, format=format),
-        'dunas': reverse('bcim_v1:duna_list', request=request, format=format),
-        'elementos fisiografico natural': reverse('bcim_v1:elemento_fisiografico_natural_list', request=request, format=format),
-        'picos': reverse('bcim_v1:pico_list', request=request, format=format),
-        'pontos cotados altimetricos': reverse('bcim_v1:ponto_cotado_altimetrico_list', request=request, format=format),
-        'pontos cotados batimetricos': reverse('bcim_v1:ponto_cotado_batimetrico_list', request=request, format=format),
-        'eclusas': reverse('bcim_v1:eclusa_list', request=request, format=format),
-        'edificacoes de construcao portuaria': reverse('bcim_v1:edif_const_portuaria_list', request=request, format=format),
-        'edificacoes de construcao aeroportuaria': reverse('bcim_v1:edif_const_aeroportuaria_list', request=request, format=format),
-        'edificacoes de metro ferroviaria': reverse('bcim_v1:edif_metro_ferroviaria_list', request=request, format=format),
-        'fundeadouros': reverse('bcim_v1:fundeadouro_list', request=request, format=format),
-        'pistas de ponto pouso': reverse('bcim_v1:pista_ponto_pouso_list', request=request, format=format),
-        'pontes': reverse('bcim_v1:ponte_list', request=request, format=format),
-        'sinalizacoes': reverse('bcim_v1:sinalizacao_list', request=request, format=format),
-        'travessias': reverse('bcim_v1:travessia_list', request=request, format=format),
-        'trechos dutos': reverse('bcim_v1:trecho_duto_list', request=request, format=format),
-        'trechos ferroviarios': reverse('bcim_v1:trecho_ferroviario_list', request=request, format=format),
-        'trechos hidroviarios': reverse('bcim_v1:trecho_hidroviario_list', request=request, format=format),
-        #'trechos rodoviarios': reverse('bcim_v1:trecho_rodoviario_list', request=request, format=format),
-        'trechos rodoviarios': reverse('bcim_v1:trecho_rodoviario_list', request=request, format=format),
-        'tuneis': reverse('bcim_v1:tunel_list', request=request, format=format),
-        'brejos e pantanos': reverse('bcim_v1:brejo_pantano_list', request=request, format=format),
-        'mangues': reverse('bcim_v1:mangue_list', request=request, format=format),
-        'vegetacoes de restinga': reverse('bcim_v1:veg_restinga_list', request=request, format=format),
-        'edificacoes publica militar': reverse('bcim_v1:edif_pub_militar_list', request=request, format=format),
-        'postos fiscais': reverse('bcim_v1:posto_fiscal_list', request=request, format=format),
-        'edificacoes agropecuarias de extracao vegetal e pesca': reverse('bcim_v1:edif_agropec_ext_vegetal_pesca_list', request=request, format=format),
-        'edificacoes industrial': reverse('bcim_v1:edif_industrial_list', request=request, format=format),
-        'extracoes minerais': reverse('bcim_v1:ext_mineral_list', request=request, format=format),
-        'edificacoes religiosa': reverse('bcim_v1:edif_religiosa_list', request=request, format=format),
-        'estacoes geradoras de energia eletrica': reverse('bcim_v1:est_gerad_energia_eletrica_list', request=request, format=format),
-        'hidreletricas': reverse('bcim_v1:hidreletrica_list', request=request, format=format),
-        'termeletricas': reverse('bcim_v1:termeletrica_list', request=request, format=format),
-        'torres de energia': reverse('bcim_v1:torre_energia_list', request=request, format=format),
-        'bancos de areia': reverse('bcim_v1:banco_areia_list', request=request, format=format),
-        'barragens': reverse('bcim_v1:barragem_list', request=request, format=format),
-        'corredeiras': reverse('bcim_v1:corredeira_list', request=request, format=format),
-        'fozes maritima': reverse('bcim_v1:foz_maritima_list', request=request, format=format),
-        'ilhas': reverse('bcim_v1:ilha_list', request=request, format=format),
-        'massas dagua': reverse('bcim_v1:massa_dagua_list', request=request, format=format),
-        'quedas dagua': reverse('bcim_v1:queda_dagua_list', request=request, format=format),
-        'recifes': reverse('bcim_v1:recife_list', request=request, format=format),
-        'rochas em agua': reverse('bcim_v1:rocha_em_agua_list', request=request, format=format),
-        'sumidouros vertedouros': reverse('bcim_v1:sumidouro_vertedouro_list', request=request, format=format),
-        'terrenos sujeito a inundacao': reverse('bcim_v1:terreno_sujeito_inundacao_list', request=request, format=format),
-        'trechos de drenagem': reverse('bcim_v1:trecho_drenagem_list', request=request, format=format),
-        'trechos de massa dagua': reverse('bcim_v1:trecho_massa_dagua_list', request=request, format=format),
-        'areas de desenvolvimento de controle': reverse('bcim_v1:area_desenvolvimento_controle_list', request=request, format=format),
-        'marcos de limite': reverse('bcim_v1:marco_de_limite_list', request=request, format=format),
-        #'pontos geodesicos': reverse('bcim_v1:ponto_exibicao_wgs84_list', request=request, format=format),
-    }
+class APIRoot(FeatureAPIRoot):
+    
+    def get_root_response(self, request, format=None):
+        root_links = {
+            'unidades federativas': reverse('bcim_v1:uf_list', request=request, format=format),
+            'municipios': reverse('bcim_v1:municipio_list', request=request, format=format),
+            #'outras unidades protegidas': reverse('bcim_v1:outras_unid_protegidas_list', request=request, format=format),
+            'outros limites oficiais': reverse('bcim_v1:outros_limites_oficiais_list', request=request, format=format),
+            'paises': reverse('bcim_v1:pais_list', request=request, format=format),
+            'terras indigenas': reverse('bcim_v1:terra_indigena_list', request=request, format=format),
+            'unidades de conservacao nao snuc': reverse('bcim_v1:unidade_conservacao_nao_snuc_list', request=request, format=format),
+            'unidades de protecao integral': reverse('bcim_v1:unidade_protecao_integral_list', request=request, format=format),
+            'unidades de uso sustentavel': reverse('bcim_v1:unidade_uso_sustentavel_list', request=request, format=format),
+            'aglomerados rurais de extensao urbana': reverse('bcim_v1:aglomerado_rural_de_extensao_urbana_list', request=request, format=format),
+            'aglomerados rurais isolado': reverse('bcim_v1:aglomerado_rural_isolado_list', request=request, format=format),
+            'aldeias indigenas': reverse('bcim_v1:aldeia_indigena_list', request=request, format=format),
+            'areas edificadas': reverse('bcim_v1:area_edificada_list', request=request, format=format),
+            'capitais': reverse('bcim_v1:capital_list', request=request, format=format),
+            'cidades': reverse('bcim_v1:cidade_list', request=request, format=format),
+            'vilas': reverse('bcim_v1:vila_list', request=request, format=format),
+            'curvas batimetricas': reverse('bcim_v1:curva_batimetrica_list', request=request, format=format),
+            #'curvas de nivel': reverse('bcim_v1:curva_nivel_list', request=request, format=format),
+            'curvas de nivel': reverse('bcim_v1:curva_nivel_list', request=request, format=format),
+            'dunas': reverse('bcim_v1:duna_list', request=request, format=format),
+            'elementos fisiografico natural': reverse('bcim_v1:elemento_fisiografico_natural_list', request=request, format=format),
+            'picos': reverse('bcim_v1:pico_list', request=request, format=format),
+            'pontos cotados altimetricos': reverse('bcim_v1:ponto_cotado_altimetrico_list', request=request, format=format),
+            'pontos cotados batimetricos': reverse('bcim_v1:ponto_cotado_batimetrico_list', request=request, format=format),
+            'eclusas': reverse('bcim_v1:eclusa_list', request=request, format=format),
+            'edificacoes de construcao portuaria': reverse('bcim_v1:edif_const_portuaria_list', request=request, format=format),
+            'edificacoes de construcao aeroportuaria': reverse('bcim_v1:edif_const_aeroportuaria_list', request=request, format=format),
+            'edificacoes de metro ferroviaria': reverse('bcim_v1:edif_metro_ferroviaria_list', request=request, format=format),
+            'fundeadouros': reverse('bcim_v1:fundeadouro_list', request=request, format=format),
+            'pistas de ponto pouso': reverse('bcim_v1:pista_ponto_pouso_list', request=request, format=format),
+            'pontes': reverse('bcim_v1:ponte_list', request=request, format=format),
+            'sinalizacoes': reverse('bcim_v1:sinalizacao_list', request=request, format=format),
+            'travessias': reverse('bcim_v1:travessia_list', request=request, format=format),
+            'trechos dutos': reverse('bcim_v1:trecho_duto_list', request=request, format=format),
+            'trechos ferroviarios': reverse('bcim_v1:trecho_ferroviario_list', request=request, format=format),
+            'trechos hidroviarios': reverse('bcim_v1:trecho_hidroviario_list', request=request, format=format),
+            #'trechos rodoviarios': reverse('bcim_v1:trecho_rodoviario_list', request=request, format=format),
+            'trechos rodoviarios': reverse('bcim_v1:trecho_rodoviario_list', request=request, format=format),
+            'tuneis': reverse('bcim_v1:tunel_list', request=request, format=format),
+            'brejos e pantanos': reverse('bcim_v1:brejo_pantano_list', request=request, format=format),
+            'mangues': reverse('bcim_v1:mangue_list', request=request, format=format),
+            'vegetacoes de restinga': reverse('bcim_v1:veg_restinga_list', request=request, format=format),
+            'edificacoes publica militar': reverse('bcim_v1:edif_pub_militar_list', request=request, format=format),
+            'postos fiscais': reverse('bcim_v1:posto_fiscal_list', request=request, format=format),
+            'edificacoes agropecuarias de extracao vegetal e pesca': reverse('bcim_v1:edif_agropec_ext_vegetal_pesca_list', request=request, format=format),
+            'edificacoes industrial': reverse('bcim_v1:edif_industrial_list', request=request, format=format),
+            'extracoes minerais': reverse('bcim_v1:ext_mineral_list', request=request, format=format),
+            'edificacoes religiosa': reverse('bcim_v1:edif_religiosa_list', request=request, format=format),
+            'estacoes geradoras de energia eletrica': reverse('bcim_v1:est_gerad_energia_eletrica_list', request=request, format=format),
+            'hidreletricas': reverse('bcim_v1:hidreletrica_list', request=request, format=format),
+            'termeletricas': reverse('bcim_v1:termeletrica_list', request=request, format=format),
+            'torres de energia': reverse('bcim_v1:torre_energia_list', request=request, format=format),
+            'bancos de areia': reverse('bcim_v1:banco_areia_list', request=request, format=format),
+            'barragens': reverse('bcim_v1:barragem_list', request=request, format=format),
+            'corredeiras': reverse('bcim_v1:corredeira_list', request=request, format=format),
+            'fozes maritima': reverse('bcim_v1:foz_maritima_list', request=request, format=format),
+            'ilhas': reverse('bcim_v1:ilha_list', request=request, format=format),
+            'massas dagua': reverse('bcim_v1:massa_dagua_list', request=request, format=format),
+            'quedas dagua': reverse('bcim_v1:queda_dagua_list', request=request, format=format),
+            'recifes': reverse('bcim_v1:recife_list', request=request, format=format),
+            'rochas em agua': reverse('bcim_v1:rocha_em_agua_list', request=request, format=format),
+            'sumidouros vertedouros': reverse('bcim_v1:sumidouro_vertedouro_list', request=request, format=format),
+            'terrenos sujeito a inundacao': reverse('bcim_v1:terreno_sujeito_inundacao_list', request=request, format=format),
+            'trechos de drenagem': reverse('bcim_v1:trecho_drenagem_list', request=request, format=format),
+            'trechos de massa dagua': reverse('bcim_v1:trecho_massa_dagua_list', request=request, format=format),
+            'areas de desenvolvimento de controle': reverse('bcim_v1:area_desenvolvimento_controle_list', request=request, format=format),
+            'marcos de limite': reverse('bcim_v1:marco_de_limite_list', request=request, format=format),
+            #'pontos geodesicos': reverse('bcim_v1:ponto_exibicao_wgs84_list', request=request, format=format),
+        }
 
+        ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
+        return ordered_dict_of_link
 
-    ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
-    return ordered_dict_of_link
-
-class APIRoot(APIView):
-
+    '''
     def __init__(self):
         super(APIRoot, self).__init__()
         self.base_context = BaseContext('api-root')
@@ -147,7 +145,7 @@ class APIRoot(APIView):
         entry_pointURL = reverse('bcim_v1:api_root', request=request)
         response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
         return self.base_context.addContext(request, response)
-
+    '''
 
 class UnidadeFederacaoDetail(FeatureResource):
 
@@ -159,13 +157,10 @@ class UnidadeFederacaoDetail(FeatureResource):
         self.context_resource.resource= self
 
     def get(self, request, format=None, *args, **kwargs):
-        if format == 'jsonld':
-            return self.options(request, *args, **kwargs)
-
         if kwargs.get('sigla') is not None:
             kwargs['sigla'] = kwargs.get('sigla').upper()
             self.kwargs['sigla'] = kwargs.get('sigla').upper()
-        return super(UnidadeFederacaoDetail, self).get(request, format, *args, **self.kwargs)
+        return super(UnidadeFederacaoDetail, self).get(request, *args, **self.kwargs)
 
     def options(self, request, *args, **kwargs):
         if kwargs.get('sigla') is not None:

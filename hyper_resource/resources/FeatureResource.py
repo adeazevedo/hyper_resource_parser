@@ -1,19 +1,5 @@
-import re
-import json
-
-from datetime import datetime
-import requests
-
-from django.contrib.gis.geos import GEOSGeometry
-from django.contrib.gis.gdal import SpatialReference
-
-from rest_framework.response import Response
-
-from hyper_resource.models import buffer
-from hyper_resource.views import RequiredObject, ENABLE_COMPLEX_REQUESTS
-#from hyper_resource import views #depraced
+from hyper_resource.resources.AbstractResource import *
 from hyper_resource.resources.SpatialResource import SpatialResource
-from hyper_resource.views import CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_JSON, CONTENT_TYPE_GEOJSON
 
 
 class FeatureResource(SpatialResource):
@@ -24,11 +10,11 @@ class FeatureResource(SpatialResource):
         return 'Feature'
 
     def dict_by_accept_resource_type(self):
-        dict_ = {
+        dict = {
             CONTENT_TYPE_OCTET_STREAM: 'Geobuf'
         }
 
-        return dict_
+        return dict
 
     def hashed_value(self, object_):
         dt = datetime.now()
@@ -287,7 +273,7 @@ class FeatureResource(SpatialResource):
         if self.path_has_only_attributes(attributes_functions_str):
             return self.required_object_for_only_attributes(request, attributes_functions_str)
 
-        res = self.get_requiredObject_from_method_to_execute(request, attributes_functions_str)
+        res = self.get_required_object_from_method_to_execute(request, attributes_functions_str)
         if res is None:
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
@@ -410,8 +396,5 @@ class FeatureResource(SpatialResource):
         return operation_type_called.return_type if res_type_by_accept == self.default_resource_type() else res_type_by_accept
 
     def get(self, request, format=None, *args, **kwargs):
-        if format == 'jsonld':
-            return self.options(request, *args, **kwargs)
-
         self.change_request_if_image_png_into_IRI(request)
-        return super(FeatureResource,self).get(request, format, *args, **self.kwargs)
+        return super(FeatureResource,self).get(request, *args, **self.kwargs)

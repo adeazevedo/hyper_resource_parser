@@ -8,24 +8,22 @@ from hyper_resource.resources.TiffResource import TiffResource
 from hyper_resource.views import * # depraced
 from raster_base.contexts import *
 from raster_base.serializers import *
-from hyper_resource.contexts import BaseContext
+from hyper_resource.contexts import BaseContext, RasterAPIRoot
 
+class APIRoot(RasterAPIRoot):
 
-def get_root_response(request):
-    format = None
-    root_links = {
+    def get_root_response(self, request, format=None):
+        root_links = {
+          'imagem-exemplo1-list': reverse('raster_base:ImagemExemplo1_list' , request=request, format=format),
+          'imagem-exemplo2-list': reverse('raster_base:ImagemExemplo2_list' , request=request, format=format),
+          'imagem-exemplo-tile1-list': reverse('raster_base:ImagemExemploTile1_list' , request=request, format=format),
+          'imagem-exemplo4-tile2-list': reverse('raster_base:ImagemExemploTile2_list' , request=request, format=format),
+        }
 
-      'imagem-exemplo1-list': reverse('raster_base:ImagemExemplo1_list' , request=request, format=format),
-      'imagem-exemplo2-list': reverse('raster_base:ImagemExemplo2_list' , request=request, format=format),
-      'imagem-exemplo-tile1-list': reverse('raster_base:ImagemExemploTile1_list' , request=request, format=format),
-      'imagem-exemplo4-tile2-list': reverse('raster_base:ImagemExemploTile2_list' , request=request, format=format),
-    }
+        ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
+        return ordered_dict_of_link
 
-    ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
-    return ordered_dict_of_link
-
-class APIRoot(APIView):
-
+    '''
     def __init__(self):
         super(APIRoot, self).__init__()
         self.base_context = BaseContext('api-root')
@@ -42,6 +40,7 @@ class APIRoot(APIView):
         root_links = get_root_response(request)
         response = Response(root_links)
         return self.base_context.addContext(request, response)
+    '''
 
 class ImagemExemplo1List(TiffCollectionResource):
     queryset = ImagemExemplo1.objects.all()

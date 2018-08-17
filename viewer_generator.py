@@ -64,8 +64,9 @@ def imports_str_as_array(a_name):
     arr.append("from " + a_name + ".models import *\n")
     arr.append("from " + a_name + ".serializers import *\n")
     arr.append("from " + a_name + ".contexts import *\n\n")
+    arr.append("from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot, FeatureAPIRoot\n")
     arr.append("from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource\n")
-    arr.append("from hyper_resource.resources.AbstractResource import AbstractResource\n")
+    arr.append("from hyper_resource.resources.AbstractResource import *\n")
     arr.append("from hyper_resource.resources.CollectionResource import CollectionResource\n")
     arr.append("from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource\n")
     arr.append("from hyper_resource.resources.FeatureResource import FeatureResource\n")
@@ -86,15 +87,27 @@ def generate_file(package_name, default_name='views.py'):
     with open(default_name, 'w+') as sr:
         for import_str in imports_str_as_array(package_name):
             sr.write(import_str)
-        sr.write('def get_root_response(request):\n')
-        sr.write((' ' * 4) + 'format = None\n')
-        sr.write((' ' * 4) + 'root_links = {\n\n')
+
+        has_spatial_model = False
+        for tuple_name_and_class in arr_tuple_name_and_class:
+            if is_spatial(tuple_name_and_class[1]):
+                has_spatial_model = True
+                break
+
+        if has_spatial_model:
+            sr.write('class APIRoot(FeatureAPIRoot):\n\n')
+        else:
+            sr.write('class APIRoot(NonSpatialAPIRoot):\n\n')
+
+        sr.write((' ' * 4) + 'def get_root_response(self, request, format=None):\n')
+        sr.write((' ' * 8) + 'root_links = {\n\n')
         for tuple_name_and_class in arr_tuple_name_and_class:
             get_root_str = generate_get_root_response(package_name ,tuple_name_and_class[0])
-            sr.write((' ' * 6) + get_root_str)
-        sr.write((' ' * 4) + '}\n\n')
-        sr.write((' ' * 4) + 'ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))\n')
-        sr.write((' ' * 4) + 'return ordered_dict_of_link\n\n')
+            sr.write((' ' * 10) + get_root_str)
+        sr.write((' ' * 8) + '}\n\n')
+        sr.write((' ' * 8) + 'ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))\n')
+        sr.write((' ' * 8) + 'return ordered_dict_of_link\n\n')
+        '''
         sr.write('class APIRoot(APIView):\n\n')
         sr.write((' ' * 4) + 'def __init__(self):\n')
         sr.write((' ' * 8) +'super(APIRoot, self).__init__()\n')
@@ -111,6 +124,7 @@ def generate_file(package_name, default_name='views.py'):
         sr.write((' ' * 8) +'root_links = get_root_response(request)\n')
         sr.write((' ' * 8) +'response = Response(root_links)\n')
         sr.write((' ' * 8) +'return self.base_context.addContext(request, response)\n\n')
+        '''
         for tuple_name_and_class in arr_tuple_name_and_class:
 
             for str in generate_snippets_to_view(tuple_name_and_class[0], is_spatial(tuple_name_and_class[1])):

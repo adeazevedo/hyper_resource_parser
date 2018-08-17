@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.contexts import BaseContext
+from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot
 from controle.models import *
 from controle.serializers import *
 from controle.contexts import *
@@ -13,20 +13,21 @@ from controle.contexts import *
 from hyper_resource.resources.CollectionResource import CollectionResource
 from hyper_resource.resources.NonSpatialResource import NonSpatialResource
 
-def get_root_response(request):
-    format = None
-    root_links = {
 
-      'gasto-list': reverse('controle_v1:Gasto_list' , request=request, format=format),
-      'tipo-gasto-list': reverse('controle_v1:TipoGasto_list' , request=request, format=format),
-      'usuario-list': reverse('controle_v1:Usuario_list' , request=request, format=format),
-    }
 
-    ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
-    return ordered_dict_of_link
+class APIRoot(NonSpatialAPIRoot):
 
-class APIRoot(APIView):
+    def get_root_response(self, request, format=None):
+        root_links = {
+          'gasto-list': reverse('controle_v1:Gasto_list' , request=request, format=format),
+          'tipo-gasto-list': reverse('controle_v1:TipoGasto_list' , request=request, format=format),
+          'usuario-list': reverse('controle_v1:Usuario_list' , request=request, format=format),
+        }
 
+        ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
+        return ordered_dict_of_link
+
+    '''
     def __init__(self):
         super(APIRoot, self).__init__()
         self.base_context = BaseContext('api-root')
@@ -53,6 +54,7 @@ class APIRoot(APIView):
         entry_pointURL = reverse('controle_v1:api_root', request=request)
         response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
         return self.base_context.addContext(request, response)
+    '''
 
 
 class GastoList(CollectionResource):

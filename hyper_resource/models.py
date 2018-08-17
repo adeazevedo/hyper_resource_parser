@@ -847,7 +847,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
         dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
         #dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
-        dict[self.spatialize_operation_name] = Type_Called(self.spatialize_operation_name, [tuple, object], GEOSGeometry)
+        #dict[self.spatialize_operation_name] = Type_Called(self.spatialize_operation_name, [tuple, object], GEOSGeometry)
         return dict
 
     def dict_all_operation_dict(self):

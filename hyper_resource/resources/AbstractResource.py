@@ -1,30 +1,120 @@
-
-import re
-import jwt
 import geobuf
+
+from hyper_resource.views import *
+from image_generator.img_generator import BuilderPNG
+
+import ast
+import re
+import json
 import random
+import jwt
+import requests
 
-from django.db import connection
-from django.shortcuts import get_object_or_404
-from django.contrib.gis.gdal import GDALRaster
-from django.contrib.gis.db.models import Extent, Union, MakeLine
-from django.http import HttpResponse, StreamingHttpResponse, FileResponse
-
+from django.contrib.gis.db.models.functions import AsGeoJSON
+from django.contrib.gis.gdal import SpatialReference
+from django.db.models.base import ModelBase
+from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404
+# Create your views here.
+from django.utils.http import quote_etag
+from requests import ConnectionError
+from requests import HTTPError
 from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.contrib.gis.geos import GEOSGeometry, GeometryCollection
+from hyper_resource.contexts import *
 from rest_framework.negotiation import BaseContentNegotiation
-
-from abc import ABCMeta
+from django.contrib.gis.db import models
+from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from django.core.cache import cache
-
-#from hyper_resource import views
-from hyper_resource.contexts import *
-from hyper_resource.views import *
-from hyper_resource.models import  FactoryComplexQuery, SpatialCollectionOperationController, BaseOperationController, BusinessModel, ConverterType, SpatializeOperation
-
+import hashlib
+from hyper_resource.models import  FactoryComplexQuery, BusinessModel, ConverterType
 from image_generator.img_generator import BuilderPNG
+
+SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
+
+HTTP_IF_NONE_MATCH = 'HTTP_IF_NONE_MATCH'
+HTTP_IF_MATCH = 'HTTP_IF_MATCH'
+HTTP_IF_UNMODIFIED_SINCE = 'HTTP_IF_UNMODIFIED_SINCE'
+HTTP_IF_MODIFIED_SINCE = 'HTTP_IF_MODIFIED_SINCE'
+HTTP_ACCEPT = 'HTTP_ACCEPT'
+CONTENT_TYPE = 'CONTENT_TYPE'
+ETAG = 'Etag'
+CONTENT_TYPE_GEOJSON = "application/vnd.geo+json"
+CONTENT_TYPE_JSON = "application/json"
+CONTENT_TYPE_LD_JSON = "application/ld+json"
+CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
+CONTENT_TYPE_IMAGE_PNG = "image/png"
+CONTENT_TYPE_IMAGE_TIFF = "image/tiff"
+SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG, CONTENT_TYPE_IMAGE_TIFF)
+ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD', 'PUT', 'DELETE', 'POST']
+
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'content-location',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'link',
+)
+
+CORS_EXPOSE_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'content-location',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-access-token',
+    'access-control-allow-origin',
+    'link',
+]
+
+ENABLE_COMPLEX_REQUESTS = True
+
+if ENABLE_COMPLEX_REQUESTS:
+    print ('***************************************************************************************************************************')
+    print("** WARNING: Complex requests is enabled                                                                                  **")
+    print("** Certify that your API isn't using the follow caracter(s) for especific purposes:                                      **")
+    print("** '!' (exclamation point)                                                                                               **")
+    print ('***************************************************************************************************************************')
+
+class IgnoreClientContentNegotiation(BaseContentNegotiation):
+    def select_parser(self, request, parsers):
+        """
+        Select the first parser in the `.parser_classes` list.
+        """
+        return parsers[0]
+
+    def select_renderer(self, request, renderers, format_suffix):
+        """
+        Select the first renderer in the `.renderer_classes` list.
+        """
+        return (renderers[0], renderers[0].media_type)
+
+
+class RequiredObject(object):
+    """
+    Responds an object with four attributes:
+    representation of what was required, content_type, object, dict=>dic[status] = status_code
+    """
+    def __init__(self, representation_object, content_type, origin_object, status_code, etag=None):
+        self.representation_object = representation_object # the resource serialized data
+        self.content_type = content_type
+        self.origin_object = origin_object # the resource without serialization
+        self.status_code = status_code
+        self.etag = etag
 
 
 class AbstractResource(APIView):
@@ -153,7 +243,7 @@ class AbstractResource(APIView):
         response['access-control-expose-headers'] = self.access_control_expose_headers_str()
 
     def add_base_headers(self, request, response):
-        iri_base = request.build_absolute_uri()
+        iri_base = self.remove_last_slash(request.build_absolute_uri())
 
         if self.contextclassname not in iri_base:
             return
@@ -164,7 +254,7 @@ class AbstractResource(APIView):
 
         self.add_url_in_header(iri_father, response, 'up')
 
-        self.add_url_in_header(iri_base[:-1] + '.jsonld', response,
+        self.add_url_in_header(iri_base + '.jsonld', response,
                                rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
         self.add_cors_header_in_header(response)
 
@@ -227,16 +317,18 @@ class AbstractResource(APIView):
         self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
         supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
 
-        context = self.context_resource.dict_context
+        context = self.context_resource.get_dict_context()
         context['hydra:supportedOperations'] = supported_operation_dict
         return context
 
     def get_context_for_operation(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         self.context_resource.set_context_to_operation(self.object_model, operation_name)
-        context = self.context_resource.dict_context
+        context = self.context_resource.get_dict_context()
         resource_type = self.define_resource_type_by_operation(request, operation_name)
         self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+        context["@type"] = self.context_resource.get_dict_context()["@type"]
+        context["@id"] = self.context_resource.get_dict_context()["@id"]
         context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
 
         return context
@@ -294,7 +386,7 @@ class AbstractResource(APIView):
 
     def _base_path(self, full_path):
         arr = full_path.split('/')
-        ind = arr.index(self.contextclassname)
+        ind = arr.index(self.contextclassname) if self.contextclassname in arr else arr.index(self.contextclassname + '.jsonld')
 
         return '/'.join(arr[:ind + 1])
 
@@ -330,6 +422,11 @@ class AbstractResource(APIView):
                 a_dict[key] = value
 
         return a_dict
+
+    def remove_suffix_from_kwargs(self, **kwargs):
+        attrs_funcs_str = kwargs[self.attributes_functions_name_template()]
+        kwargs[self.attributes_functions_name_template()] = attrs_funcs_str[:attrs_funcs_str.index('.jsonld')]
+        return kwargs
 
     def attributes_functions_name_template(self):
         return 'attributes_functions'
@@ -373,11 +470,11 @@ class AbstractResource(APIView):
         return a_content_type
 
     def dict_by_accept_resource_type(self):
-        dict_ = {
+        dicti = {
             CONTENT_TYPE_OCTET_STREAM: bytes
         }
 
-        return dict_
+        return dicti
 
     def resource_type_for_accept_header(self, accept):
         return self.dict_by_accept_resource_type()[accept] if accept in self.dict_by_accept_resource_type() else None
@@ -399,28 +496,16 @@ class AbstractResource(APIView):
 
     # Answer if a client's etag is equal server's etag
     def conditional_etag_match(self, request):
-        """
-        Return True if Request If-None-Match header value matches with the Etag cached value.
-        If the generated request key is not in the cache key set or if Request If-None-Match header
-        value not matches with the Etag cache value, return False
-        :param request:
-        :return:
-        """
-        # mounts a key based on Request Accept header or default Content-Type
         key = self.get_key_cache(request)
 
         # the cache stores a tuple of Etag and the serialized data
         tuple_etag_serialized_data = cache.get(key)
 
-        # if tuple_etag_serialized_data is None, this means that the key not correspond none of the cache keys
-        # hence the resource isn't in cache
         if tuple_etag_serialized_data is None:
             return False
 
-        # compare the Request If-None-Match header value with the Etag value of the cache
         return tuple_etag_serialized_data[0] == request.META.get(HTTP_IF_NONE_MATCH, '')
 
-    # Answer if a get(request) is conditional
     def is_conditional_get(self, request):
         return request.META.get(HTTP_IF_NONE_MATCH) is not None or \
                request.META.get(HTTP_IF_UNMODIFIED_SINCE) is not None
@@ -504,29 +589,16 @@ class AbstractResource(APIView):
 
     # Should be overridden
     def response_base_object_in_cache(self, request):
-        """
-        Returns a cached Response (if this is in cache)
-        defining wich Content-Type the response has
-        :param request:
-        :return:
-        """
-        # AbstractResource.resource_in_cache_or_None return de cached data
-        # if the mounted key based on Accept Request header matches one of the cached keys
         tuple_etag_serialized_data = self.resource_in_cache(request)
 
         if tuple_etag_serialized_data is not None:
             if request.META[HTTP_ACCEPT] in [CONTENT_TYPE_IMAGE_PNG, CONTENT_TYPE_OCTET_STREAM]:
-                # if Accept Request header value is application/octet-stream or image/png
-                # the Response Content-Type will be the same value
                 resp = HttpResponse(tuple_etag_serialized_data[1], content_type=request.META[HTTP_ACCEPT])
 
             else:
-                # if Accept Request header value isn't application/octet-stream nor image/png
-                # the Content-Type will be the Accept value or the default Content-Type
                 resp = Response(data=tuple_etag_serialized_data[1], status=200,
                                 content_type=self.content_type_or_default_content_type(request))
 
-            # set etag in Response header
             self.set_etag_in_header(resp, tuple_etag_serialized_data[0])
 
             return resp
@@ -585,6 +657,14 @@ class AbstractResource(APIView):
 
     # Could be overridden
     def get(self, request, format=None, *args, **kwargs):
+        if format == 'jsonld':
+            return self.options(request, *args, **kwargs)
+
+        if request.build_absolute_uri().endswith('.jsonld'):
+            kwargs = self.remove_suffix_from_kwargs(**kwargs)
+            self.kwargs = kwargs
+            return self.options(request, *args, **kwargs)
+
         if 'HTTP_ETAG' in request.META:
             etag = request.META['HTTP_ETAG']
 
@@ -849,6 +929,10 @@ class AbstractResource(APIView):
         collection_operations_array = list(self.operation_controller.dict_all_operation_dict().keys())
         return collection_operations_array
 
+    # must be overrided
+    def get_operation_type_called(self, attributes_functions_str):
+        pass
+
     def get_operation_name_from_path(self, attributes_functions_str):
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).lower().split('/')
 
@@ -863,7 +947,7 @@ class AbstractResource(APIView):
         return first_part_name
 
     # Responds a RequiredObject via execute operation that's depends on path(attributes_functions_str) of the IRI
-    def get_requiredObject_from_method_to_execute(self, request, attributes_functions_str):
+    def get_required_object_from_method_to_execute(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         method_to_execute = self.get_operation_to_execute(operation_name)
 
@@ -871,6 +955,24 @@ class AbstractResource(APIView):
             return None
 
         return method_to_execute(*[request, attributes_functions_str])
+
+    def get_required_context_from_method_to_execute(self, request, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        method_to_execute = self.get_context_from_operation(operation_name)
+        if method_to_execute is None:
+            return None
+        return method_to_execute(*[request, attributes_functions_str])
+
+
+    def get_context_for_resource_type(self, resource_type, attributes_functions_str):
+        res_type_context = {}
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        res_type_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        res_type_context['@id'] = self.context_resource.get_resource_type_context(resource_type)['@id']
+        res_type_context['@type'] = self.context_resource.get_resource_type_context(resource_type)['@type']
+        self.context_resource.set_context_to_operation(self.object_model, operation_name)
+        res_type_context['@context'] = self.context_resource.get_dict_context()['@context']
+        return res_type_context
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
         dic = self.operations_with_parameters_type()
@@ -1152,6 +1254,19 @@ class AbstractResource(APIView):
 
         return d[operation_name]
 
+    def get_context_from_operation(self, operation_name):
+        d = self.operation_name_context_dic()
+
+        if operation_name is None:
+            return None
+
+        return d[operation_name]
+
     # Must be overrided
     def operation_name_method_dic(self):
         return {self.operation_controller.spatialize_operation_name: self.required_object_for_spatialize_operation}
+
+    def operation_name_context_dic(self):
+        return {}
+
+

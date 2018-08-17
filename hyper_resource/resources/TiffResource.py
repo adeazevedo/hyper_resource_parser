@@ -1,16 +1,6 @@
-
-import json
-
-from django.http import HttpResponse
-from django.contrib.gis.geos import GEOSGeometry
-from django.contrib.gis.gdal import SpatialReference
-
-from rest_framework.response import Response
-
-from hyper_resource.models import buffer
-from hyper_resource.views import RequiredObject
+from hyper_resource.resources.AbstractResource import *
+from hyper_resource.resources.BaseModel import BaseModel
 from hyper_resource.resources.RasterResource import RasterResource
-from hyper_resource.views import BaseModel, CONTENT_TYPE_IMAGE_TIFF, CONTENT_TYPE_JSON, CONTENT_TYPE_GEOJSON
 
 
 class TiffResource(RasterResource):
@@ -89,6 +79,7 @@ class TiffResource(RasterResource):
 
         return Response(data=required_object.representation_object,status=200, content_type=required_object.content_type)
 
+    '''
     def get_old(self, request, *args, **kwargs):
         self.object_model = self.get_object_model_raster(kwargs)
         self.current_object_state = self.object_model
@@ -98,3 +89,4 @@ class TiffResource(RasterResource):
         response['Content-Disposition'] = 'attachment; filename=' + self.default_file_name()
 
         return response
+    '''

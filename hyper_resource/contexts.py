@@ -12,15 +12,18 @@ from django.contrib.gis.gdal import SpatialReference
 from django.contrib.gis.geos import GEOSGeometry, Point, Polygon, MultiPolygon,LineString, MultiLineString, MultiPoint, GeometryCollection
 from datetime import date, datetime
 from time import *
+from copy import deepcopy
 
 from django.contrib.gis.geos.prepared import PreparedGeometry
 from django.db.models import *
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.reverse import reverse
 
 from hyper_resource.models import *
 from hyper_resource.views import *
-from hyper_resource.resources.AbstractResource import AbstractResource
+from hyper_resource.resources.AbstractResource import *
 
 
 class Reflection:
@@ -212,6 +215,7 @@ def OperationVocabularyDict():
     dic[IntegerField] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
 
     dic[str] = ["http://172.30.10.86/api/operations-list/string-operation-interface-list"]
+    dic['str'] = ["http://172.30.10.86/api/operations-list/string-operation-interface-list"]
     dic[CharField] = ["http://172.30.10.86/api/operations-list/string-operation-interface-list"]
 
     dic[date] = ["http://172.30.10.86/api/operations-list/date-operation-interface-list"]
@@ -336,18 +340,23 @@ class ContextResource:
         self.dict_context = None
         self.resource = None
 
+    def get_dict_context(self):
+        return deepcopy(self.dict_context)
+
     #def attribute_name_list(self):
     #    return ( field.attname for field in self.model_class._meta.fields[:])
 
     #def attribute_type_list(self):
     #    return ( type(field) for field in self.model_class._meta.fields[:])
 
+    '''
     def get_context_for_object(an_object):
 
         if isinstance(AbstractResource, an_object):
             return an_object.context()
         if  isinstance(GEOSGeometry, an_object):
             return None
+    '''
 
     def host_with_path(self):
         return self.host + self.basic_path + "/" + self.complement_path
@@ -355,7 +364,7 @@ class ContextResource:
     def operation_names(self):
         return [method for method in dir(self) if callable(getattr(self, method)) and self.is_not_private(method)]
 
-    def attribute_contextualized_dict_for(self, field):
+    def attribute_contextualized_dict_for_field(self, field):
         voc = vocabulary(field.name)
         oper_voc_list = operation_vocabulary(field.name)
 
@@ -378,11 +387,21 @@ class ContextResource:
             'hydra:supportedOperations': oper_res_voc_dict_list
         }
 
+    def attribute_contextualized_dict_for_type(self, a_type):
+        res_voc = vocabulary(a_type)
+        oper_voc_type_list = operation_vocabulary(a_type)
+        oper_res_voc_dict_list = [{"hydra:Link": oper_res_voc} for oper_res_voc in oper_voc_type_list]
+        return {
+            '@id': res_voc,
+            '@type':  ("@id" if a_type == ForeignKey else res_voc) ,
+            'hydra:supportedOperations': oper_res_voc_dict_list
+        }
+
     def attributes_contextualized_dict(self):
         dic_field = {}
         fields = self.resource.fields_to_web()
         for field_model in fields:
-            dic_field[field_model.name] = self.attribute_contextualized_dict_for(field_model)
+            dic_field[field_model.name] = self.attribute_contextualized_dict_for_field(field_model)
         return dic_field
 
     def selectedAttributeContextualized_dict(self, attribute_name_array):
@@ -529,7 +548,7 @@ class ContextResource:
         self.dict_context["@context"] = dict
         #isGeometry = isinstance(object, GEOSGeometry)
         #if isGeometry:
-        self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
+        #self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
 
     def set_context_to_object(self, object, attribute_name):
         self.dict_context = {}
@@ -550,13 +569,13 @@ class ContextResource:
         self.dict_context.update(self.get_resource_type_context(resource_type))
         #self.dict_contex["hydra:resourceRepresentation"]
 
-        return self.dict_context
+        return deepcopy(self.dict_context)
 
     def context(self, resource_type=None):
         if self.dict_context is None:
             resource_type = resource_type if resource_type is not None else self.resource.default_resource_type()
             self.initalize_context(resource_type)
-        return self.dict_context
+        return deepcopy(self.dict_context)
 
     def set_context_(self, dictionary):
         self.dict_context = dictionary
@@ -575,7 +594,7 @@ class AbstractCollectionResourceContext(ContextResource):
 
 class RasterEntryPointResourceContext(ContextResource):
 
-    def attribute_contextualized_dict_for(self, iri):
+    def attribute_contextualized_dict_for_field(self, iri):
        return {
             '@id': 'http://schema.org/ImageObject',
             '@type':  "@id"
@@ -585,7 +604,7 @@ class RasterEntryPointResourceContext(ContextResource):
         dic_field = {}
         fields = self.resource.fields_to_web()
         for field_model in fields:
-            dic_field[field_model] = self.attribute_contextualized_dict_for(field_model)
+            dic_field[field_model] = self.attribute_contextualized_dict_for_field(field_model)
         return dic_field
 
     def supportedProperties(self):
@@ -698,3 +717,79 @@ class BaseContext(object):
         #contextdata = self.addIriTamplate(contextdata, request, self.serializer_object)
         contextdata["@id"] = "https://www.hydra-cg.com/spec/latest/core/#hydra:entrypoint"
         return contextdata
+
+class AbstractAPIRoot(APIView):
+    def __init__(self):
+        super(AbstractAPIRoot, self).__init__()
+        self.base_context = BaseContext('api-root')
+
+    def add_url_in_header(self, url, response, rel):
+        link = ' <'+url+'>; rel=\"'+rel+'\" '
+        if "Link" not in response:
+            response['Link'] = link
+        else:
+            response['Link'] += "," + link
+        return response
+
+    def add_cors_headers_in_header(self, response):
+        response["access-control-allow-origin"] = "*"
+        access_control_allow_headers_str = ''
+        for value in CORS_ALLOW_HEADERS:
+            access_control_allow_headers_str += ', ' + value
+
+        access_control_expose_headers_str = ''
+        for value in CORS_EXPOSE_HEADERS:
+            access_control_expose_headers_str += ', ' + value
+
+        access_control_allow_methods_str = ''
+        for value in ACCESS_CONTROL_ALLOW_METHODS:
+            access_control_allow_methods_str += ', ' + value
+        response['access-control-allow-headers'] = access_control_allow_headers_str
+        response['access-control-expose-headers'] = access_control_expose_headers_str
+        response['access-control-allow-methods'] = access_control_allow_methods_str
+
+    def create_context_as_dict(self, dict_of_name_link):
+        a_context = {}
+        dicti = {"@context": a_context}
+        for key in dict_of_name_link.keys():
+            a_context[key] = {"@id": "https://schema.org/Thing", "@type": "@id" }
+
+        return dicti
+
+    def get_root_response(self, request):
+        pass
+
+    def options(self, request, *args, **kwargs):
+        context = self.base_context.getContextData(request)
+        root_links = self.get_root_response(request)
+        #self.base_context.addRootLinks(context, root_links)
+        context.update( self.create_context_as_dict(root_links) )
+        response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")
+        entry_pointURL = request.build_absolute_uri() #reverse('bcim_v1:api_root', request=request)
+        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
+        response = self.base_context.addContext(request, response)
+        return response
+
+    def get(self, request, format=None, *args, **kwargs):
+        root_links = self.get_root_response(request)
+        response = Response(root_links)
+        self.add_cors_headers_in_header(response)
+        entry_pointURL = request.build_absolute_uri() #reverse('bcim_v1:api_root', request=request)
+        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
+        return self.base_context.addContext(request, response)
+
+class FeatureAPIRoot(AbstractAPIRoot):
+
+    def create_context_as_dict(self, dict_of_name_link):
+        a_context = {}
+        dicti = {"@context": a_context}
+        for key in dict_of_name_link.keys():
+            a_context[key] = {"@id": "http://geojson.org/geojson-ld/vocab.html#FeatureCollection", "@type": "@id" }
+
+        return dicti
+
+class NonSpatialAPIRoot(AbstractAPIRoot):
+    pass
+
+class RasterAPIRoot(AbstractAPIRoot):
+    pass

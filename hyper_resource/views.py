@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # Create your views here.
-from rest_framework.negotiation import BaseContentNegotiation
-from django.db import connection
-from django.contrib.gis.gdal import GDALRaster
-from hyper_resource.contexts import *
 
+'''
 SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
 
 HTTP_IF_NONE_MATCH = 'HTTP_IF_NONE_MATCH'
@@ -22,7 +19,7 @@ CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
 CONTENT_TYPE_IMAGE_PNG = "image/png"
 CONTENT_TYPE_IMAGE_TIFF = "image/tiff"
 SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG, CONTENT_TYPE_IMAGE_TIFF)
-ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD']
+ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD', 'PUT', 'DELETE', 'POST']
 
 CORS_ALLOW_HEADERS = (
     'accept',
@@ -56,8 +53,6 @@ CORS_EXPOSE_HEADERS = [
 
 ENABLE_COMPLEX_REQUESTS = True
 
-#GEOSGEOMETRY_SUBCLASSES = ['POINT', 'MULTIPOINT', 'LINESTRING', 'MULTILINESTRING', 'POLYGON', 'MULTIPOLYGON', 'GEOMETRYCOLLECTION']
-
 if ENABLE_COMPLEX_REQUESTS:
     print ('***************************************************************************************************************************')
     print("** WARNING: Complex requests is enabled                                                                                  **")
@@ -77,67 +72,8 @@ class IgnoreClientContentNegotiation(BaseContentNegotiation):
         Select the first renderer in the `.renderer_classes` list.
         """
         return (renderers[0], renderers[0].media_type)
+'''
 
-
-class BaseModel(object):
-
-    _instance = None
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = object.__new__(cls, *args, **kwargs)
-        return cls._instance
-
-    def create_model_object_raster(self, view_resource, row):
-        obj_model = view_resource.model_class()()
-        setattr(obj_model,view_resource.pk_name(), row[0])
-        rst = GDALRaster(row[1].tobytes())
-        setattr(obj_model,view_resource.spatial_field_name(), rst)
-        return obj_model
-
-    def get_model_object_raster(self, view_resource, kwargs):
-       pk_name = view_resource.pk_name()
-       sql_string = "SELECT " + pk_name +  ", ST_AsGDALRaster(" + view_resource.spatial_field_name() +  ", 'GTiff') FROM " + view_resource.table_name() +  " WHERE " + pk_name + "  = " + kwargs['pk']
-       with connection.cursor() as cursor:
-            cursor.execute(sql_string)
-            row = cursor.fetchone()
-            return self.create_model_object_raster(view_resource, row)
-
-    def get_model_objects_raster(self, view_resource, kwargs):
-       pk_name = view_resource.pk_name()
-       sql_string = "SELECT " + pk_name +  ", ST_AsGDALRaster(" + view_resource.spatial_field_name() +  ", 'GTiff') FROM " + view_resource.table_name()
-       with connection.cursor() as cursor:
-            cursor.execute(sql_string)
-            rows = cursor.fetchall()
-            model_raster_collection = []
-            for row in rows:
-                model_raster_collection.append(self.create_model_object_raster(view_resource, row))
-            return model_raster_collection
-
-    def get_iris_raster(self, view_resource, kwargs):
-        pk_name = view_resource.pk_name()
-        sql_string = "SELECT " + pk_name + " FROM " + view_resource.table_name()
-        iri= view_resource.request.build_absolute_uri()
-        with connection.cursor() as cursor:
-            cursor.execute(sql_string)
-            rows = cursor.fetchall()
-            iri_raster_dic = {}
-            name = view_resource.table_name()
-            for row in rows:
-                str_pk = str(row[0])
-                iri_raster_dic[name+ '-' + str_pk ] = (iri + str_pk + '/')
-            return iri_raster_dic
-
-class RequiredObject(object):
-    """
-    Responds an object with four attributes:
-    representation of what was required, content_type, object, dict=>dic[status] = status_code
-    """
-    def __init__(self, representation_object, content_type, origin_object, status_code, etag=None):
-        self.representation_object = representation_object # the resource serialized data
-        self.content_type = content_type
-        self.origin_object = origin_object # the resource without serialization
-        self.status_code = status_code
-        self.etag = etag
 '''
 class AbstractResource(APIView):
     """

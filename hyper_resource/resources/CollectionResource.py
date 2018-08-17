@@ -1,7 +1,3 @@
-
-from hyper_resource import views
-from hyper_resource.views import RequiredObject
-from hyper_resource.views import CONTENT_TYPE_JSON
 from hyper_resource.models import CollectionResourceOperationController
 from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource
 from copy import deepcopy
@@ -70,6 +66,7 @@ class CollectionResource(AbstractCollectionResource):
         resource_type = self.resource_type_or_default_resource_type(request)
         self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
 
+        context["@type"] = self.context_resource.get_dict_context()["@type"]
         supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
         context.update({'hydra:supportedOperations': supported_operations_list})
 

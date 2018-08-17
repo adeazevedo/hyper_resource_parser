@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.contexts import BaseContext
+from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot
 from user_management.models import *
 from user_management.serializers import *
 from user_management.contexts import *
@@ -13,21 +13,21 @@ from user_management.contexts import *
 from hyper_resource.resources.CollectionResource import CollectionResource
 from hyper_resource.resources.NonSpatialResource import NonSpatialResource
 
-def get_root_response(request):
-    format = None
-    root_links = {
+class APIRoot(NonSpatialAPIRoot):
 
-      'api-resource-list': reverse('user_management:APIResource_list' , request=request, format=format),
-      'hyper-user-list': reverse('user_management:HyperUser_list' , request=request, format=format),
-      'hyper-user-group-list': reverse('user_management:HyperUserGroup_list' , request=request, format=format),
-      'hyper-user-group-api-resource-list': reverse('user_management:HyperUserGroupAPIResource_list' , request=request, format=format),
-    }
+    def get_root_response(self, request, format=None):
+        root_links = {
 
-    ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
-    return ordered_dict_of_link
+          'api-resource-list': reverse('user_management:APIResource_list' , request=request, format=format),
+          'hyper-user-list': reverse('user_management:HyperUser_list' , request=request, format=format),
+          'hyper-user-group-list': reverse('user_management:HyperUserGroup_list' , request=request, format=format),
+          'hyper-user-group-api-resource-list': reverse('user_management:HyperUserGroupAPIResource_list' , request=request, format=format),
+        }
 
-class APIRoot(APIView):
+        ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
+        return ordered_dict_of_link
 
+    '''
     def __init__(self):
         super(APIRoot, self).__init__()
         self.base_context = BaseContext('api-root')
@@ -44,6 +44,7 @@ class APIRoot(APIView):
         root_links = get_root_response(request)
         response = Response(root_links)
         return self.base_context.addContext(request, response)
+    '''
 
 class APIResourceList(CollectionResource):
     queryset = APIResource.objects.all()
