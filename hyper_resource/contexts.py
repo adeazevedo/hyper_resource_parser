@@ -349,15 +349,6 @@ class ContextResource:
     #def attribute_type_list(self):
     #    return ( type(field) for field in self.model_class._meta.fields[:])
 
-    '''
-    def get_context_for_object(an_object):
-
-        if isinstance(AbstractResource, an_object):
-            return an_object.context()
-        if  isinstance(GEOSGeometry, an_object):
-            return None
-    '''
-
     def host_with_path(self):
         return self.host + self.basic_path + "/" + self.complement_path
 
@@ -389,7 +380,7 @@ class ContextResource:
 
     def attribute_contextualized_dict_for_type(self, a_type):
         res_voc = vocabulary(a_type)
-        oper_voc_type_list = operation_vocabulary(a_type)
+        oper_voc_type_list = [] if operation_vocabulary(a_type) is None else operation_vocabulary(a_type)
         oper_res_voc_dict_list = [{"hydra:Link": oper_res_voc} for oper_res_voc in oper_voc_type_list]
         return {
             '@id': res_voc,
@@ -496,16 +487,15 @@ class ContextResource:
         iri_templates.append(dict)
         return {"iri_templates": iri_templates}
 
-    def get_resource_type_context(self, resource_type=None):
-        if self.dict_context is not None and "@id" in self.dict_context and "@type" in self.dict_context:
-            resource_type_context = {"@id": self.dict_context["@id"], "@type": self.dict_context["@type"]}
-        else:
+    def get_resource_type_context(self, resource_type):
+        #if self.dict_context is not None and "@id" in self.dict_context and "@type" in self.dict_context:
+        #    resource_type_context = {"@id": self.dict_context["@id"], "@type": self.dict_context["@type"]}
+        #else:
             #resource_type = self.resource.default_resource_type()
-            resource_type_voc = vocabulary(resource_type)
-            res_voc = resource_type_voc if resource_type_voc is not None else "http://schema.org/Thing"
-            resource_type_str = resource_type.__name__ if inspect.isclass(resource_type) else str(resource_type)
-            resource_type_context = {'@id': res_voc, '@type': resource_type_str}
-        return resource_type_context
+        resource_type_voc = vocabulary(resource_type)
+        res_voc = resource_type_voc if resource_type_voc is not None else "http://schema.org/Thing"
+        resource_type_str = resource_type.__name__ if inspect.isclass(resource_type) else str(resource_type)
+        return {'@id': res_voc, '@type': resource_type_str}
 
     def set_context_to_resource_type(self, request, object, object_type=None):
         resource_type = self.resource.resource_type
@@ -557,6 +547,11 @@ class ContextResource:
             self.set_context_to_operation(object, attribute_name)
         else:
             self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
+
+    def get_context_to_operation(self, operation_name):
+        dict = {}
+        dict[operation_name] = { "@id": vocabulary(operation_name),"@type": "@id" }
+        return {"@context": dict}
 
     def initalize_context(self, resource_type):
         self.dict_context = {}

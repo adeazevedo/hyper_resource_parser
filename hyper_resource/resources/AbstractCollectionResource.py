@@ -10,17 +10,14 @@ class AbstractCollectionResource(AbstractResource):
     def default_resource_type(self):
         return 'Collection'
 
-    def define_resource_type_by_operation(self, request, operation_name):
-        #operation_type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
+    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
         return self.resource_type_or_default_resource_type(request)
-        '''
-        if res_type_by_accept != self.default_resource_type():
-            return res_type_by_accept
 
-        else:
-            res_type_by_accept = bytes if res_type_by_accept == 'Geobuf' else res_type_by_accept
-        return operation_type_called.return_type if res_type_by_accept == self.default_resource_type() else res_type_by_accept
-        '''
+    def define_resource_type_by_operation(self, request, operation_name):
+        return self.resource_type_or_default_resource_type(request)
+
+    def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
+        raise NotImplementedError("'define_resource_type_by_collect_operation' must be implemented in subclasses")
 
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
         arr_str = attributes_functions_str.split('/')[1:]
@@ -97,7 +94,7 @@ class AbstractCollectionResource(AbstractResource):
         if as_string:
             return attrs_funcs_arr[1]
 
-        return attrs_funcs_arr[1].split(',')
+        return sorted( attrs_funcs_arr[1].split(',') )
 
     def extract_collect_operation_snippet(self, attributes_functions_str):
         collect_oper_snippet = self.remove_last_slash(attributes_functions_str)
@@ -114,6 +111,10 @@ class AbstractCollectionResource(AbstractResource):
         collect_oper_snippet_arr = self.extract_collect_operation_snippet(attributes_functions_str).split("/")
         collect_attrs = collect_oper_snippet_arr[1]
         return collect_attrs.replace('&', ',') if as_string else collect_attrs.split('&')
+
+    def get_operation_in_collect_type_called(self, attributes_functions_str):
+        operation_in_collect_name = self.extract_collect_operation_snippet(attributes_functions_str).split("/")[2]
+        return BaseOperationController().dict_all_operation_dict()[operation_in_collect_name]
 
     def extract_offset_limit_operation_snippet(self, attributes_functions_str):
         offset_limit_oper_snippet = self.remove_last_slash(attributes_functions_str)
@@ -137,7 +138,7 @@ class AbstractCollectionResource(AbstractResource):
             return None
 
         if len(offset_limit_oper_snippet_arr) == 3:
-            return offset_limit_oper_snippet_arr[-1].split(',')
+            return sorted( offset_limit_oper_snippet_arr[-1].split(',') )
 
         return None
 
@@ -176,29 +177,6 @@ class AbstractCollectionResource(AbstractResource):
     def path_has_filter_operation(self, attributes_functions_str):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
         return len(att_funcs) > 1 and (att_funcs[0].lower() == self.operation_controller.filter_collection_operation_name)
-
-    """
-    def path_has_groupy_operation(self, attributes_functions_str):
-        att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        return len(att_funcs) == 2 and (att_funcs[0].lower() == self.operation_controller.group_by_collection_operation_name)
-
-    def path_has_groupbycount_operation(self, attributes_functions_str):
-        att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        return len(att_funcs) == 2 and (att_funcs[0].lower() == self.operation_controller.group_by_collection_operation_name)
-
-    def path_has_distinct_operation(self, attributes_functions_str):
-        att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        return len(att_funcs) == 2 and (att_funcs[0].lower() == self.operation_controller.distinct_collection_operation_name)
-
-    def path_has_countresource_operation(self, attributes_functions_str):
-        att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        return len(att_funcs) == 1 and (att_funcs[0].lower() == self.operation_controller.count_resource_collection_operation_name)
-
-    def path_has_offsetlimit_operation(self, attributes_functions_str):
-        att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
-        att_funcs = [ele for ele in att_funcs if ele != '']
-        return len(att_funcs) == 2 and (att_funcs[0].lower() == self.operation_controller.offset_limit_collection_operation_name)
-    """
 
     # Responds an array of operations name.
     # Should be overridden
@@ -411,6 +389,14 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_collect_operation(self, request, attributes_functions_str):
+        if self.path_has_projection(attributes_functions_str):
+            projection_attrs = self.extract_projection_attributes(attributes_functions_str)
+            collect_attrs = sorted( self.extract_collect_operation_attributes(attributes_functions_str) )
+
+            if projection_attrs != collect_attrs:
+                message = 'Projection attributes list must be the same as collect operation attributes list'
+                return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
+
         context = self.get_context_for_collect_operation(request, attributes_functions_str)
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
@@ -419,10 +405,12 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_offset_limit_operation(self, request, attributes_functions_str):
-        pass
+        context = self.get_context_for_offset_limit_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_distinct_operation(self, request, attributes_functions_str):
-        pass
+        context = self.get_context_for_distinct_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_group_by_operation(self, request, attributes_functions_str):
         context = self.get_context_for_group_by_operation(request, attributes_functions_str)
@@ -432,6 +420,15 @@ class AbstractCollectionResource(AbstractResource):
         context = self.get_context_for_group_by_count_operation(request, attributes_functions_str)
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
+    def required_context_for_offset_limit_and_collect_operation(self, request, attributes_functions_str):
+        offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_functions_str)
+        collect_attrs = sorted( self.extract_collect_operation_attributes(attributes_functions_str) )
+
+        if offset_limit_attrs is not None and offset_limit_attrs != collect_attrs:
+            message = 'offset_limit attributes list must be the same as collect operation attributes list'
+            return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+        return self.required_context_for_collect_operation(request, attributes_functions_str)
+
     def required_context_for_simple_path(self, request):
         resource_type = self.resource_type_or_default_resource_type(request)
         return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
@@ -439,12 +436,6 @@ class AbstractCollectionResource(AbstractResource):
     def required_context_for_only_attributes(self, request, attributes_functions_str):
         context = self.get_context_by_only_attributes(request, attributes_functions_str)
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
-
-    '''
-    def required_context_for_operation_return_type(self, request, attributes_functions_str):
-        context = self.get_context_for_operation(request, attributes_functions_str)
-        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
-    '''
 
     def generics_collection_operation_name(self):
        return self.operation_controller.feature_collection_operations_dict().keys()
@@ -581,20 +572,21 @@ class AbstractCollectionResource(AbstractResource):
 
     # ---------------------------------------- GET CONTEXT FROM OPERATION  ----------------------------------------
     def get_context_for_filter_operation(self, request, attributes_functions_str):
-        self.context_resource.dict_context = {}
         operation_name = self.operation_controller.filter_collection_operation_name
         resource_type = self.define_resource_type_by_operation(request, operation_name)
 
-        self.context_resource.dict_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        self.context_resource.dict_context['@id'] = self.context_resource.get_resource_type_context(resource_type)['@id']
-        self.context_resource.dict_context['@type'] = self.context_resource.get_resource_type_context(resource_type)['@type']
         self.context_resource.set_context_to_operation(self.object_model, operation_name)
-        return self.context_resource.dict_context
+        context = self.context_resource.get_dict_context()
+        context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        context['@id'] = self.context_resource.get_resource_type_context(resource_type)['@id']
+        context['@type'] = self.context_resource.get_resource_type_context(resource_type)['@type']
+
+        return context
 
     def get_context_for_collect_operation(self, request, attributes_functions_str):
-        resource_type = self.resource_type_or_default_resource_type(request)
+        resource_type = self.define_resource_type_by_collect_operation(request, attributes_functions_str)
         context = self.get_context_for_resource_type(resource_type, attributes_functions_str)
-        context["@context"] = self.get_context_for_attr_and_operation_in_collect(request, attributes_functions_str)
+        context["@context"].update( self.get_context_for_attr_and_operation_in_collect(request, attributes_functions_str) )
         return context
 
     def get_context_for_attr_and_operation_in_collect(self, request, attributes_functions_str):
@@ -602,7 +594,7 @@ class AbstractCollectionResource(AbstractResource):
         attrs = self.extract_collect_operation_attributes(attributes_functions_str)
         operated_attr = attrs.pop()
 
-        operation_in_collect = self.remove_last_slash(attributes_functions_str).split('/')[2]
+        operation_in_collect = self.extract_collect_operation_snippet(attributes_functions_str).split('/')[2]
         self.context_resource.set_context_to_operation(self.object_model, operation_in_collect)
         oper_context = deepcopy(self.context_resource.dict_context["@context"])
         attrs_and_oper_context.update(oper_context)
@@ -629,10 +621,11 @@ class AbstractCollectionResource(AbstractResource):
         return self.get_context_for_resource_type(resource_type, attributes_functions_str)
 
     def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
-        pass
+        raise NotImplementedError("'required_context_for_offset_limit_operation' must be implemented in subclasses")
 
     def get_context_for_distinct_operation(self, request, attributes_functions_str):
-        pass
+        resource_type = self.resource_type_or_default_resource_type(request)
+        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
 
     def get_context_for_group_by_operation(self, request, attributes_functions_str):
         resource_type = self.resource_type_or_default_resource_type(request)
@@ -780,20 +773,6 @@ class AbstractCollectionResource(AbstractResource):
         })
         return d
 
-
-    '''
-    # Responds a RequiredObject via execute operation that's depends on path(attributes_functions_str) of the IRI
-    def get_requiredObject_from_method_to_execute(self, request, attributes_functions_str):
-        operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        method_to_execute = self.get_operation_to_execute(operation_name)
-
-        if method_to_execute is None:
-            return None
-
-        attr_functions_str =  attributes_functions_str.replace(operation_name, self.get_real_operation_name(operation_name))
-        return method_to_execute(*[request, attr_functions_str])
-    '''
-
     def operation_name_context_dic(self):
         dicti = super(AbstractCollectionResource, self).operation_name_context_dic()
         dicti.update({
@@ -804,28 +783,14 @@ class AbstractCollectionResource(AbstractResource):
             self.operation_controller.distinct_collection_operation_name: self.required_context_for_distinct_operation,
             self.operation_controller.group_by_collection_operation_name: self.required_context_for_group_by_operation,
             self.operation_controller.group_by_count_collection_operation_name: self.required_context_for_group_by_count_operation,
-            #self.operation_controller.spatialize_operation_name: self.required_context_for_spatialize_operation
+            self.operation_controller.filter_and_collect_collection_operation_name: self.required_context_for_collect_operation,
+            self.operation_controller.offset_limit_and_collect_collection_operation_name: self.required_context_for_offset_limit_and_collect_operation,
+            self.operation_controller.filter_and_count_resource_collection_operation_name: self.required_context_for_count_resource_operation,
         })
         return dicti
 
-
-    '''
-    # Responds a dictionary(key=operation_name, value=method_to_execute).
-    # Should be overridden
-    def operation_name_context_dic(self):
-        d = {self.operation_controller.offset_limit_collection_operation_name: self.context_resource.context(),
-             self.operation_controller.count_resource_collection_operation_name: self.required_object_for_count_resource_operation,
-             self.operation_controller.distinct_collection_operation_name: self.required_object_for_distinct_operation,
-             self.operation_controller.group_by_collection_operation_name: self.required_object_for_group_by_operation,
-             self.operation_controller.group_by_count_collection_operation_name: self.required_object_for_group_by_count_operation,
-             self.operation_controller.filter_collection_operation_name: self.required_object_for_filter_operation,
-             self.operation_controller.collect_collection_operation_name: self.required_object_for_collect_operation,
-             self.operation_controller.filter_and_collect_collection_operation_name: self.required_object_for_filter_and_collect_collection_operation}
-
-        return d
-    '''
-
     #Responds a context. Should be overridden
+    '''
     def get_context_from_method_to_execute(self, request, attributes_functions_str):
         method_to_execute = self.get_operation_to_execute(request, attributes_functions_str)
 
@@ -834,6 +799,7 @@ class AbstractCollectionResource(AbstractResource):
 
         if method_to_execute == self.required_object_for_count_resource_operation:
             self._set_context_to_operation()
+    '''
 
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
@@ -907,83 +873,3 @@ class AbstractCollectionResource(AbstractResource):
     def get_objects_by_only_attributes(self, attribute_names_str):
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
         return self.model_class().objects.values(*attribute_names_str_as_array)
-
-    '''
-    def get_context_by_only_attributes(self, request, attributes_functions_str):
-        attrs_str = attributes_functions_str[:-1] if attributes_functions_str.endswith('/') else attributes_functions_str
-        attrs_list = attrs_str.split(',')
-
-        if len(attrs_list) > 1:
-            self._set_context_to_attributes(attrs_list)
-
-        else:
-            self._set_context_to_only_one_attribute(attrs_list[0])
-
-        return self.context_resource.dict_context
-    '''
-
-    def get_context_for_operation(self, request, attributes_functions_str):
-        context = {}
-        operation_name = self.get_operation_name_from_path(attributes_functions_str)
-
-        if operation_name in self.operation_controller.internal_collection_operations_dict().keys():
-            last_oper_name = operation_name.split('_and_')[1]
-        else:
-            last_oper_name = operation_name
-
-        oper_type_called = self._dict_all_operation_dict()[last_oper_name]
-
-        if operation_name in [self.operation_controller.collect_collection_operation_name,
-                              self.operation_controller.filter_and_collect_collection_operation_name,
-                              self.operation_controller.offset_limit_and_collect_collection_operation_name]:
-            context.update(self.get_context_for_collect_operation(request, attributes_functions_str))
-
-        else:
-            if Q in oper_type_called.parameters:
-                context.update({'hydra:supportedProperties': self.context_resource.supportedProperties()})
-
-            resource_type = self.define_resource_type(request, attributes_functions_str)
-            context.update({'hydra:supportedOperations': self.context_resource.supportedOperationsFor(self.object_model, resource_type)})
-            context.update(self.context_resource.get_resource_type_context(resource_type))
-            self.context_resource.set_context_to_operation(self.object_model, last_oper_name)
-            context.update({'@context': self.context_resource.dict_context['@context']})
-
-        return context
-
-    '''
-    def get_context_for_collect_operation(self, request, attributes_functions_str):
-        attrs_func_str = self.remove_last_slash(attributes_functions_str)
-        operation_name = self.get_operation_name_from_path(attrs_func_str)
-
-        if operation_name != self.operation_controller.collect_collection_operation_name:
-            collect_oper_snippet = attrs_func_str[attrs_func_str.index('*')+1:]
-            collect_operation_params = collect_oper_snippet.split('/')
-
-        else:
-            collect_operation_params = attrs_func_str.split('/')
-
-        operation_in_collect = "/".join(collect_operation_params)
-        context = self.get_context_for_operation_in_collect_operation(request, operation_in_collect)
-
-        attrs = ','.join(collect_operation_params[1].split('&'))
-        attrs_context = self.get_context_by_only_attributes(None, attrs)
-        context['@context'].update(attrs_context['@context'].items())
-
-        return context
-    '''
-
-    def get_context_for_operation_in_collect_operation(self, request, collect_operation_str):
-        pass
-
-    def set_resource_type_context_by_operation(self, request, attributes_functions_str):
-        attrs_func_str = self.remove_last_slash(attributes_functions_str)
-        operation_name = self.get_operation_name_from_path(attrs_func_str)
-        type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
-
-        if operation_name in self.operation_controller.subcollection_operations_dict():
-            self.context_resource.set_context_to_resource_type(request, self.object_model, 'Collection')
-
-        else:
-            self.context_resource.set_context_to_resource_type(request, self.object_model, type_called.return_type)
-
-        return self.context_resource.get_resource_type_context()

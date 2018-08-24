@@ -70,10 +70,18 @@ class FeatureCollectionResource(SpatialCollectionResource):
     #todo: need prioritize in unity tests
     def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
         collected_attrs = self.extract_collect_operation_attributes(attributes_functions_str)
-
         res_type_by_accept = self.resource_type_or_default_resource_type(request)
+        oper_in_collect_ret_type = self.get_operation_in_collect_type_called(attributes_functions_str).return_type
+
         if res_type_by_accept != self.default_resource_type():
-            if self.geometry_field_name() in collected_attrs:
+            if self.geometry_field_name() not in collected_attrs:
+                return 'bytes'
+
+            # the operated attribute isn't the geometric attribute
+            if self.geometry_field_name() != collected_attrs[-1]:
+                return res_type_by_accept
+
+            if issubclass(oper_in_collect_ret_type, GEOSGeometry):
                 return res_type_by_accept
             return 'bytes'
 
@@ -83,7 +91,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         # at this point collect operation has geometric attribute
         if len(collected_attrs) == 1:
-            return GeometryCollection
+            if issubclass(oper_in_collect_ret_type, GEOSGeometry):
+                return GeometryCollection
+            return "Collection"
 
         return res_type_by_accept
 
@@ -329,6 +339,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
              self.operation_controller.union_collection_operation_name: self.required_context_for_union_operation,
              self.operation_controller.extent_collection_operation_name: self.required_context_for_extent_operation,
              self.operation_controller.make_line_collection_operation_name: self.required_context_for_make_line_operation,
+             self.operation_controller.spatialize_operation_name: self.required_context_for_specialized_operation,
         })
         return dicti
 
@@ -422,11 +433,15 @@ class FeatureCollectionResource(SpatialCollectionResource):
         spatialized_data_list = []
         for original_feature in spatialize_operation.left_join_data['features']:
             updated_feature = deepcopy(original_feature)
-            for position, dict_to_spatialize in enumerate(spatialize_operation.right_join_data):
-                if updated_feature['properties'][spatialize_operation.left_join_attr] == dict_to_spatialize[spatialize_operation.right_join_attr]:
-                    updated_feature['properties']['joined__' + str(position) ] = deepcopy(dict_to_spatialize)#.pop(position)
+            updated_feature['properties']['__joined__'] = []
 
-            if sorted(list(updated_feature['properties'].keys())) != sorted(list(original_feature['properties'].keys())):
+            for dict_to_spatialize in spatialize_operation.right_join_data:
+                if updated_feature['properties'][spatialize_operation.left_join_attr] == dict_to_spatialize[spatialize_operation.right_join_attr]:
+                    updated_feature['properties']['__joined__'].append( deepcopy(dict_to_spatialize) )
+
+            # verify if the current feature was updated
+            #if sorted(list(updated_feature['properties'].keys())) != sorted(list(original_feature['properties'].keys())):
+            if len(updated_feature['properties']['__joined__']) > 0:
                 spatialized_data_list.append(updated_feature)
 
         return {'type': 'FeatureCollection', 'features': spatialized_data_list}
@@ -567,11 +582,17 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return objects
 
-
+    '''
     def get_context_for_collect_operation(self, request, attributes_functions_str):
         resource_type = self.define_resource_type_by_collect_operation(request, attributes_functions_str)
         context = self.get_context_for_resource_type(resource_type, attributes_functions_str)
-        context["@context"] = self.get_context_for_attr_and_operation_in_collect(request, attributes_functions_str)
+        context["@context"].update( self.get_context_for_attr_and_operation_in_collect(request, attributes_functions_str) )
+        return context
+    '''
+
+    def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
+        context = {}
+        self.extract_offset_limit_operation_attrs(attributes_functions_str, as_string=True)
         return context
 
     def get_context_for_specialized_operation(self, request, attributes_functions_str):
@@ -610,6 +631,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return context
 
+    '''
     def get_context_for_operation_in_collect_operation(self, request, collect_operation_str):
         context = {}
         collect_operation_arr = collect_operation_str.split('/')
@@ -641,6 +663,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
                 context.update(self.context_resource.dict_context)
 
         return context
+    '''
 
     def set_resource_type_context_by_operation(self, request, oper_name):
         resource_type = self.resource_type_or_default_resource_type(request)

@@ -8,6 +8,9 @@ class CollectionResource(AbstractCollectionResource):
         self.queryset = None
         self.operation_controller = CollectionResourceOperationController()
 
+    def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
+        return self.resource_type_or_default_resource_type(request)
+
     def operations_with_parameters_type(self):
         return self.operation_controller.collection_operations_dict()
 
@@ -61,6 +64,11 @@ class CollectionResource(AbstractCollectionResource):
 
         return objects
 
+    def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
+        context = {}
+        return context
+
+    '''
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         context = super(CollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
         resource_type = self.resource_type_or_default_resource_type(request)
@@ -71,4 +79,5 @@ class CollectionResource(AbstractCollectionResource):
         context.update({'hydra:supportedOperations': supported_operations_list})
 
         return context
+    '''
 

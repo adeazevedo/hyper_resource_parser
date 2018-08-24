@@ -333,9 +333,8 @@ class AbstractResource(APIView):
 
         return context
 
-    # must be overided
     def required_object_for_simple_path(self, request):
-        pass
+        raise NotImplementedError("'required_object_for_simple_path' must be implemented in subclasses")
 
     def required_object_for_only_attributes(self, request, attributes_functions_str):
         pass
@@ -450,13 +449,11 @@ class AbstractResource(APIView):
     def define_resource_type(self, request, attributes_functions_str):
         pass
 
-    # must be overrided
     def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
-        pass
+        raise NotImplementedError("'define_resource_type_by_only_attributes' must be implemented in subclasses")
 
-    # must be overrided
     def define_resource_type_by_operation(self, request, operation_name):
-        pass
+        raise NotImplementedError("'define_resource_type_by_operation' must be implemented in subclasses")
 
     def content_type_or_default_content_type(self, request):
         if request is None:
@@ -929,9 +926,8 @@ class AbstractResource(APIView):
         collection_operations_array = list(self.operation_controller.dict_all_operation_dict().keys())
         return collection_operations_array
 
-    # must be overrided
     def get_operation_type_called(self, attributes_functions_str):
-        pass
+        raise NotImplementedError("'get_operation_type_called' must be implemented in subclasses")
 
     def get_operation_name_from_path(self, attributes_functions_str):
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).lower().split('/')
@@ -966,12 +962,10 @@ class AbstractResource(APIView):
 
     def get_context_for_resource_type(self, resource_type, attributes_functions_str):
         res_type_context = {}
-        operation_name = self.get_operation_name_from_path(attributes_functions_str)
         res_type_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        res_type_context['@id'] = self.context_resource.get_resource_type_context(resource_type)['@id']
-        res_type_context['@type'] = self.context_resource.get_resource_type_context(resource_type)['@type']
-        self.context_resource.set_context_to_operation(self.object_model, operation_name)
-        res_type_context['@context'] = self.context_resource.get_dict_context()['@context']
+        res_type_context.update( self.context_resource.get_resource_type_context(resource_type) )
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        res_type_context['@context'] = self.context_resource.get_context_to_operation(operation_name)['@context']
         return res_type_context
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
@@ -1171,9 +1165,8 @@ class AbstractResource(APIView):
     def get_absolute_uri(self, request):
         return request.scheme + '://' + request.get_host() + request.path
 
-    # Must be overridden
     def execute_complex_request(self, request):
-        pass
+        raise NotImplementedError("'execute_complex_request' must be implemented in subclasses")
 
     def get_objects_by_only_attributes(self, attribute_names_str):
         pass
@@ -1204,10 +1197,10 @@ class AbstractResource(APIView):
         message = spatialize_oper_uri[0] + " isn't joinable with " + spatialize_oper_uri[2]
         return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
 
-    # must be overrided
     def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
-        pass
+        raise NotImplementedError("'get_operation_type_called' must be implemented in subclasses")
 
+    #todo: need handle non 200 status code response
     def build_spatialize_operation(self, request, attributes_functions_str):
         uri_before_oper, join_attrs, uri_or_data_after_oper = self.split_spatialize_uri(request, attributes_functions_str)
 

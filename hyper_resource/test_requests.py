@@ -220,22 +220,101 @@ arr_get_for_spatialize_operation = [
 
 arr_options_for_collection_operation = [
     RequestTest("controle-list/usuario-list/filter/id/gt/5/", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/collect/id&email/upper", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/count_resource", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2/nome", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2/nome,email", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/distinct/nome", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset_limit/0&2/", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset_limit/0&2/email,nome", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/group_by/nome", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/group_by_count/nome", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/filter/id/gt/5/*collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/filter/id/gt/5/*collect/id&email/upper", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/filter/id/gt/5/*count_resource", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2/*collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2/*collect/id&nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2/nome/*collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2/nome,id/*collect/id&nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset_limit/0&2/nome/*collect/id&nome/upper", 400, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/filter/id/gt/5/*count_resource", 200, method="OPTIONS"),
+
     # Collection operation used by FeatureCollection
-    RequestTest("api/bcim/aldeias-indigenas/filter/nome/isnull", 200, method="OPTIONS"),
-    RequestTest("api/bcim/aldeias-indigenas/count_resource", 200, method="OPTIONS"),
-    RequestTest("api/bcim/aldeias-indigenas/distinct/nome", 200, method="OPTIONS"),
-    RequestTest("api/bcim/aldeias-indigenas/offset_limit/0&2/", 200, method="OPTIONS"),
-    RequestTest("api/bcim/aldeias-indigenas/offset_limit/0&2/nome", 200, method="OPTIONS"),
-    RequestTest("api/bcim/aldeias-indigenas/group_by/nome", 200, method="OPTIONS"),
-    RequestTest("api/bcim/aldeias-indigenas/group_by_count/nome", 200, method="OPTIONS"),
-    RequestTest("api/bcim/aldeias-indigenas/filter/nome/isnull/*count_resource", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP", 200, method="OPTIONS"),
+
+    RequestTest("api/bcim/unidades-federativas/collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/nome&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/geom&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/sigla&geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/sigla&geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/collect/geom/point_on_surface", 200, method="OPTIONS"),
+
+    RequestTest("api/bcim/unidades-federativas/count_resource", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/nome", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/nome,sigla", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/nome,geom", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/geom", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/distinct/nome", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/group_by/nome", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/group_by_count/nome", 200, method="OPTIONS"),
+
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/nome&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/geom&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/sigla&geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/sigla&geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/geom/point_on_surface", 200, method="OPTIONS"),
+
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/nome&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/geom&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/sigla&geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/sigla&geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/*collect/geom/point_on_surface", 200, method="OPTIONS"),
+
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/nome/*collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/nome,sigla/*collect/nome&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/sigla,geom/*collect/geom&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/sigla,geom/*collect/sigla&geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/geom/*collect/geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/geom/*collect/geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/sigla,geom/*collect/sigla&geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/sigla,geom/*collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/geom/*collect/geom/point_on_surface", 200, method="OPTIONS"),
+
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*count_resource", 200, method="OPTIONS"),
+]
+
+# The suffixed requests just need simple tests (once requests suffixed with '.jsonld' is just repassed to options() method)
+# More complex tests must be applied in OPTIONS requests (without suffix)
+arr_get_for_collect_operation_context = [
+    RequestTest("controle-list/usuario-list/filter/id/gt/5.jsonld", 200),
+    RequestTest("controle-list/usuario-list/collect/nome/upper.jsonld", 200),
+    RequestTest("controle-list/usuario-list/collect/id&email/upper.jsonld", 200),
+    RequestTest("controle-list/usuario-list/projection/id,email/collect/id&email/upper.jsonld", 200),
+    RequestTest("controle-list/usuario-list/projection/email/collect/id&email/upper.jsonld", 400),
+    RequestTest("api/bcim/unidades-federativas/collect/nome/upper.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/nome&sigla/lower.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/geom&sigla/lower.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/sigla&geom/buffer/0.2.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/geom/buffer/0.2.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/geom/area.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/sigla&geom/area.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/sigla&geom/point_on_surface.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/collect/geom/point_on_surface.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/collect/sigla&geom/area.jsonld", 200),
+    RequestTest("api/bcim/unidades-federativas/projection/sigla/collect/sigla&geom/area.jsonld", 400),
+
 ]
 
 def test_requests(request_test_list, test_label=''):
@@ -277,5 +356,6 @@ test_requests(arr_get_for_projection, test_label="Tests for FeatureCollection wi
 test_requests(arr_get_for_geometry_collection_operation, test_label="Tests for spatial collection operations")
 test_requests(arr_get_for_spatialize_operation, test_label="Tests for spatialize operation")
 test_requests(arr_options_for_collection_operation, test_label = "Tests OPTIONS for Collection operations")
+test_requests(arr_get_for_collect_operation_context, test_label = "Tests GET for Collect operation context")
 
 print("\n\n" + 25 * "X" + "\nX End of all test sets  X\n" + 25 * "X" + "\n\n")

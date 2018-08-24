@@ -278,51 +278,6 @@ class FeatureResource(SpatialResource):
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
-
-    """
-    def basic_get(self, request, *args, **kwargs):
-        self.object_model = self.get_object(kwargs)
-        self.current_object_state = self.object_model
-        self.set_basic_context_resource(request)
-        self.e_tag = str(hash(self.object_model))
-
-        attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
-
-        if self.is_simple_path(attributes_functions_str):
-            serializer = self.serializer_class(self.object_model)
-            required_object = RequiredObject(serializer.data, self.content_type_or_default_content_type(request), self.object_model, 200)
-
-        elif self.path_has_only_attributes(attributes_functions_str):
-            str_attribute = attributes_functions_str.replace(" ", "").replace("/","")
-            required_object = self.response_request_with_attributes(str_attribute, request)
-
-            att_names = attributes_functions_str.split(',')
-
-            if len(att_names) > 1:
-                self._set_context_to_attributes(att_names)
-
-            else:
-                self._set_context_to_only_one_attribute(attributes_functions_str)
-
-        elif self.path_has_url(attributes_functions_str.lower()):
-            required_object = self.response_request_attributes_functions_str_with_url(attributes_functions_str, request)
-            self.context_resource.set_context_to_object(self.current_object_state, self.name_of_last_operation_executed)
-
-        else:
-            s = str(attributes_functions_str)
-
-            if s.endswith('/'):
-               s = s[:-1]
-
-            required_object = self.response_of_request(s)
-            self._set_context_to_operation(self.name_of_last_operation_executed)
-
-        self.inject_e_tag()
-        self.temporary_content_type= required_object.content_type
-
-        return required_object
-    """
-
     def basic_required_object(self, request, *args, **kwargs):
         return self.basic_get(request, *args, **kwargs)
 
