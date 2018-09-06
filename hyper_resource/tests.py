@@ -350,15 +350,16 @@ class AbstractRequestTest(SimpleTestCase):
                                         'ewkt', 'extend', 'extent', 'geojson', 'geom_type', 'geom_typeid', 'get_coords', 'get_srid', 'get_x', 'get_y',
                                         'get_z', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'interpolate', 'intersection', 'intersects', 'json', 'kml',
                                         'length', 'normalize', 'num_coords', 'num_geom', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'relate',
-                                        'relate_pattern', 'ring', 'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z', 'simple', 'simplify', 'spatialize', 'srid',
+                                        'relate_pattern', 'ring', 'simple', 'simplify', 'spatialize', 'srid',
                                         'srs', 'sym_difference', 'touches', 'transform', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
+         #'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z',
         self.basic_operations_names = ['spatialize']
         self.spatial_collection_operation_names = ['bbcontains', 'bboverlaps', 'collect', 'contained', 'contains', 'contains_properly', 'count_resource',
                                                     'covers', 'covers_by', 'crosses', 'disjoint', 'distance_gt', 'distance_gte', 'distance_lt', 'distance_lte',
-                                                    'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'intersects', 'isvalid', 'left',
+                                                    'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'intersects', 'isvalid', 'left',
                                                     'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right',
                                                    'relate', 'right', 'spatialize', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
-        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'offset_limit']
+        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'offset_limit']
         self.non_simple_path_dict_keys = ["@context", '@id', '@type', 'hydra:supportedOperations']
 
     def aux_get_dict_from_response(self, response):
@@ -1047,6 +1048,68 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         response = requests.get(self.controle_base_uri + "usuario-list/projection/email/collect/email&nome/upper/")
         self.assertEquals(response.status_code, 400)
 
+#python manage.py test hyper_resource.tests.GroupBySumOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class GroupBySumOperationTest(AbstractRequestTest):
+    def setUp(self):
+        super(GroupBySumOperationTest, self).setUp()
+
+    def test_group_by_sum_operation(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/group_by_sum/data/valor")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+#python manage.py test hyper_resource.tests.FilterOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class FilterOperationTest(AbstractRequestTest):
+
+    def aux_get_attributes_from_features(self, response, attribute_name):
+        response_dict = self.aux_get_dict_from_response(response)
+        attrs_arr = [feature['properties'][attribute_name] for feature in response_dict['features'] ]
+        return sorted(attrs_arr)
+
+    def test_simple_filter(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/geocodigo/eq/22/")
+        self.assertEquals(response.status_code, 200)
+
+        names_list = self.aux_get_attributes_from_features(response, "nome")
+        self.assertEquals(names_list, ["Piauí"])
+
+    def test_filter_with_or_operator(self):
+        # Maranhão = 21
+        # Piauí = 22
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/geocodigo/eq/22/or/nome/eq/Maranhão/")
+        self.assertEquals(response.status_code, 200)
+
+        names_list = self.aux_get_attributes_from_features(response, "nome")
+        self.assertEquals(names_list, ["Maranhão", "Piauí"])
+
+    def test_filter_with_and_operator(self):
+        # Maranhão = 21
+        # Piauí = 22
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/geocodigo/eq/22/and/nome/eq/Maranhão/")
+        self.assertEquals(response.status_code, 200)
+
+        names_list = self.aux_get_attributes_from_features(response, "nome")
+        self.assertEquals(names_list, [])
+
+    # WARNING: This test don't pass and this problem must be solved by the url interpretor
+    def test_precedence_between_AND_operator_and_OR_operator(self):
+        '''
+        Independent of which order you put AND or OR operator, the result must be the same
+        (AND operator is always be the first to be considered)
+        # Maranhão = 21
+        # Piauí = 22
+        '''
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/geocodigo/eq/22/or/nome/eq/Maranhão/and/geocodigo/eq/21/")
+        self.assertEquals(response.status_code, 200)
+
+        names_list = self.aux_get_attributes_from_features(response, "nome")
+        self.assertEquals(names_list, ["Maranhão", "Piauí"])
+
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/nome/eq/Maranhão/and/geocodigo/eq/21/or/geocodigo/eq/22/")
+        self.assertEquals(response.status_code, 200)
+
+        names_list = self.aux_get_attributes_from_features(response, "nome")
+        self.assertEquals(names_list, ["Maranhão", "Piauí"])
 
 #python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class RequestOptionsTest(AbstractRequestTest):
@@ -2426,6 +2489,7 @@ class SpatializeOperationTest(AbstractRequestTest):
     def setUp(self):
         super(SpatializeOperationTest, self).setUp()
         self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
+        self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
         self.feature_collection_keys = ["features", "type"]
         self.feature_keys = ["geometry", "id", "properties", "type"]
         self.geometry_collection_keys = ["geometries", "type"]
@@ -2433,8 +2497,10 @@ class SpatializeOperationTest(AbstractRequestTest):
 
     def aux_get_first_feature(self, response):
         response_dict = self.aux_get_dict_from_response(response)
-        first_feature = response_dict["features"][0]
-        return first_feature
+
+        if "features" not in response_dict.keys():
+            return response_dict
+        return response_dict["features"][0]
 
     def aux_get_first_feature_keys(self, response):
         first_feature = self.aux_get_first_feature(response)
@@ -2451,10 +2517,71 @@ class SpatializeOperationTest(AbstractRequestTest):
 
 
     # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
+    def test_spatialize_operation__for_feature_resource(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/spatialize/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
 
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_dict_keys, self.feature_keys)
+
+        feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(feature_properties_keys, ["__joined__", "anodereferencia", "geocodigo", "geometriaaproximada", "nome", "nomeabrev"])
+
+        joined_alfanumeric_attrs = self.aux_get_first_feature_joined_properties(response)
+        self.assertEquals(joined_alfanumeric_attrs, ['ano_lei_codigo_obras', 'ano_lei_criacao',
+                                                     'ano_lei_legis_sob_area_zona_espe_inte_social',
+                                                     'ano_lei_legis_sob_zona_area_espe_inter',
+                                                     'ano_lei_legis_sobre_parc_solo',
+                                                     'ano_lei_legis_sobre_zone_uso_ocupa_solo',
+                                                     'ano_lei_legislacao_sobre_contri_melhoria',
+                                                     'ano_lei_legislacao_sobre_dire_superficie',
+                                                     'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                                     'ano_lei_legislacao_sobre_estu_pre_impa_ambiental',
+                                                     'ano_lei_legislacao_sobre_legitimacao_posse',
+                                                     'ano_lei_legislacao_sobre_ope_urba_consorciada',
+                                                     'ano_lei_legislacao_sobre_regula_fundiaria',
+                                                     'ano_lei_legislacao_sobre_servi_administrativa',
+                                                     'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                                     'ano_lei_legislacao_sobre_tombamento',
+                                                     'ano_lei_legislacao_sobre_uni_conservacao',
+                                                     'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano',
+                                                     'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                                     'ano_lei_lei_perimetro_urba',
+                                                     'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia',
+                                                     'ano_ultima_atualizacao', 'caract_orgao_gestor_plane_urba_munic',
+                                                     'codigo_municipio', 'codigo_obras_existencia', 'codigo_uf',
+                                                     'geocodigo', 'id_planejamento_urbano',
+                                                     'informacoes_sob_gestor_escolaridade',
+                                                     'legis_sobre_parc_solo_existencia',
+                                                     'legislacao_sobre_area_zona_espec_inter_social_existencia',
+                                                     'legislacao_sobre_conce_uso_espe_fins_moradia',
+                                                     'legislacao_sobre_contri_melhoria_existencia',
+                                                     'legislacao_sobre_dire_superficie',
+                                                     'legislacao_sobre_estu_impa_vizinhanca_existencia',
+                                                     'legislacao_sobre_estu_pre_impa_ambiental',
+                                                     'legislacao_sobre_legitimacao_posse',
+                                                     'legislacao_sobre_ope_urba_consorciada_existencia',
+                                                     'legislacao_sobre_regula_fundiaria',
+                                                     'legislacao_sobre_servi_administrativa',
+                                                     'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist',
+                                                     'legislacao_sobre_tombamento',
+                                                     'legislacao_sobre_uni_conservacao',
+                                                     'legislacao_sobre_usuca_espe_imovel_urbano',
+                                                     'legislacao_sobre_zona_area_espe_inter_existencia',
+                                                     'legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                                     'legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                                     'lei_perimetro_urba_existencia', 'nome',
+                                                     'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia'] )
+
+    def test_spatialize_operation__for_feature_resource_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/spatialize/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
+                                headers={"accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
 
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
-    def test_spatialize_operation_with_filter(self):
+    def test_spatialize_operation_for_feature_collection_with_filter(self):
         response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
@@ -2474,6 +2601,12 @@ class SpatializeOperationTest(AbstractRequestTest):
                                                      'compl_esp_parado', 'est_func', 'est_parado', 'gin_func',
                                                      'gin_parado', 'id', 'id_estado', 'kartodromo_func',
                                                      'kartodromo_parado'] )
+
+    def test_spatialize_operation_for_feature_collection_with_filter_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/",
+                                headers={"accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
 
 #python manage.py test hyper_resource.tests.OptionsForSpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class OptionsForSpatializeOperationTest(AbstractRequestTest):
@@ -2502,4 +2635,58 @@ class OptionsForSpatializeOperationTest(AbstractRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'FeatureCollection')
+
+#python manage.py test hyper_resource.tests.PaginationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class PaginationTest(AbstractRequestTest):
+    '''
+    def test_collection_simple_path_pagination(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/")
+        self.assertEquals(response.status_code, 200)
+        # the string must be hardcoded, if not, the test fails
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/101&100>; rel="next" '
+        #expected_link = '<' + HOST + 'api/bcim/>; rel="up" , <' + HOST + 'api/bcim/aldeias-indigenas.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <' + HOST + 'api/bcim/aldeias-indigenas/offset_limit/101&100>; rel="next" '
+        self.assertEquals(response.headers["link"], expected_link)
+    '''
+
+    '''
+    def test_feature_collection_simle_path_ordering_by_geometry_longitude(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/order_by/geom")
+        self.assertEquals(response.status_code, 200)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        features_names_ordered_by_longitude = [ uf['properties']['nome'] for uf in response_dict['features'] ]
+        expected_names_ordered_by_longitude = ['Acre', 'Amazonas', 'Rondônia', 'Roraima', 'Mato Grosso', 'Pará',
+                                               'Mato Grosso do Sul', 'Rio Grande do Sul', 'Amapá', 'Paraná',
+                                               'Santa Catarina', 'Goiás', 'São Paulo', 'Minas Gerais', 'Tocantins',
+                                               'Maranhão', 'Distrito Federal', 'Bahia', 'Piauí', 'Rio de Janeiro',
+                                               'Espírito Santo', 'Ceará', 'Pernambuco', 'Paraíba', 'Rio Grande do Norte',
+                                               'Sergipe', 'Alagoas']
+        self.assertListEqual(features_names_ordered_by_longitude, expected_names_ordered_by_longitude)
+    '''
+
+    def test_options_for_collection_simple_path_pagination(self):
+        response = requests.options(self.controle_base_uri + "gasto-list/")
+        self.assertEquals(response.status_code, 200)
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/1001&1000>; rel="next" '
+        self.assertEquals(response.headers["link"], expected_link)
+
+    def test_collection_pagination_with_offset_limit_operation(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/offset_limit/1001&1000")
+        self.assertEquals(response.status_code, 200)
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/1001&1000.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/2001&1000>; rel="next" '
+        self.assertEquals(response.headers["link"], expected_link)
+
+    def test_options_for_collection_pagination_with_offset_limit_operation(self):
+        response = requests.options(self.controle_base_uri + "gasto-list/offset_limit/1001&1000")
+        self.assertEquals(response.status_code, 200)
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/1001&1000.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/2001&1000>; rel="next" '
+        self.assertEquals(response.headers["link"], expected_link)
+
+    # Pagination for feature collection must be specific for each case
+    # In this specific "aldeias-indigenas" case we are dealing with Poits and don't make sense paginate about 200 Points
+    def test_feature_collection_simple_path_pagination(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/")
+        self.assertEquals(response.status_code, 200)
+        expected_link = '<http://luc00557196:8000/api/bcim/aldeias-indigenas/offset_limit/1001&100>; rel="next" '
+        self.assertNotIn(expected_link, response.headers["link"])
 

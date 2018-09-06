@@ -7,6 +7,33 @@ class CollectionResource(AbstractCollectionResource):
         super(CollectionResource, self).__init__()
         self.queryset = None
         self.operation_controller = CollectionResourceOperationController()
+        self.objs_per_page = 1000
+
+    def add_base_headers(self, request, response):
+        super(AbstractCollectionResource, self).add_base_headers(request, response)
+        attributes_functions_str = self.kwargs.get('attributes_functions') if self.kwargs.get('attributes_functions') is not None else ""
+        attrs_funcs_str = self.remove_projection_from_path(attributes_functions_str) if self.path_has_projection(attributes_functions_str) else attributes_functions_str
+
+        if  self.is_simple_path(attrs_funcs_str) or\
+            self.get_operation_name_from_path(attrs_funcs_str) == self.operation_controller.offset_limit_collection_operation_name:
+
+            pagination_link = self.build_offset_limit_link(request, attrs_funcs_str)
+            self.add_url_in_header(pagination_link, response, rel="next")
+
+    def build_offset_limit_link(self, request, attributes_functions_str):
+        absolute_uri = self.remove_last_slash(request.build_absolute_uri())
+        offset_limit_oper_name = self.operation_controller.offset_limit_collection_operation_name
+
+        if not self.is_simple_path(attributes_functions_str): # if isn't simple path, is offset_limit operation
+            offset_limit_arr = self.remove_last_slash(attributes_functions_str).split("/")
+            range_arr = offset_limit_arr[1].split("&")
+            new_start_idx = str( int(range_arr[0]) + self.objs_per_page)
+            new_offset_limit = offset_limit_arr[0] + "/" + new_start_idx + "&" + range_arr[1]
+            pagination_link = absolute_uri[:absolute_uri.index(offset_limit_oper_name)] + new_offset_limit
+        else:
+            pagination_link = absolute_uri + "/" + offset_limit_oper_name + "/" + str(self.objs_per_page +1 ) + "&" + str(self.objs_per_page)
+
+        return pagination_link
 
     def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
         return self.resource_type_or_default_resource_type(request)
@@ -68,16 +95,8 @@ class CollectionResource(AbstractCollectionResource):
         context = {}
         return context
 
-    '''
-    def get_context_by_only_attributes(self, request, attributes_functions_str):
-        context = super(CollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
-        resource_type = self.resource_type_or_default_resource_type(request)
-        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+    def get_objects_from_simple_path(self):
+        if self.model_class().objects.count() > self.objs_per_page:
+            return self.model_class().objects.all()[0:self.objs_per_page]
 
-        context["@type"] = self.context_resource.get_dict_context()["@type"]
-        supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        context.update({'hydra:supportedOperations': supported_operations_list})
-
-        return context
-    '''
-
+        return self.model_class().objects.all()

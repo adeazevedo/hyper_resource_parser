@@ -474,11 +474,11 @@ class BaseOperationController(object):
         self.relate_operation_name ='relate'
         self.relate_pattern_operation_name = 'relate_pattern'
         self.ring_operation_name = 'ring'
-        self.set_coords_operation_name = 'set_coords'
-        self.set_srid_operation_name = 'set_srid'
-        self.set_x_operation_name = 'set_x'
-        self.set_y_operation_name = 'set_y'
-        self.set_z_operation_name = 'set_z'
+        #self.set_coords_operation_name = 'set_coords'
+        #self.set_srid_operation_name = 'set_srid'
+        #self.set_x_operation_name = 'set_x'
+        #self.set_y_operation_name = 'set_y'
+        #self.set_z_operation_name = 'set_z'
         self.simple_operation_name = 'simple'
         self.simplify_operation_name = 'simplify'
         self.srid_operation_name = 'srid'
@@ -553,11 +553,11 @@ class BaseOperationController(object):
             dic[self.relate_operation_name] = Type_Called('relate', [GEOSGeometry], str)
             dic[self.relate_pattern_operation_name] = Type_Called('relate_pattern', [GEOSGeometry, str], str)
             dic[self.ring_operation_name] = Type_Called('ring', [], bool)
-            dic[self.set_coords_operation_name] = Type_Called('set_coords', [tuple], None)
-            dic[self.set_srid_operation_name] = Type_Called('set_srid', [str], None)
-            dic[self.set_x_operation_name] = Type_Called('set_x', [float], None)
-            dic[self.set_y_operation_name] = Type_Called('set_y', [float], None)
-            dic[self.set_z_operation_name] = Type_Called('set_z', [float], None)
+            #dic[self.set_coords_operation_name] = Type_Called('set_coords', [tuple], None)
+            #dic[self.set_srid_operation_name] = Type_Called('set_srid', [str], None)
+            #dic[self.set_x_operation_name] = Type_Called('set_x', [float], None)
+            #dic[self.set_y_operation_name] = Type_Called('set_y', [float], None)
+            #dic[self.set_z_operation_name] = Type_Called('set_z', [float], None)
             dic[self.simple_operation_name] = Type_Called('simple', [], bool)
             dic[self.simplify_operation_name] = Type_Called('simplify', [float, bool], GEOSGeometry)
             dic[self.srid_operation_name] = Type_Called('srid', [], int)
@@ -811,6 +811,7 @@ class CollectionResourceOperationController(BaseOperationController):
         self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
         self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
         self.spatialize_operation_name = 'spatialize'
+        self.group_by_sum_collection_operation_name = "group_by_sum"
 
     # operations that return a subcollection of an collection
     def subcollection_operations_dict(self):
@@ -846,6 +847,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
         dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
         dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
+        dict[self.group_by_sum_collection_operation_name] = Type_Called(self.group_by_sum_collection_operation_name, [str, str], object)
         #dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
         #dict[self.spatialize_operation_name] = Type_Called(self.spatialize_operation_name, [tuple, object], GEOSGeometry)
         return dict

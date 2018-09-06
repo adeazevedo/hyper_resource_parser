@@ -253,9 +253,7 @@ class AbstractResource(APIView):
         iri_father = iri_base[:idx]
 
         self.add_url_in_header(iri_father, response, 'up')
-
-        self.add_url_in_header(iri_base + '.jsonld', response,
-                               rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
+        self.add_url_in_header(iri_base + '.jsonld', response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
         self.add_cors_header_in_header(response)
 
         if self.is_entry_point:
@@ -876,6 +874,10 @@ class AbstractResource(APIView):
 
     def remove_last_slash(self, url_as_str):
         url = url_as_str.strip()
+
+        if url_as_str is None or url_as_str == "":
+            return url_as_str
+
         url = url[:-1] if url[-1] == '*' else url
         return url[:-1] if url.endswith('/') else url
 
@@ -1037,7 +1039,7 @@ class AbstractResource(APIView):
         return hasattr(object, attribute_or_function_name) and not callable(getattr(object, attribute_or_function_name))
 
     def _value_from_object(self, object, attribute_or_function_name, parameters):
-        attribute_or_function_name_striped = attribute_or_function_name.strip()
+        attribute_or_function_name_striped = self.remove_last_slash(attribute_or_function_name)
         self.name_of_last_operation_executed = attribute_or_function_name_striped
 
         if self.is_attribute_for(object, attribute_or_function_name):

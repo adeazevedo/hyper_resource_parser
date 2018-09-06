@@ -67,8 +67,10 @@ class AbstractCollectionResource(AbstractResource):
         return super(AbstractCollectionResource, self).path_has_only_attributes(attrs_funcs_str)
 
     def path_has_projection(self, attributes_functions_name):
-        attrs_funcs_arr = self.remove_last_slash(attributes_functions_name).split('/')
+        if attributes_functions_name == None or attributes_functions_name == '':
+            return False
 
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_name).split('/')
         return attrs_funcs_arr[0] == 'projection'
 
     def remove_projection_from_path(self, attributes_functions_str, remove_only_name=False):
@@ -277,11 +279,18 @@ class AbstractCollectionResource(AbstractResource):
 
     def required_object_for_group_by_operation(self, request, attributes_functions_str):
         objects =  self.get_objects_from_group_by_operation(attributes_functions_str)
-        return self.required_object_for_aggregation_operation(request, objects)
+        serialized_data = self.get_objects_serialized_by_aggregation_operation(attributes_functions_str, objects)
+        return self.required_object_for_aggregation_operation(request, serialized_data)
 
-    def required_object_for_group_by_count_operation(self,request, attributes_functions_str):
+    def required_object_for_group_by_count_operation(self, request, attributes_functions_str):
         objects =  self.get_objects_from_group_by_count_operation(attributes_functions_str)
-        return self.required_object_for_aggregation_operation(request, objects)
+        serialized_data = self.get_objects_serialized_by_aggregation_operation(attributes_functions_str, objects)
+        return self.required_object_for_aggregation_operation(request, serialized_data)
+
+    def required_object_for_group_by_sum_operation(self, request, attributes_functions_str):
+        objects = self.get_objects_from_group_by_sum_operation(attributes_functions_str)
+        serialized_data = self.get_objects_serialized_by_aggregation_operation(attributes_functions_str, objects)
+        return self.required_object_for_aggregation_operation(request, serialized_data)
 
     def required_object_for_filter_operation(self, request, attributes_functions_str):
         business_objects = self.get_objects_from_filter_operation(attributes_functions_str)
@@ -368,7 +377,7 @@ class AbstractCollectionResource(AbstractResource):
         return required_obj
 
     def required_object_for_simple_path(self, request):
-        objects = self.model_class().objects.all()
+        objects = self.get_objects_from_simple_path()
         serializer = self.serializer_class(objects, many=True, context={'request': request})
         required_object = RequiredObject(serializer.data, self.content_type_or_default_content_type(request), objects, 200)
         self.temporary_content_type= required_object.content_type
@@ -418,6 +427,10 @@ class AbstractCollectionResource(AbstractResource):
 
     def required_context_for_group_by_count_operation(self, request, attributes_functions_str):
         context = self.get_context_for_group_by_count_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_group_by_sum_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_group_by_sum_operation(request, attributes_functions_str)
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_offset_limit_and_collect_operation(self, request, attributes_functions_str):
@@ -542,6 +555,10 @@ class AbstractCollectionResource(AbstractResource):
 
         return self.model_class().objects.values(*parameters).annotate(count=Count(*parameters))
 
+    def get_objects_from_group_by_sum_operation(self, attributes_functions_str):
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
+        return self.model_class().objects.all().values( attrs_funcs_arr[1] ).annotate(sum=Sum( attrs_funcs_arr[2] ))
+
     def get_objects_from_offset_limit_operation(self, attributes_functions_str):
         attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
 
@@ -656,6 +673,21 @@ class AbstractCollectionResource(AbstractResource):
         context["@context"] = group_by_count_acontext_dict
         return context
 
+    def get_context_for_group_by_sum_operation(self, request, attributes_functions_str):
+        context = {}
+        resource_type = self.resource_type_or_default_resource_type(request)
+        operation_name = self.operation_controller.group_by_sum_collection_operation_name
+        group_by_attr = self.remove_last_slash(attributes_functions_str).split("/")[1]
+
+        context = self.context_resource.get_resource_type_context(resource_type)
+        context["hydra:supportedOperations"] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        context["@context"] = {
+            operation_name: self.context_resource.get_context_to_operation( operation_name ),
+            group_by_attr: self.context_resource.attribute_contextualized_dict_for_field( self.field_for(group_by_attr) ),
+            "sum": {"@id": "http://schema.org/Float", "@type": "http://schema.org/Float", "hydra:supportedOperations": []}
+        }
+        return context
+
     def get_context_for_spatialize_operation(self, request, attributes_functions_str):
         pass
 
@@ -696,6 +728,9 @@ class AbstractCollectionResource(AbstractResource):
         collected_attrs_str = ",".join(collected_attrs)
 
         return self.get_objects_serialized_by_only_attributes(collected_attrs_str, objects)
+
+    def get_objects_serialized_by_aggregation_operation(self, attributes_functions_str, objects):
+        return list(objects)
 
     def converter_collection_operation_parameters(self, operation_name, parameters):
         """
@@ -770,6 +805,7 @@ class AbstractCollectionResource(AbstractResource):
             self.operation_controller.group_by_count_collection_operation_name: self.required_object_for_group_by_count_operation,
             self.operation_controller.filter_collection_operation_name: self.required_object_for_filter_operation,
             self.operation_controller.collect_collection_operation_name: self.required_object_for_collect_operation,
+            self.operation_controller.group_by_sum_collection_operation_name: self.required_object_for_group_by_sum_operation,
         })
         return d
 
@@ -786,6 +822,7 @@ class AbstractCollectionResource(AbstractResource):
             self.operation_controller.filter_and_collect_collection_operation_name: self.required_context_for_collect_operation,
             self.operation_controller.offset_limit_and_collect_collection_operation_name: self.required_context_for_offset_limit_and_collect_operation,
             self.operation_controller.filter_and_count_resource_collection_operation_name: self.required_context_for_count_resource_operation,
+            self.operation_controller.group_by_sum_collection_operation_name: self.required_context_for_group_by_sum_operation,
         })
         return dicti
 
@@ -873,3 +910,7 @@ class AbstractCollectionResource(AbstractResource):
     def get_objects_by_only_attributes(self, attribute_names_str):
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
         return self.model_class().objects.values(*attribute_names_str_as_array)
+
+    def get_objects_from_simple_path(self):
+        return self.model_class().objects.all()
+

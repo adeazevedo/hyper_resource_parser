@@ -196,11 +196,11 @@ class FeatureResource(SpatialResource):
             self.operation_controller.relate_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.relate_pattern_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.ring_operation_name: self.required_object_for_spatial_operation,
-            self.operation_controller.set_coords_operation_name: self.required_object_for_spatial_operation,
-            self.operation_controller.set_srid_operation_name: self.required_object_for_spatial_operation,
-            self.operation_controller.set_x_operation_name: self.required_object_for_spatial_operation,
-            self.operation_controller.set_y_operation_name: self.required_object_for_spatial_operation,
-            self.operation_controller.set_z_operation_name: self.required_object_for_spatial_operation,
+            #self.operation_controller.set_coords_operation_name: self.required_object_for_spatial_operation,
+            #self.operation_controller.set_srid_operation_name: self.required_object_for_spatial_operation,
+            #self.operation_controller.set_x_operation_name: self.required_object_for_spatial_operation,
+            #self.operation_controller.set_y_operation_name: self.required_object_for_spatial_operation,
+            #self.operation_controller.set_z_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.simple_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.simplify_operation_name: self.required_object_for_spatial_operation,
             self.operation_controller.srid_operation_name: self.required_object_for_spatial_operation,
@@ -241,14 +241,13 @@ class FeatureResource(SpatialResource):
         return self.join_feature_on_dict_response(spatialize_operation)
 
     def join_feature_on_dict_response(self, spatialize_operation):
-        if spatialize_operation.left_join_data['properties'][ spatialize_operation.left_join_attr ] !=\
-                spatialize_operation.right_join_data[ spatialize_operation.right_join_attr ]:
-            # the datas isn't 'joinable'
-            return None
+        if  spatialize_operation.left_join_data['properties'][ spatialize_operation.left_join_attr ] !=\
+            spatialize_operation.right_join_data[ spatialize_operation.right_join_attr ]:
+            return None # the datas isn't 'joinable'
 
-        for alfa_attr_name, alfa_attr_val in spatialize_operation.right_join_data.items():
-            spatialize_operation.left_join_data['properties']['joined__' + alfa_attr_name] = alfa_attr_val
-        return spatialize_operation.left_join_data
+        spatialize_operation.left_join_data["properties"]["__joined__"] = []
+        spatialize_operation.left_join_data["properties"]["__joined__"].append( spatialize_operation.right_join_data )
+        return deepcopy(spatialize_operation.left_join_data)
 
     def join_feature_on_list_response(self, spatialize_operation):
         for k, dicti in enumerate(spatialize_operation.right_join_data):
@@ -307,20 +306,6 @@ class FeatureResource(SpatialResource):
             response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)},
                                 status=required_object.status_code)
         return response
-
-    '''
-    def get_context_by_only_attributes(self, request, attributes_functions_str):
-        attrs_funcs_str = self.remove_last_slash(attributes_functions_str)
-        super(FeatureResource, self).get_context_by_only_attributes(request, attrs_funcs_str)
-
-        resource_type = self.define_resource_type_by_only_attributes(request, attrs_funcs_str)
-        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
-        supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-
-        context = self.context_resource.dict_context
-        context['hydra:supportedOperations'] = supported_operation_dict
-        return context
-    '''
 
     def default_content_type(self):
         return self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON

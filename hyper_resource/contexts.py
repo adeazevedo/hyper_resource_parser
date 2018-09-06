@@ -22,7 +22,6 @@ from rest_framework.views import APIView
 from rest_framework.reverse import reverse
 
 from hyper_resource.models import *
-from hyper_resource.views import *
 from hyper_resource.resources.AbstractResource import *
 
 
@@ -102,6 +101,14 @@ def vocabularyDict():
     dict['filter'] = 'http://opengis.org/operations/filter'
     dict['map'] = 'http://opengis.org/operations/map'
     dict['annotate'] = 'http://opengis.org/operations/annotate'
+    dict['group_by'] = "http://172.30.10.86/api/operations-list/collection-operation-interface-list/6/"
+    dict['group_by_sum'] = ''
+    dict['group_by_count'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/7/'
+    dict['distinct'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/5/'
+    dict['count_resource'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/3/'
+    dict['collect'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/2/'
+    dict['spatilize'] = ''
+    dict['make_line'] = 'http://172.30.10.86/api/operations-list/spatial-collection-operation-interface-list/30'
     dict['count_elements'] = 'http://opengis.org/operations/count_elements'
     dict['offset_limit'] = 'http://opengis.org/operations/offset_limit'
     dict['distance_lte'] = 'http://opengis.org/operations/distance_lte'
@@ -488,10 +495,6 @@ class ContextResource:
         return {"iri_templates": iri_templates}
 
     def get_resource_type_context(self, resource_type):
-        #if self.dict_context is not None and "@id" in self.dict_context and "@type" in self.dict_context:
-        #    resource_type_context = {"@id": self.dict_context["@id"], "@type": self.dict_context["@type"]}
-        #else:
-            #resource_type = self.resource.default_resource_type()
         resource_type_voc = vocabulary(resource_type)
         res_voc = resource_type_voc if resource_type_voc is not None else "http://schema.org/Thing"
         resource_type_str = resource_type.__name__ if inspect.isclass(resource_type) else str(resource_type)
