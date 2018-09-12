@@ -86,7 +86,7 @@ class Filter:
 
         # Case operator is 'not' or 'not/in' turn values into a list if it is not
         if operator in ['in', 'not/in']:
-            values = [tup[2]] if not isinstance(tup[2], list) else []
+            values = [tup[2]] if not isinstance(tup[2], list) else values
 
         switch = {
             'eq': Q(**{field: values}),
