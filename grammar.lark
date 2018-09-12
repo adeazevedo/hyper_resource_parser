@@ -1,0 +1,117 @@
+
+?start: api_path
+
+?api_path: API _SLS entry_point _SLS resource_locator [_SLS expression_chain] [_SLS|ender_expr]
+
+entry_point: id
+resource_locator: id [_SLS implicit_expression]
+
+expression_chain: expression ((_SLS|ender_expr) expression)*
+?expression: filter_expression              -> filter
+            | collect_expression            -> collect
+            | count_resource_expression     -> count_resource
+            | offset_limit_expression       -> offset_limit
+            | projection_expression         -> projection
+            | kv_expression                 -> kv_expression
+            | function_expression
+
+?filter_expression.160: _FILTER_OPERATOR _SLS logical_expression
+?collect_expression.150: _COLLECT_OPERATOR _SLS id_list _SLS function_expression
+?count_resource_expression.150: _COUNT_RESOURCE_OPERATOR
+?offset_limit_expression.150: _OFFSET_LIMIT_OPERATOR _SLS offset_limit_number_list [_SLS id_list]
+?projection_expression.150: explicit_projection_expression
+?kv_expression: "?*" kv_term ("&" kv_term)*
+//?group_by_expression:
+//?group_by_count_expression:
+?function_expression: function_name [_SLS function_parameter]
+
+?explicit_projection_expression: _PROJECTION_OPERATOR _SLS id_list
+implicit_expression.100: number | id
+
+logical_expression: or_expression
+?or_expression.10: and_expression ((_SLS|_ender_url) _OR _SLS and_expression)*
+?and_expression.20: not_expression ((_SLS|_ender_url) _AND _SLS not_expression)*
+?not_expression.30: _NOT _SLS parentesis_expression -> not_expression | parentesis_expression
+?parentesis_expression.40: _OPEN_LOGICAL [_SLS] or_expression [_SLS] _CLOSE_LOGICAL | comparison_expression
+?comparison_expression: between_expression | null_comparison | simple_expression | term_expression
+
+?between_expression.10: id _SLS BETWEEN_OPERATOR _SLS between_value _SLS _AND _SLS between_value
+?null_comparison.8: id _SLS null_operator
+simple_expression.6: id _SLS operator _SLS value
+term_expression.2: id _SLS function_and_parameters_list
+
+kv_term: operation_name "=" value
+?between_value: number | DATE -> date
+
+operator.5: EQ_OPERATOR | NEQ_OPERATOR | GT_OPERATOR | GTE_OPERATOR | LT_OPERATOR
+            | LTE_OPERATOR | LIKE_OPERATOR | IN_OPERATOR | NOT_IN_OPERATOR
+
+!operation_name: id
+!function_name: id
+function_parameter: value
+
+?id_list: id ((_COMMA|"&") id)*
+?number_list: number ((_COMMA|"&") number)*
+?offset_limit_number_list: number (_COMMA|"&") number
+function_and_parameters_list: function_or_parameters_value (_SLS function_or_parameters_value)*
+?function_or_parameters_value: id | value
+
+?value: DATE -> date | URL -> url | id_list | number_list | GEOM_VALUE -> wkt_value
+URL.10: /http:.+?(?=\/\*|$)/
+DATE.8: INT~4 _HYPHEN INT~2 _HYPHEN INT~2
+GEOM_VALUE.2: /(POINT|MULTIPOINT|LINESTRING|MULTILINESTRING|POLYGON|MULTIPOLYGON)\(.+\)/i
+
+id: STRING
+object_id: INT
+number: SIGNED_NUMBER
+
+?ender_expr: _SLS _ASTERISK [_SLS]
+_ender_url.2: _SLS _ASTERISK [_SLS]
+
+_OR.10: "or"
+_AND.11: "and"
+_NOT.12: "not"
+
+_FILTER_OPERATOR: "filter"
+_COLLECT_OPERATOR: "collect"
+_OFFSET_LIMIT_OPERATOR: "offset_limit"
+_PROJECTION_OPERATOR: "projection"
+_COUNT_RESOURCE_OPERATOR: "count_resource"
+BETWEEN_OPERATOR.16: "between"
+EQ_OPERATOR.15: "eq"
+NEQ_OPERATOR.15: "neq"
+GT_OPERATOR.15: "gt"
+GTE_OPERATOR.15: "gte"
+LT_OPERATOR.15: "lt"
+LTE_OPERATOR.15: "lte"
+LIKE_OPERATOR.15: "like"
+IN_OPERATOR.15: "in"
+NOT_IN_OPERATOR.15: "not" _SLS "in"
+!null_operator.2: "isnull" | "isnotnull"
+_OPEN_LOGICAL.2: "_("
+_CLOSE_LOGICAL.2: ")_"
+
+API: "api"
+_SLS: "/"
+_HYPHEN: "-"
+_UNDERSCORE: "_"
+_COMMA: ","
+_MINUS_SIGN: "-"
+_PLUS_SIGN: "+"
+_ASTERISK: "*"
+
+STRING: (LETTER|_UNDERSCORE) (LETTER | _DIGIT | _UNDERSCORE | _HYPHEN)*
+
+INT.2: _DIGIT+
+FLOAT.3: INT _EXP | _DECIMAL _EXP?
+NUMBER.4: FLOAT | INT
+SIGNED_INT.5: [_SIGN] INT
+SIGNED_FLOAT.6: [_SIGN] FLOAT
+SIGNED_NUMBER.7: [_SIGN] NUMBER
+
+_DIGIT: "0".."9"
+_DECIMAL: INT "." INT? | "." INT
+_EXP: ("e"|"E") SIGNED_INT
+_SIGN: _PLUS_SIGN | _MINUS_SIGN
+
+%import common.LETTER
