@@ -16,10 +16,8 @@ class AbstractResource:
     def set_filter(self, query_set=None):
         self._result_set = self.model.objects.filter(query_set)
 
-        return self
-
     def result_set(self):
-        if not self._result_set:
+        if self._result_set is None:
             self._result_set = self.model.objects.all()
 
         return self._result_set
