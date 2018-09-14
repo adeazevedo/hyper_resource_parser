@@ -496,6 +496,7 @@ class BaseOperationController(object):
         self.y_operation_name = 'y'
         self.z_operation_name = 'z'
         self.spatialize_operation_name = 'spatialize'
+        self.projection_operation_name = 'projection'
 
     #Spatial Operations
     def geometry_operations_dict(self):
@@ -592,6 +593,11 @@ class BaseOperationController(object):
         dicti = self.geometry_operations_dict()
         return dicti
 
+    def generic_object_operations_dict(self):
+        d = {}
+        d['projection'] = Type_Called('projection', [list], object)
+        return d
+
     def boolean_operations_dict(self):
         d = {}
         return d
@@ -687,6 +693,7 @@ class BaseOperationController(object):
         d.update(self.date_operations_dict())
         d.update(self.string_operations_dict())
         d.update(self.geometry_operations_dict())
+        d.update(self.generic_object_operations_dict())
         return d
 
     def is_operation(self, an_object, name):
@@ -812,6 +819,7 @@ class CollectionResourceOperationController(BaseOperationController):
         self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
         self.spatialize_operation_name = 'spatialize'
         self.group_by_sum_collection_operation_name = "group_by_sum"
+        self.projection_operation_name = 'projection'
 
     # operations that return a subcollection of an collection
     def subcollection_operations_dict(self):
@@ -850,6 +858,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.group_by_sum_collection_operation_name] = Type_Called(self.group_by_sum_collection_operation_name, [str, str], object)
         #dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
         #dict[self.spatialize_operation_name] = Type_Called(self.spatialize_operation_name, [tuple, object], GEOSGeometry)
+        dict[self.projection_operation_name] = Type_Called('projection', [list], object)
         return dict
 
     def dict_all_operation_dict(self):
@@ -936,6 +945,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], GEOSGeometry)
         #d[self.spatialize_collection_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
         d[self.spatialize_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
+        d['projection'] = Type_Called('projection', [list], object)
 
         return d
 
@@ -1102,35 +1112,13 @@ class FeatureModel(SpatialModel):
         return GeometryField
 
     def _get_type_geometry_object(self):
-        """
-        Returns the type of geometric field of the FeatureModel
-        instance
-        :return:
-        """
-        # FeatureModel.get_geometry_object() returns a
-        # geometric object references to the FeatureModel instance
         geo_object = self.get_spatial_object()
         if geo_object is None:
             return None
         return type(geo_object)
 
     def get_geometry_type(self):
-        """
-        Returns a geometric type (the type of geometric field of FeatureModel instance)
-        or a geometric model if this not exists
-        :return:
-        """
-
-        # todo check this affirmative late
-        # OBS: FeatureModel._get_type_geometry_object() indirectly calls FeatureModel.geofield()
-        # and we call FeatureModel.geo_field() bellow again. This is posibly a redundance
-
-        # FeatureModel._get_type_geometry_object() returns the type of  geometric field of the FeatureModel instace
         geoType = self._get_type_geometry_object()
-
-        # dict_map_geo_field_geometry() returns a dict of geometric models indexed by geometric types
-        # FeatureModel.geo_field() returns the geometric field of the FeatureModel instace
-        # so, we'll use this geometric field to get the geometric model if 'geoType' is None
         return geoType if geoType is not None else dict_map_geo_field_geometry()[type(self.geo_field())]
 
     def operations_with_parameters_type(self):

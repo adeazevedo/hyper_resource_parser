@@ -62,11 +62,7 @@ class CollectionResource(AbstractCollectionResource):
         objects = self.model_class().objects.all()
         return self.serializer_class(objects, many=True, context={'request': self.request}).data
 
-    def get_objects_by_only_attributes(self, attribute_names_str):
-        attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
-        return self.model_class().objects.values(*attribute_names_str_as_array)
-
-    def get_objects_serialized_by_only_attributes(self, attribute_names_str, query_set):
+    def get_object_serialized_by_only_attributes(self, attribute_names_str, query_set):
         arr = []
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
 

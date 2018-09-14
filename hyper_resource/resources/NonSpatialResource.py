@@ -5,38 +5,9 @@ from rest_framework.response import Response
 
 
 class NonSpatialResource(AbstractResource):
-    '''
-    def response_of_request(self,  attributes_functions_str):
-        att_funcs = attributes_functions_str.split('/')
-        if (not self.is_operation(att_funcs[0])) and self.is_attribute(att_funcs[0]):
-            att_funcs = att_funcs[1:]
-
-        self.current_object_state = self._execute_attribute_or_method(self.object_model, att_funcs[0], att_funcs[1:])
-
-        if hasattr(self.current_object_state, 'model') and issubclass(self.current_object_state.model, Model):
-            class_name = self.current_object_state.model.__name__ + 'Serializer'
-            serializer_cls = self.object_model.class_for_name(self.serializer_class.__module__, class_name)
-
-            if isinstance(self.current_object_state, QuerySet):
-                self.current_object_state = serializer_cls(self.current_object_state, many=True, context={'request': self.request}).data
-
-            elif isinstance(self.current_object_state.field, OneToOneField):
-                self.current_object_state = serializer_cls(self.current_object_state, context={'request': self.request}).data
-
-            else:
-                self.current_object_state = serializer_cls(self.current_object_state, many=True, context={'request': self.request}).data
-
-        a_value = {self.name_of_last_operation_executed: self.current_object_state}
-
-        return a_value, CONTENT_TYPE_JSON, self.object_model, {'status': 200}
-    '''
 
     def operation_name_method_dic(self):
         return super(NonSpatialResource, self).operation_name_method_dic()
-
-    #todo: HARCODED METHOD IMPLEMENTATION. Need to create NonSpatialOperationController and override 'dict_all_operation_dict' method
-    def array_of_operation_name(self):
-        return ['spatialize']
 
     # same signature in FeatureResource
     def response_request_attributes_functions_str_with_url(self, attributes_functions_str, request=None):
@@ -48,11 +19,11 @@ class NonSpatialResource(AbstractResource):
         return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), self.object_model, 200)
 
     def required_object_for_only_attributes(self, request, attributes_functions_str):
-        object = self.get_objects_by_only_attributes(attributes_functions_str)
-        serialized_object = self.get_objects_serialized_by_only_attributes(attributes_functions_str, object)
+        object = self.get_object_by_only_attributes(attributes_functions_str)
+        serialized_object = self.get_object_serialized_by_only_attributes(attributes_functions_str, object)
         return RequiredObject(serialized_object, self.content_type_or_default_content_type(request), object, 200)
 
-    def get_objects_by_only_attributes(self, attribute_names_str):
+    def get_object_by_only_attributes(self, attribute_names_str):
         attr_list = self.remove_last_slash(attribute_names_str).split(',')
         obj_dict = {}
         for attr_name in attr_list:
@@ -60,7 +31,7 @@ class NonSpatialResource(AbstractResource):
             obj_dict[attr_name] = attr_value
         return obj_dict
 
-    def get_objects_serialized_by_only_attributes(self, attribute_names_str, objects):
+    def get_object_serialized_by_only_attributes(self, attribute_names_str, objects):
         # NonSpatialObjects don't need a complex serialization, this method is here just to keep the code design
         # remember these three steps:
         # 1. get the object(s) by a "get_objects_by_something" method like
@@ -124,26 +95,6 @@ class NonSpatialResource(AbstractResource):
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
-    '''
-    def get(self, request, format=None, *args, **kwargs):
-        required_object = super(NonSpatialResource, self).get(request, format, *args, **kwargs)
-        status = required_object.status_code
-
-        if status == 400:
-            return Response(required_object.representation_object, status=required_object.status_code, content_type=required_object.content_type)
-
-        if status in [401,404]:
-            return Response({'Error ': 'The request has problem. Status:' + str(status)}, status=status)
-
-        if status in [500]:
-           return Response({'Error ': 'The server can not process this request. Status:' + str(status)}, status=status)
-
-        response = Response(data=required_object.representation_object, content_type=required_object.content_type)
-        self.add_base_headers(request, response)
-
-        return response
-    '''
-
     def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
         r_type = self.resource_type_or_default_resource_type(request)
         if r_type != self.default_resource_type():
@@ -156,6 +107,7 @@ class NonSpatialResource(AbstractResource):
 
         return self.default_resource_type()
 
+    '''
     def basic_options(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
         self.set_basic_context_resource(request)
@@ -165,9 +117,11 @@ class NonSpatialResource(AbstractResource):
             return self.required_context_for_simple_path(request)
         if self.path_has_only_attributes(attributes_functions_str):
             return self.required_context_for_only_attributes(request, attributes_functions_str)
-        if self.path_has_operations(attributes_functions_str):
-            return self.required_context_for_operation(request, attributes_functions_str)
-        return self.required_object_for_invalid_sintax(attributes_functions_str, message="This request has invalid attribute or operation: ")
+        res = self.get_required_context_from_method_to_execute(request, attributes_functions_str)
+        if res is None:
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
+        return res
+    '''
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)

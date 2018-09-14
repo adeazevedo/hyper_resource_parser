@@ -1,4 +1,4 @@
-import requests
+import requests, os, sys
 from time import sleep
 #se'rvidor = ''
 #servidor = 'http://LUC00557347.ibge.gov.br/'
@@ -14,6 +14,7 @@ class RequestTest():
 arr_get_for_non_spatial_resource = [
     RequestTest("controle-list/usuario-list/1/", 200),
     RequestTest("controle-list/usuario-list/1/nome,email", 200),
+    RequestTest("controle-list/usuario-list/1/projection/nome,email", 200),
 ]
 
 arr_get_for_collection = [
@@ -48,7 +49,6 @@ arr_get_for_collection = [
     RequestTest('api/bcim/unidades-federativas/filter/sigla/in/RJ&ES/*collect/nome&geom/buffer/0.2', 200),
     RequestTest('api/bcim/aldeias-indigenas/offset_limit/0&2/nome,geom,nomeabrev/*collect/nome&geom/buffer/0.5', 400),
     RequestTest('api/bcim/aldeias-indigenas/offset_limit/0&2/nome,geom/*collect/geom/buffer/0.5', 400),
-    RequestTest('api/bcim/unidades-federativas/filter/sigla/in/ES&PA/*projection/sigla,geocodigo', 200),
 ]
 
 arr_get_for_spatial_operations = [
@@ -348,6 +348,7 @@ def test_requests(request_test_list, test_label=''):
     fin_label_len = len(test_label) + len(default_fin_test_label) + 5
     print("\n\n" + fin_label_len * "*" + "\n* " + default_fin_test_label + " " + test_label + " *\n" + fin_label_len * "*" + "\n\n")
 
+'''
 test_requests(arr_get_for_non_spatial_resource, test_label = "Tests for NonSpatialResource")
 test_requests(arr_get_for_collection, test_label="Generic tests to collection operations")
 test_requests(arr_get_for_spatial_operations, test_label="Tests for spatial operations")
@@ -357,5 +358,31 @@ test_requests(arr_get_for_geometry_collection_operation, test_label="Tests for s
 test_requests(arr_get_for_spatialize_operation, test_label="Tests for spatialize operation")
 test_requests(arr_options_for_collection_operation, test_label = "Tests OPTIONS for Collection operations")
 test_requests(arr_get_for_collect_operation_context, test_label = "Tests GET for Collect operation context")
+'''
 
 print("\n\n" + 25 * "X" + "\nX End of all test sets  X\n" + 25 * "X" + "\n\n")
+
+args = sys.argv
+if '-a' in args:
+    print("<<< Testing CollectOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing OptionsForCollectOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsForCollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing GroupBySumOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.GroupBySumOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing ProjectionOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.ProjectionOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing OptionsForProjectionOperation >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsForProjectionOperation --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing FilterOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.FilterOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing RequestOptionsTest >>>")
+    os.system("python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing GetRequestContextTest >>>")
+    os.system("python manage.py test hyper_resource.tests.GetRequestContextTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing SpatializeOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.SpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing OptionsForSpatializeOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsForSpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("<<< Testing PaginationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.PaginationTest --testrunner=hyper_resource.tests.NoDbTestRunner")

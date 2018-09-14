@@ -353,13 +353,15 @@ class AbstractRequestTest(SimpleTestCase):
                                         'relate_pattern', 'ring', 'simple', 'simplify', 'spatialize', 'srid',
                                         'srs', 'sym_difference', 'touches', 'transform', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
          #'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z',
+        self.string_operations_names = ['capitalize', 'center', 'count', 'endswith', 'find', 'isalnum', 'isalpha', 'isdigit', 'islower', 'isupper',
+                                        'join', 'lower', 'split', 'startswith', 'upper']
         self.basic_operations_names = ['spatialize']
         self.spatial_collection_operation_names = ['bbcontains', 'bboverlaps', 'collect', 'contained', 'contains', 'contains_properly', 'count_resource',
                                                     'covers', 'covers_by', 'crosses', 'disjoint', 'distance_gt', 'distance_gte', 'distance_lt', 'distance_lte',
                                                     'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'intersects', 'isvalid', 'left',
-                                                    'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right',
+                                                    'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right', 'projection',
                                                    'relate', 'right', 'spatialize', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
-        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'offset_limit']
+        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'offset_limit', 'projection']
         self.non_simple_path_dict_keys = ["@context", '@id', '@type', 'hydra:supportedOperations']
 
     def aux_get_dict_from_response(self, response):
@@ -369,6 +371,7 @@ class AbstractRequestTest(SimpleTestCase):
         response_dict = self.aux_get_dict_from_response(response)
         return sorted( list(response_dict.keys()) )
 
+    # todo: this methods below must be moved for "AbstractOptionsRequestTest" class
     def aux_get_keys_from_response_context(self, response):
         response_dict = self.aux_get_dict_from_response(response)
         return sorted( list(response_dict["@context"].keys()) )
@@ -383,10 +386,9 @@ class AbstractRequestTest(SimpleTestCase):
         operations_names = [operation_dict['hydra:operation'] for operation_dict in response_dict['hydra:supportedOperations']]
         return sorted(operations_names)
 
-#python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
-class CollectOperationTest(AbstractRequestTest):
+class AbstractGetRequestTest(AbstractRequestTest):
     def setUp(self):
-        super(CollectOperationTest, self).setUp()
+        super(AbstractGetRequestTest, self).setUp()
         self.feature_collection_keys = ["features", "type"]
         self.geometry_collection_keys = ["geometries", "type"]
         self.feature_keys = ["geometry", "properties", "type"]
@@ -397,8 +399,10 @@ class CollectOperationTest(AbstractRequestTest):
 
     def aux_get_first_feature(self, response):
         response_dict = self.aux_get_dict_from_response(response)
-        first_feature = response_dict["features"][0]
-        return first_feature
+
+        if "features" not in response_dict.keys():
+            return response_dict
+        return response_dict["features"][0]
 
     def aux_get_first_feature_keys(self, response):
         first_feature = self.aux_get_first_feature(response)
@@ -408,15 +412,21 @@ class CollectOperationTest(AbstractRequestTest):
         first_feature = self.aux_get_first_feature(response)
         return sorted( list(first_feature['properties'].keys()) )
 
-    def aux_get_first_element_keys(self, response):
+    def aux_get_first_element_keys_from_response_list(self, response):
         response_list = self.aux_get_list_from_response(response)
         return sorted( list(response_list[0].keys()) )
 
-    def aux_get_keys_from_first_geometry(self, response):
+    def aux_get_first_geometry_keys_from_response_list(self, response):
         response_dict = self.aux_get_dict_from_response(response)
         first_geometry = response_dict["geometries"][0]
         return sorted( list(first_geometry.keys()) )
 
+    def aux_get_single_feature_properties_keys_from_response(self, response):
+        response_dict = self.aux_get_dict_from_response(response)
+        return sorted( list(response_dict['properties'].keys()) )
+
+#python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class CollectOperationTest(AbstractGetRequestTest):
 
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
     # FeatureCollection return
@@ -472,7 +482,7 @@ class CollectOperationTest(AbstractRequestTest):
         response_dict_keys = self.aux_get_keys_from_response(response)
         self.assertEquals(response_dict_keys, self.geometry_collection_keys)
 
-        first_geometry_keys = self.aux_get_keys_from_first_geometry(response)
+        first_geometry_keys = self.aux_get_first_geometry_keys_from_response_list(response)
         self.assertEquals(first_geometry_keys, self.geometry_keys)
 
     def test_collect_operation_with_geometry_collection_return_accept_header(self):
@@ -487,7 +497,7 @@ class CollectOperationTest(AbstractRequestTest):
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/json')
 
-        first_element_keys = self.aux_get_first_element_keys(response)
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
         self.assertEquals(first_element_keys, ["area", "nome"])
 
     def test_collect_operation_with_spatial_operation_and_float_return_accept_header(self):
@@ -500,7 +510,7 @@ class CollectOperationTest(AbstractRequestTest):
         response = requests.get(self.bcim_base_uri + "aldeias-indigenas/collect/nome/upper")
         self.assertEquals(response.status_code, 200)
 
-        first_element_keys = self.aux_get_first_element_keys(response)
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
         self.assertEquals(first_element_keys, ["upper"])
 
     def test_collect_operation_with_alphanumeric_operation_accept_header(self):
@@ -543,7 +553,7 @@ class CollectOperationTest(AbstractRequestTest):
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/json')
 
-        first_element_keys = self.aux_get_first_element_keys(response)
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
         self.assertEquals(first_element_keys, ["email", "upper"])
 
     def test_collect_operation_with_collection_return_with_accept_header(self):
@@ -557,7 +567,7 @@ class CollectOperationTest(AbstractRequestTest):
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/json')
 
-        first_element_keys = self.aux_get_first_element_keys(response)
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
         self.assertEquals(first_element_keys, ["upper"])
 
     def test_collect_operation_with_collection_return_only_one_attribute_with_accept_header(self):
@@ -572,7 +582,7 @@ class CollectOperationTest(AbstractRequestTest):
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/json')
 
-        first_element_keys = self.aux_get_first_element_keys(response)
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
         self.assertEquals(first_element_keys, ["email", "upper"])
 
     def test_collect_operation_with_projection_collection_return_and_accept_header(self):
@@ -598,10 +608,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom__buffer", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
 
-        geom__buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__buffer")
-        self.assertEquals(geom__buffer_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
@@ -624,10 +634,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom__buffer", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
 
-        geom__buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__buffer")
-        self.assertEquals(geom__buffer_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
@@ -649,7 +659,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "geom", "lower", "sigla__lower"])
+        self.assertEquals(acontext_keys, ["collect", "geom", "lower", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -657,8 +667,8 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         lower_context_keys = self.aux_get_keys_from_acontext_attrs(response, "lower")
         self.assertEquals(lower_context_keys, self.keys_from_oper_context)
-        sigla__lower_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla__lower")
-        self.assertEquals(sigla__lower_context_keys, self.keys_from_attrs_context)
+        sigla_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla")
+        self.assertEquals(sigla_context_keys, self.keys_from_attrs_context)
 
         operations_names = self.aux_get_supported_operations_names(response)
         self.assertEquals(operations_names, self.spatial_collection_operation_names)
@@ -675,7 +685,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "geom", "lower", "sigla__lower"])
+        self.assertEquals(acontext_keys, ["collect", "geom", "lower", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -683,8 +693,8 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         lower_context_keys = self.aux_get_keys_from_acontext_attrs(response, "lower")
         self.assertEquals(lower_context_keys, self.keys_from_oper_context)
-        sigla__lower_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla__lower")
-        self.assertEquals(sigla__lower_context_keys, self.keys_from_attrs_context)
+        sigla_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla")
+        self.assertEquals(sigla_context_keys, self.keys_from_attrs_context)
 
         operations_names = self.aux_get_supported_operations_names(response)
         self.assertEquals(operations_names, self.spatial_collection_operation_names)
@@ -701,10 +711,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom__buffer"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom"])
 
-        geom__buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__buffer")
-        self.assertEquals(geom__buffer_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
@@ -725,10 +735,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom__buffer"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom"])
 
-        geom__buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__buffer")
-        self.assertEquals(geom__buffer_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
@@ -749,10 +759,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["area", "collect", "geom__area"])
+        self.assertEquals(acontext_keys, ["area", "collect", "geom"])
 
-        geom__area_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__area")
-        self.assertEquals(geom__area_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         area_context_keys = self.aux_get_keys_from_acontext_attrs(response, "area")
@@ -773,10 +783,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["area", "collect", "geom__area"])
+        self.assertEquals(acontext_keys, ["area", "collect", "geom"])
 
-        geom__area_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__area")
-        self.assertEquals(geom__area_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         area_context_keys = self.aux_get_keys_from_acontext_attrs(response, "area")
@@ -796,14 +806,14 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "lower", "sigla__lower"])
+        self.assertEquals(acontext_keys, ["collect", "lower", "sigla"])
 
         lower_context_keys = self.aux_get_keys_from_acontext_attrs(response, "lower")
         self.assertEquals(lower_context_keys, self.keys_from_oper_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
-        sigla__lower_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla__lower")
-        self.assertEquals(sigla__lower_context_keys, self.keys_from_attrs_context)
+        sigla_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla")
+        self.assertEquals(sigla_context_keys, self.keys_from_attrs_context)
 
         operations_names = self.aux_get_supported_operations_names(response)
         self.assertEquals(operations_names, self.collection_operation_names)
@@ -820,9 +830,9 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "lower", "sigla__lower"])
+        self.assertEquals(acontext_keys, ["collect", "lower", "sigla"])
 
-        sigla_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla__lower")
+        sigla_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla")
         self.assertEquals(sigla_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
@@ -844,10 +854,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom__buffer", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
 
-        geom__buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__buffer")
-        self.assertEquals(geom__buffer_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
@@ -870,10 +880,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom__buffer", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
 
-        geom__buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom__buffer")
-        self.assertEquals(geom__buffer_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
         self.assertEquals(collect_context_keys, self.keys_from_oper_context)
         buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
@@ -902,10 +912,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'nome__upper', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'nome', 'upper'])
 
-        nome__upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome__upper')
-        self.assertEquals(nome__upper_context_keys, self.keys_from_attrs_context)
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
         upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
         self.assertEquals(upper_context_keys, self.keys_from_oper_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'collect')
@@ -926,10 +936,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'nome__upper', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'nome', 'upper'])
 
-        nome__upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome__upper')
-        self.assertEquals(nome__upper_context_keys, self.keys_from_attrs_context)
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
         upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
         self.assertEquals(upper_context_keys, self.keys_from_oper_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'collect')
@@ -949,12 +959,12 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email__upper', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
-        email__upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email__upper')
-        self.assertEquals(email__upper_context_keys, self.keys_from_attrs_context)
+        email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
+        self.assertEquals(email_context_keys, self.keys_from_attrs_context)
         upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
         self.assertEquals(upper_context_keys, self.keys_from_oper_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'collect')
@@ -975,12 +985,12 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email__upper', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
-        email__upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email__upper')
-        self.assertEquals(email__upper_context_keys, self.keys_from_attrs_context)
+        email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
+        self.assertEquals(email_context_keys, self.keys_from_attrs_context)
         upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
         self.assertEquals(upper_context_keys, self.keys_from_oper_context)
         collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'collect')
@@ -1001,10 +1011,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email__upper', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
 
-        email__upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email__upper')
-        self.assertEquals(email__upper_context_keys, self.keys_from_attrs_context)
+        email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
+        self.assertEquals(email_context_keys, self.keys_from_attrs_context)
         nome_upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_upper_context_keys, self.keys_from_attrs_context)
         upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
@@ -1027,10 +1037,10 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email__upper', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
 
-        email__upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email__upper')
-        self.assertEquals(email__upper_context_keys, self.keys_from_attrs_context)
+        email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
+        self.assertEquals(email_context_keys, self.keys_from_attrs_context)
         nome_upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_upper_context_keys, self.keys_from_attrs_context)
         upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
@@ -1057,6 +1067,456 @@ class GroupBySumOperationTest(AbstractRequestTest):
         response = requests.get(self.controle_base_uri + "gasto-list/group_by_sum/data/valor")
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/json')
+
+#python manage.py test hyper_resource.tests.ProjectionOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class ProjectionOperationTest(AbstractGetRequestTest):
+
+    # --------------- TESTS FOR NONSPATIAL RESOURCE ---------------------------------
+    def test_projection_for_non_spatial_resource(self):
+        implicit_projection_resp = requests.get(self.controle_base_uri + "usuario-list/1/nome,email") # implicit projection
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/json')
+
+        f_response_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_keys, ["email", "nome"])
+
+        explicit_projection_resp = requests.get(self.controle_base_uri + "usuario-list/1/projection/nome,email") # explicit projection
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/json')
+
+        s_response_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_keys, ["email", "nome"])
+
+    def test_projection_for_non_spatial_resource_accept_octet_stream(self):
+        implicit_projection_resp = requests.get(self.controle_base_uri + "usuario-list/1/nome,email", headers={"Accept": "application/octet-stream"}) # implicit projection
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+        explicit_projection_resp = requests.get(self.controle_base_uri + "usuario-list/1/projection/nome,email", headers={"Accept": "application/octet-stream"}) # explicit projection
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+
+    # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
+    def test_projection_for_feature_resource(self):
+        # implicit projection
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/nome,geom")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        f_response_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_keys, self.feature_keys)
+
+        f_feature_properties_keys = self.aux_get_single_feature_properties_keys_from_response(implicit_projection_resp)
+        self.assertEquals(f_feature_properties_keys, ["nome"])
+
+        # explicit projection
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/projection/nome,geom")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        s_response_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_keys, self.feature_keys)
+
+        s_feature_properties_keys = self.aux_get_single_feature_properties_keys_from_response(explicit_projection_resp)
+        self.assertEquals(s_feature_properties_keys, ["nome"])
+
+    def test_projection_for_feature_resource_without_geometric_attribute(self):
+        # implicit projection
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/nome,sigla")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/json')
+
+        f_feature_properties_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(f_feature_properties_keys, ["nome", "sigla"])
+
+        # explicit projection
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/projection/nome,sigla")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/json')
+
+        s_feature_properties_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(s_feature_properties_keys, ["nome", "sigla"])
+
+    def test_projection_for_feature_resource_only_geometric_attribute(self):
+        # implicit projection
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/geom")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        f_response_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_keys, self.geometry_keys)
+
+        # explicit projection
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/projection/geom")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        s_response_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_keys, self.geometry_keys)
+
+    def test_projection_for_feature_resource_accept_octet_stream(self):
+        # implicit projection
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/nome,geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/projection/nome,geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+    def test_projection_for_feature_resource_without_geometric_attribute_accept_octet_stream(self):
+        # implicit projection
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/nome,sigla", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/projection/nome,sigla", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+    def test_projection_for_feature_resource_only_geometric_attribute_accept_octet_stream(self):
+        # implicit projection
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+        # explicit projection
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/ES/projection/geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+    # --------------- TESTS FOR COLLECTION ---------------------------------
+    def test_projection_for_collection_resource(self):
+        implicit_projection_resp = requests.get(self.controle_base_uri + "usuario-list/nome,email/")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/json')
+
+        f_keys_from_first_element = self.aux_get_first_element_keys_from_response_list(implicit_projection_resp)
+        self.assertEquals(f_keys_from_first_element, ['email', 'nome'])
+
+        explicit_projection_resp = requests.get(self.controle_base_uri + "usuario-list/projection/nome,email/")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/json')
+
+        s_keys_from_first_element = self.aux_get_first_element_keys_from_response_list(explicit_projection_resp)
+        self.assertEquals(s_keys_from_first_element, ['email', 'nome'])
+
+    def test_projection_for_collection_resource_with_collect_operation(self):
+        response = requests.get(self.controle_base_uri + "usuario-list/projection/nome,email/collect/email&nome/upper")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        keys_from_frist_element = self.aux_get_first_element_keys_from_response_list(response)
+        self.assertEquals(keys_from_frist_element, ['email', 'upper'])
+
+    def test_projection_for_collection_resource_with_collect_operation_projection_list_different_from_collect_list(self):
+        response = requests.get(self.controle_base_uri + "usuario-list/projection/nome,email/collect/nome/upper")
+        self.assertEquals(response.status_code, 400)
+
+    def test_projection_for_collection_resource_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "usuario-list/nome,email/", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    def test_projection_for_collection_resource_with_collect_operation_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "usuario-list/projection/nome,email/collect/email&nome/upper", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
+    def test_projection_for_feature_collection(self):
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/nome,geom")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        f_first_feature_keys = self.aux_get_first_feature_keys(implicit_projection_resp)
+        self.assertEquals(f_first_feature_keys, self.feature_keys)
+        f_first_feature_properties_keys = self.aux_get_first_feature_properties_keys(implicit_projection_resp)
+        self.assertEquals(f_first_feature_properties_keys, ['nome'])
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/projection/nome,geom")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        s_first_feature_keys = self.aux_get_first_feature_keys(explicit_projection_resp)
+        self.assertEquals(s_first_feature_keys, self.feature_keys)
+        s_first_feature_properties_keys = self.aux_get_first_feature_properties_keys(explicit_projection_resp)
+        self.assertEquals(s_first_feature_properties_keys, ['nome'])
+
+    def test_projection_for_feature_collection_without_geometric_attribute(self):
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/nome")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/json')
+
+        f_first_element_keys = self.aux_get_first_element_keys_from_response_list(implicit_projection_resp)
+        self.assertEquals(f_first_element_keys, ['nome'])
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/projection/nome")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/json')
+
+        s_first_element_keys = self.aux_get_first_element_keys_from_response_list(explicit_projection_resp)
+        self.assertEquals(s_first_element_keys, ['nome'])
+
+    def test_projection_for_feature_collection_only_geometric_attribute(self):
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/geom")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        f_first_geometry_keys = self.aux_get_first_geometry_keys_from_response_list(implicit_projection_resp)
+        self.assertEquals(f_first_geometry_keys, self.geometry_keys)
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/projection/geom")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/vnd.geo+json')
+
+        s_first_geometry_keys = self.aux_get_first_geometry_keys_from_response_list(explicit_projection_resp)
+        self.assertEquals(s_first_geometry_keys, self.geometry_keys)
+
+    # tests just to know if projection works with collect operation (tests for collect operation must be in his specific test class)
+    def test_projection_for_feature_collection_with_collect_operation(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/projection/nome,geom/collect/nome&geom/buffer/0.2")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
+
+        first_feature_keys = self.aux_get_first_feature_keys(response)
+        self.assertEquals(first_feature_keys, self.feature_keys)
+        first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(first_feature_properties_keys, ['nome'])
+
+    def test_projection_for_feature_collection_with_collect_operation_projection_attributes_different_from_collect_attibutes(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/projection/nome,geom/collect/geom/buffer/0.2")
+        self.assertEquals(response.status_code, 400)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+#python manage.py test hyper_resource.tests.OptionsForProjectionOperation --testrunner=hyper_resource.tests.NoDbTestRunner
+class OptionsForProjectionOperation(AbstractRequestTest):
+
+    # --------------- TESTS FOR NONSPATIAL RESOURCE ---------------------------------
+    def test_options_for_non_spatial_resource_projection_operation(self):
+        # implicit projection
+        implicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/1/nome,email")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.basic_operations_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+
+        f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
+        self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
+        f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'nome')
+        self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
+
+        f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEqual(f_resp_dict['@type'], 'Thing')
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/1/projection/nome,email")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.basic_operations_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+
+        s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
+        self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'nome')
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'projection')
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEqual(s_resp_dict['@type'], 'Thing')
+
+    def test_options_for_non_spatial_resource_projection_operation_accept_octet_stream(self):
+        # implicit projection
+        implicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/1/nome,email",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, [])
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+
+        f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
+        self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
+        f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'nome')
+        self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
+
+        f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEqual(f_resp_dict['@type'], 'bytes')
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/1/projection/nome,email",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, [])
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+
+        s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
+        self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'nome')
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'projection')
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEqual(s_resp_dict['@type'], 'bytes')
+
+    # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
+    def test_options_for_feature_resource_projection_operation(self):
+        # implicit project
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/ES/nome,geom/")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.spatial_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['geom', 'nome'])
+
+        f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'geom')
+        self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
+        f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'nome')
+        self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
+
+        f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEqual(f_resp_dict['@type'], 'Feature')
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/ES/projection/nome,geom/")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.spatial_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['geom', 'nome', 'projection'])
+
+        s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'geom')
+        self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'nome')
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'projection')
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEqual(s_resp_dict['@type'], 'Feature')
+
+    def test_options_for_feature_resource_projection_operation_only_geometric_attribute(self):
+        # implicit project
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/ES/geom/")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.spatial_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['geom'])
+
+        f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'geom')
+        self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
+
+        f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEqual(f_resp_dict['@type'], 'GeometryField')
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/ES/projection/geom/")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.spatial_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['geom', 'projection'])
+
+        s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'geom')
+        self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'projection')
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEqual(s_resp_dict['@type'], 'GeometryField')
+
+    def test_options_for_feature_resource_projection_operation_only_alphanumeric_attribute(self):
+        # implicit project
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/ES/nome/")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.string_operations_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['nome'])
+
+        f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'nome')
+        self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
+
+        f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEqual(f_resp_dict['@type'], 'CharField')
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/ES/projection/nome/")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.string_operations_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['nome', 'projection'])
+
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'nome')
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'projection')
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEqual(s_resp_dict['@type'], 'CharField')
+
+    # --------------- TESTS FOR COLLECTION ---------------------------------
+
+    # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
 
 #python manage.py test hyper_resource.tests.FilterOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class FilterOperationTest(AbstractRequestTest):
@@ -2485,30 +2945,12 @@ class GetRequestContextTest(AbstractRequestTest):
     # ------------------- TESTS FOR ENTRY POINTS -------------------------------------
 
 #python manage.py test hyper_resource.tests.SpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
-class SpatializeOperationTest(AbstractRequestTest):
+class SpatializeOperationTest(AbstractGetRequestTest):
     def setUp(self):
         super(SpatializeOperationTest, self).setUp()
         self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
         self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
-        self.feature_collection_keys = ["features", "type"]
         self.feature_keys = ["geometry", "id", "properties", "type"]
-        self.geometry_collection_keys = ["geometries", "type"]
-        self.geometry_keys = ["coordinates", "type"]
-
-    def aux_get_first_feature(self, response):
-        response_dict = self.aux_get_dict_from_response(response)
-
-        if "features" not in response_dict.keys():
-            return response_dict
-        return response_dict["features"][0]
-
-    def aux_get_first_feature_keys(self, response):
-        first_feature = self.aux_get_first_feature(response)
-        return sorted( list(first_feature.keys()) )
-
-    def aux_get_first_feature_properties_keys(self, response):
-        first_feature = self.aux_get_first_feature(response)
-        return sorted( list(first_feature['properties'].keys()) )
 
     def aux_get_first_feature_joined_properties(self, response):
         first_feature = self.aux_get_first_feature(response)

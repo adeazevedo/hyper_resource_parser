@@ -13,9 +13,6 @@ class AbstractCollectionResource(AbstractResource):
     def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
         return self.resource_type_or_default_resource_type(request)
 
-    def define_resource_type_by_operation(self, request, operation_name):
-        return self.resource_type_or_default_resource_type(request)
-
     def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
         raise NotImplementedError("'define_resource_type_by_collect_operation' must be implemented in subclasses")
 
@@ -57,46 +54,6 @@ class AbstractCollectionResource(AbstractResource):
             first_oper_snippet = attrs_functs_str
             second_oper_snippet = None
         return (first_oper_snippet, second_oper_snippet)
-
-    def path_has_only_attributes(self, attributes_functions_name):
-        if self.path_has_projection(attributes_functions_name):
-            attrs_funcs_str = self.remove_projection_from_path(attributes_functions_name, remove_only_name=True)
-        else:
-            attrs_funcs_str = attributes_functions_name
-
-        return super(AbstractCollectionResource, self).path_has_only_attributes(attrs_funcs_str)
-
-    def path_has_projection(self, attributes_functions_name):
-        if attributes_functions_name == None or attributes_functions_name == '':
-            return False
-
-        attrs_funcs_arr = self.remove_last_slash(attributes_functions_name).split('/')
-        return attrs_funcs_arr[0] == 'projection'
-
-    def remove_projection_from_path(self, attributes_functions_str, remove_only_name=False):
-        attrs_functs_arr = self.remove_last_slash(attributes_functions_str).split('/')
-
-        if attrs_functs_arr[0] == 'projection':
-            attrs_functs_arr.pop(0)
-
-            if not remove_only_name:
-                attrs_functs_arr.pop(0)
-
-        return '/'.join(attrs_functs_arr)
-
-    def extract_projection_snippet(self, attributes_functions_str, as_string=False):
-        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
-        projection_snippet = '/'.join(attrs_funcs_arr[:2])
-
-        return projection_snippet
-
-    def extract_projection_attributes(self, attributes_functions_str, as_string=False):
-        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
-
-        if as_string:
-            return attrs_funcs_arr[1]
-
-        return sorted( attrs_funcs_arr[1].split(',') )
 
     def extract_collect_operation_snippet(self, attributes_functions_str):
         collect_oper_snippet = self.remove_last_slash(attributes_functions_str)
@@ -213,7 +170,11 @@ class AbstractCollectionResource(AbstractResource):
         if self.path_has_spatialize_operation(attributes_functions_str):
             return self.operation_controller.spatialize_operation_name
 
-        first_part_name = arr_att_funcs[2] if self.path_has_projection(attributes_functions_str) else arr_att_funcs[0]
+        if self.path_has_projection(attributes_functions_str):
+            path_without_projection = self.remove_projection_from_path(attributes_functions_str)
+            first_part_name = self.operation_controller.projection_operation_name if path_without_projection == '' else arr_att_funcs[2]
+        else:
+            first_part_name = arr_att_funcs[0]
 
         if first_part_name not in self.array_of_operation_name():
             return None
@@ -254,13 +215,13 @@ class AbstractCollectionResource(AbstractResource):
 
         if self.path_has_projection(attributes_functions_str):
             projection_atts_str = self.extract_projection_attributes(attributes_functions_str, as_string=True)
-            objects = self.get_objects_serialized_by_only_attributes(projection_atts_str, queryset_or_objects)
+            objects = self.get_object_serialized_by_only_attributes(projection_atts_str, queryset_or_objects)
 
             return RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
 
         elif len(offset_limit_snippet_arr) == 3:
             offset_limit_attrs = offset_limit_snippet_arr[2]
-            objects = self.get_objects_serialized_by_only_attributes(offset_limit_attrs, queryset_or_objects)
+            objects = self.get_object_serialized_by_only_attributes(offset_limit_attrs, queryset_or_objects)
             return RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
 
         else:
@@ -271,7 +232,7 @@ class AbstractCollectionResource(AbstractResource):
 
         if self.path_has_projection(attributes_functions_str):
             projection_attrs = self.extract_projection_attributes(attributes_functions_str, as_string=True)
-            serialized_data = self.get_objects_serialized_by_only_attributes(projection_attrs, queryset_or_objects)
+            serialized_data = self.get_object_serialized_by_only_attributes(projection_attrs, queryset_or_objects)
 
             return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
 
@@ -297,7 +258,7 @@ class AbstractCollectionResource(AbstractResource):
 
         if self.path_has_projection(attributes_functions_str):
             attrs_funcs_str = self.extract_projection_attributes(attributes_functions_str, as_string=True)
-            serialized_data = self.get_objects_serialized_by_only_attributes(attrs_funcs_str, business_objects)
+            serialized_data = self.get_object_serialized_by_only_attributes(attrs_funcs_str, business_objects)
 
         else:
             serialized_data = self.serializer_class(business_objects, many=True, context={'request': request}).data
@@ -386,8 +347,8 @@ class AbstractCollectionResource(AbstractResource):
 
     def required_object_for_only_attributes(self, request, attributes_functions_str):
         attrs_funcs_str = self.remove_projection_from_path(attributes_functions_str, remove_only_name=True)
-        objects = self.get_objects_by_only_attributes(attrs_funcs_str)
-        serialized_data = self.get_objects_serialized_by_only_attributes(attrs_funcs_str, objects)
+        objects = self.get_object_by_only_attributes(attrs_funcs_str)
+        serialized_data = self.get_object_serialized_by_only_attributes(attrs_funcs_str, objects)
         content_type = self.content_type_or_default_content_type(request)
 
         return RequiredObject(serialized_data, content_type, objects, 200)
@@ -612,15 +573,12 @@ class AbstractCollectionResource(AbstractResource):
         operated_attr = attrs.pop()
 
         operation_in_collect = self.extract_collect_operation_snippet(attributes_functions_str).split('/')[2]
-        self.context_resource.set_context_to_operation(self.object_model, operation_in_collect)
-        oper_context = deepcopy(self.context_resource.dict_context["@context"])
+        oper_context = self.context_resource.get_context_to_operation(operation_in_collect)["@context"]
         attrs_and_oper_context.update(oper_context)
 
         oper_type_called = BaseOperationController().dict_all_operation_dict()[operation_in_collect]
         operated_attr_context = self.context_resource.attribute_contextualized_dict_for_type(oper_type_called.return_type)
-        attrs_and_oper_context.update(
-            {operated_attr + '__' + operation_in_collect: operated_attr_context}
-        )
+        attrs_and_oper_context.update( {operated_attr: operated_attr_context} )
 
         for attr in attrs:
             acontext_for_field = self.context_resource.attribute_contextualized_dict_for_field(self.field_for(attr))
@@ -712,9 +670,6 @@ class AbstractCollectionResource(AbstractResource):
     def get_objects_from_specialized_operation(self, attributes_functions_str):
         pass
 
-    # Have to be overridden
-    def get_objects_serialized_by_only_attributes(self, attributes_functions_str, objects):
-        pass
 
     def get_objects_serialized_by_collect_operation(self, attributes_functions_str, objects):
         collect_operatiion_snippet = self.remove_last_slash(attributes_functions_str)
@@ -727,22 +682,12 @@ class AbstractCollectionResource(AbstractResource):
             collected_attrs[-1] = operation_name
         collected_attrs_str = ",".join(collected_attrs)
 
-        return self.get_objects_serialized_by_only_attributes(collected_attrs_str, objects)
+        return self.get_object_serialized_by_only_attributes(collected_attrs_str, objects)
 
     def get_objects_serialized_by_aggregation_operation(self, attributes_functions_str, objects):
         return list(objects)
 
     def converter_collection_operation_parameters(self, operation_name, parameters):
-        """
-        Receive a operation name for a collection resource and a list of parameters
-        for this operation. If this operation name corresponds to an collection operations
-        dict key, convert each element into the parameters list to the expected type for
-        the respective collection operation. Return the parameters intact if the operation
-        name isn't in the collection operations dict.
-        :param operation_name:
-        :param parameters:
-        :return:
-        """
         operation_name_lower = operation_name.lower()
 
         # gets the dict whit all operations for collections
@@ -826,18 +771,6 @@ class AbstractCollectionResource(AbstractResource):
         })
         return dicti
 
-    #Responds a context. Should be overridden
-    '''
-    def get_context_from_method_to_execute(self, request, attributes_functions_str):
-        method_to_execute = self.get_operation_to_execute(request, attributes_functions_str)
-
-        if method_to_execute is None:
-            return self.context_resource.context()
-
-        if method_to_execute == self.required_object_for_count_resource_operation:
-            self._set_context_to_operation()
-    '''
-
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
         self.current_object_state = self.object_model
@@ -861,21 +794,21 @@ class AbstractCollectionResource(AbstractResource):
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
+    '''
     def basic_options(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
         self.set_basic_context_resource(request)
-        attributes_functions_str = self.kwargs.get('attributes_functions')
+        attributes_functions_str = self.kwargs.get('attributes_functions', None)
 
         if self.is_simple_path(attributes_functions_str):
             return self.required_context_for_simple_path(request)
-
         if self.path_has_only_attributes(attributes_functions_str):
             return self.required_context_for_only_attributes(request, attributes_functions_str)
-
         res = self.get_required_context_from_method_to_execute(request, attributes_functions_str)
         if res is None:
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
+    '''
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)
@@ -907,7 +840,7 @@ class AbstractCollectionResource(AbstractResource):
 
         return local_hash
 
-    def get_objects_by_only_attributes(self, attribute_names_str):
+    def get_object_by_only_attributes(self, attribute_names_str):
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
         return self.model_class().objects.values(*attribute_names_str_as_array)
 

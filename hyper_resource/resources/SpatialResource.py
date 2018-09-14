@@ -13,8 +13,10 @@ class SpatialResource(AbstractResource):
         super(SpatialResource, self).__init__()
         self.iri_style = None
 
+    '''
     def spatial_field_name(self):
         return self.serializer_class.Meta.geo_field
+    '''
 
     def make_geometrycollection_from_featurecollection(self, feature_collection):
         geoms = []
