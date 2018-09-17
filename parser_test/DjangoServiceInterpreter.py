@@ -33,6 +33,9 @@ class DjangoServiceInterpreter(ServiceInterpreter):
         elif description['filter']:
             self.resource.set_filter(self.build_filter(description['filter']))
 
+        if 'projection' in description:
+            self.resource.projection(*description['projection'])
+
         return self.resource
 
     def build_filter(self, representation):

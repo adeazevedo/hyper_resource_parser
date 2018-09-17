@@ -55,11 +55,19 @@ class Interpreter(lark.visitors.Interpreter):
                 filter_ = self.filter(child)
                 filter_description.append(filter_)
 
+            elif child.data == 'projection':
+                projection = self.projection(child)
+                self.description.update(projection=projection)
+
         self.description.update(
             filter=filter_description
         )
 
     def filter(self, tree):
+        result = self.visit_children(tree)
+        return result[0]
+
+    def projection(self, tree):
         result = self.visit_children(tree)
         return result[0]
 
@@ -187,3 +195,42 @@ class NotFilter(Filter):
         self.operation = 'not'
 
         self.add(expr)
+
+
+
+import heapq, itertools
+
+class PriorityQueue:
+    def __init__(self):
+        self.priority_queue = []
+        self.entry_finder = {}  # mapping of tasks to entries
+        self.REMOVED = '<removed-task>'  # placeholder for a removed task
+        self.counter = itertools.count()  # unique sequence count
+
+    def add_task(self, task, priority=0):
+        #'Add a new task or update the priority of an existing task'
+        if task in self.entry_finder:
+            self.remove_task(task)
+
+        count = next(self.counter)
+        entry = [priority, count, task]
+        self.entry_finder[task] = entry
+        heapq.heappush(self.priority_queue, entry)
+
+    def remove_task(self, task):
+        #'Mark an existing task as REMOVED.  Raise KeyError if not found.'
+        entry = self.entry_finder.pop(task)
+        entry[-1] = self.REMOVED
+
+    def pop_task(self):
+        'Remove and return the lowest priority task. Raise KeyError if empty.'
+        while self.priority_queue:
+            priority, count, task = heapq.heappop(self.priority_queue)
+
+            if task is not self.REMOVED:
+                del self.entry_finder[task]
+                return task
+
+        raise KeyError('pop from an empty priority queue')
+
+

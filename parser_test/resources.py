@@ -16,6 +16,10 @@ class AbstractResource:
     def set_filter(self, query_set=None):
         self._result_set = self.model.objects.filter(query_set)
 
+    def projection(self, *fields):
+        #self._result_set = self._result_set.only(*fields)
+        self._result_set = self._result_set.values('id_objeto', *fields)
+
     def result_set(self):
         if self._result_set is None:
             self._result_set = self.model.objects.all()
