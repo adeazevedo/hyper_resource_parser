@@ -93,6 +93,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return res_type_by_accept
 
+    # todo: need refactoring to remove this method
     def define_resource_type(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         res_type_or_default = self.resource_type_or_default_resource_type(request)
@@ -161,9 +162,9 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def get_operation_name_from_path(self, attributes_functions_str):
         first_part_name = super(FeatureCollectionResource, self).get_operation_name_from_path(attributes_functions_str)
 
-        # spatialize operation has priority
-        if self.path_has_spatialize_operation(attributes_functions_str):
-            return self.operation_controller.spatialize_operation_name
+        # join operation has priority
+        if self.path_has_join_operation(attributes_functions_str):
+            return self.operation_controller.join_operation_name
 
         if first_part_name not in self.array_of_operation_name():
             return None
@@ -345,7 +346,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
              self.operation_controller.union_collection_operation_name: self.required_context_for_union_operation,
              self.operation_controller.extent_collection_operation_name: self.required_context_for_extent_operation,
              self.operation_controller.make_line_collection_operation_name: self.required_context_for_make_line_operation,
-             self.operation_controller.spatialize_operation_name: self.required_context_for_specialized_operation,
+             self.operation_controller.join_operation_name: self.required_context_for_specialized_operation,
         })
         return dicti
 
@@ -431,26 +432,26 @@ class FeatureCollectionResource(SpatialCollectionResource):
         serialized_data = self.get_objects_serialized_by_collect_operation(collect_operation_snippet, business_objects)
         return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
 
-    def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
-        spatialize_operatio = self.build_spatialize_operation(request, attributes_functions_str)
-        return self.join_feature_collection_on_dict_list(spatialize_operatio)
+    def get_objects_from_join_operation(self, request, attributes_functions_str):
+        join_operation = self.build_join_operation(request, attributes_functions_str)
+        return self.join_feature_collection_on_dict_list(join_operation)
 
-    def join_feature_collection_on_dict_list(self, spatialize_operation):
-        spatialized_data_list = []
-        for original_feature in spatialize_operation.left_join_data['features']:
+    def join_feature_collection_on_dict_list(self, join_operation):
+        joined_data_list = []
+        for original_feature in join_operation.left_join_data['features']:
             updated_feature = deepcopy(original_feature)
             updated_feature['properties']['__joined__'] = []
 
-            for dict_to_spatialize in spatialize_operation.right_join_data:
-                if updated_feature['properties'][spatialize_operation.left_join_attr] == dict_to_spatialize[spatialize_operation.right_join_attr]:
-                    updated_feature['properties']['__joined__'].append( deepcopy(dict_to_spatialize) )
+            for dict_to_join in join_operation.right_join_data:
+                if updated_feature['properties'][join_operation.left_join_attr] == dict_to_join[join_operation.right_join_attr]:
+                    updated_feature['properties']['__joined__'].append( deepcopy(dict_to_join) )
 
             # verify if the current feature was updated
             #if sorted(list(updated_feature['properties'].keys())) != sorted(list(original_feature['properties'].keys())):
             if len(updated_feature['properties']['__joined__']) > 0:
-                spatialized_data_list.append(updated_feature)
+                joined_data_list.append(updated_feature)
 
-        return {'type': 'FeatureCollection', 'features': spatialized_data_list}
+        return {'type': 'FeatureCollection', 'features': joined_data_list}
 
     def get_objects_from_specialized_operation(self, attributes_functions_str):
 
@@ -624,7 +625,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
         context.update({'hydra:supportedOperations': supported_operations_list})
 
         self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
-        resource_type_context = self.context_resource.get_resource_type_context(resource_type)
+        resource_type_context = self.context_resource.get_resource_type_identification(resource_type)
         context.update(resource_type_context)
 
         return context
@@ -642,7 +643,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         self.context_resource.set_context_to_resource_type(request, self.object_model, ret_type)
 
-        return self.context_resource.get_resource_type_context()
+        return self.context_resource.get_resource_type_identification()
 
     def get_png(self, queryset, request):
         geom_type = None

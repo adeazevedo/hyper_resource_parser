@@ -39,30 +39,30 @@ class NonSpatialResource(AbstractResource):
         # 3. and finally return a RequiredObject with the serialized_data, a content_type and the original object
         return objects
 
-    def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
-        spatialize_operation = self.build_spatialize_operation(request, attributes_functions_str)
+    def get_objects_from_join_operation(self, request, attributes_functions_str):
+        join_operation = self.build_join_operation(request, attributes_functions_str)
 
-        if spatialize_operation.right_join_data['type'] == 'FeatureCollection':
-            return self.join_non_spatial_on_feature_collection(spatialize_operation)
-        return self.join_non_spatial_on_feature(spatialize_operation)
+        if join_operation.right_join_data['type'] == 'FeatureCollection':
+            return self.join_non_spatial_on_feature_collection(join_operation)
+        return self.join_non_spatial_on_feature(join_operation)
 
-    def join_non_spatial_on_feature(self, spatialize_operation):
-        if spatialize_operation.left_join_data[ spatialize_operation.left_join_attr ] != \
-        spatialize_operation.right_join_data['properties'][ spatialize_operation.right_join_attr ]:
+    def join_non_spatial_on_feature(self, join_operation):
+        if join_operation.left_join_data[ join_operation.left_join_attr] != \
+        join_operation.right_join_data['properties'][ join_operation.right_join_attr]:
             return None
 
-        for alpha_attr, alpha_data in spatialize_operation.left_join_data.items():
-            spatialize_operation.right_join_data['properties']['joined__' + alpha_attr] = alpha_data
+        for alpha_attr, alpha_data in join_operation.left_join_data.items():
+            join_operation.right_join_data['properties']['joined__' + alpha_attr] = alpha_data
 
-        return spatialize_operation.right_join_data
+        return join_operation.right_join_data
 
-    def join_non_spatial_on_feature_collection(self, spatialize_operation):
-        for feature in spatialize_operation.right_join_data['features']:
-            if spatialize_operation.left_join_data[ spatialize_operation.left_join_attr ] == \
-                feature['properties'][ spatialize_operation.right_join_attr ]:
+    def join_non_spatial_on_feature_collection(self, join_operation):
+        for feature in join_operation.right_join_data['features']:
+            if join_operation.left_join_data[ join_operation.left_join_attr] == \
+                feature['properties'][ join_operation.right_join_attr]:
 
                 copied_feature = deepcopy(feature)
-                for alpha_attr, alpha_data in spatialize_operation.left_join_data.items():
+                for alpha_attr, alpha_data in join_operation.left_join_data.items():
                     copied_feature['properties']['joined__' + alpha_attr] = alpha_data
                 return copied_feature # only one location joined on alphanumeric data
 
@@ -106,22 +106,6 @@ class NonSpatialResource(AbstractResource):
             return type(self.field_for(attrs_functs_arr[0]))
 
         return self.default_resource_type()
-
-    '''
-    def basic_options(self, request, *args, **kwargs):
-        self.object_model = self.model_class()()
-        self.set_basic_context_resource(request)
-        attributes_functions_str = self.kwargs.get("attributes_functions", None)
-
-        if self.is_simple_path(attributes_functions_str):
-            return self.required_context_for_simple_path(request)
-        if self.path_has_only_attributes(attributes_functions_str):
-            return self.required_context_for_only_attributes(request, attributes_functions_str)
-        res = self.get_required_context_from_method_to_execute(request, attributes_functions_str)
-        if res is None:
-            return self.required_object_for_invalid_sintax(attributes_functions_str)
-        return res
-    '''
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)

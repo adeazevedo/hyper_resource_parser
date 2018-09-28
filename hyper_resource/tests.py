@@ -348,19 +348,19 @@ class AbstractRequestTest(SimpleTestCase):
         self.spatial_operation_names = ['area', 'boundary', 'buffer', 'centroid', 'contains', 'convex_hull', 'coord_seq', 'coords', 'count', 'crosses',
                                         'crs', 'difference', 'dims', 'disjoint', 'distance', 'empty', 'envelope', 'equals', 'equals_exact', 'ewkb',
                                         'ewkt', 'extend', 'extent', 'geojson', 'geom_type', 'geom_typeid', 'get_coords', 'get_srid', 'get_x', 'get_y',
-                                        'get_z', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'interpolate', 'intersection', 'intersects', 'json', 'kml',
+                                        'get_z', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'interpolate', 'intersection', 'intersects', 'join', 'json', 'kml',
                                         'length', 'normalize', 'num_coords', 'num_geom', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'relate',
-                                        'relate_pattern', 'ring', 'simple', 'simplify', 'spatialize', 'srid',
+                                        'relate_pattern', 'ring', 'simple', 'simplify', 'srid',
                                         'srs', 'sym_difference', 'touches', 'transform', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
          #'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z',
         self.string_operations_names = ['capitalize', 'center', 'count', 'endswith', 'find', 'isalnum', 'isalpha', 'isdigit', 'islower', 'isupper',
                                         'join', 'lower', 'split', 'startswith', 'upper']
-        self.basic_operations_names = ['spatialize']
+        self.basic_operations_names = ['join']
         self.spatial_collection_operation_names = ['bbcontains', 'bboverlaps', 'collect', 'contained', 'contains', 'contains_properly', 'count_resource',
                                                     'covers', 'covers_by', 'crosses', 'disjoint', 'distance_gt', 'distance_gte', 'distance_lt', 'distance_lte',
-                                                    'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'intersects', 'isvalid', 'left',
+                                                    'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'intersects', 'isvalid', 'join', 'left',
                                                     'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right', 'projection',
-                                                   'relate', 'right', 'spatialize', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
+                                                   'relate', 'right', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
         self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'offset_limit', 'projection']
         self.non_simple_path_dict_keys = ["@context", '@id', '@type', 'hydra:supportedOperations']
 
@@ -1290,6 +1290,40 @@ class ProjectionOperationTest(AbstractGetRequestTest):
         self.assertEquals(response.status_code, 400)
         self.assertEquals(response.headers['content-type'], 'application/json')
 
+    # binary response
+    def test_projection_for_feature_collection_accept_octet_stream(self):
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/nome,geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/projection/nome,geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+    def test_projection_for_feature_collection_without_geometric_attribute_accept_octet_stream(self):
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/nome", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/projection/nome", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+    def test_projection_for_feature_collection_only_geometric_attribute_accept_octet_stream(self):
+        implicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+        explicit_projection_resp = requests.get(self.bcim_base_uri + "unidades-federativas/projection/geom", headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
+
+    def test_projection_for_feature_collection_with_collect_operation_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/projection/nome,geom/collect/nome&geom/buffer/0.2",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
 #python manage.py test hyper_resource.tests.OptionsForProjectionOperation --testrunner=hyper_resource.tests.NoDbTestRunner
 class OptionsForProjectionOperation(AbstractRequestTest):
 
@@ -1515,8 +1549,461 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEqual(s_resp_dict['@type'], 'CharField')
 
     # --------------- TESTS FOR COLLECTION ---------------------------------
+    def test_options_for_collection_resource_projection_operation(self):
+        implicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/nome,email")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.collection_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+
+        f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
+        self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
+        f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'nome')
+        self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
+
+        f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEqual(f_resp_dict['@type'], 'Collection')
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/projection/nome,email")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.collection_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+
+        s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
+        self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'nome')
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'projection')
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEqual(s_resp_dict['@type'], 'Collection')
+
+    def test_options_for_collection_resource_projection_operation_with_collect_operation(self):
+        response = requests.options(self.controle_base_uri + "usuario-list/projection/nome,email/collect/nome&email/upper")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.collection_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+
+        email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
+        self.assertEquals(email_context_keys, self.keys_from_attrs_context)
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
+        collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'collect')
+        self.assertEquals(collect_context_keys, self.keys_from_oper_context)
+        upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
+        self.assertEquals(upper_context_keys, self.keys_from_oper_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict['@type'], "Collection")
+
+    def test_options_for_collection_resource_projection_operation_with_collect_operation_projection_list_different_from_collect_list(self):
+        response = requests.options(self.controle_base_uri + "usuario-list/projection/nome/collect/nome&email/upper")
+        self.assertEquals(response.status_code, 400)
+
+    def test_options_for_collection_resource_projection_operation_accept_octet_stream(self):
+        implicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/nome,email",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, [])
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+
+        f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
+        self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
+        f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'nome')
+        self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
+
+        f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEqual(f_resp_dict['@type'], 'bytes')
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.controle_base_uri + "usuario-list/projection/nome,email",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, [])
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+
+        s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
+        self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'nome')
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'projection')
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEqual(s_resp_dict['@type'], 'bytes')
+
+    def test_options_for_collection_resource_projection_operation_with_collect_operation_accept_octet_stream(self):
+        response = requests.options(self.controle_base_uri + "usuario-list/projection/nome,email/collect/nome&email/upper",
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, [])
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+
+        email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
+        self.assertEquals(email_context_keys, self.keys_from_attrs_context)
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
+        collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'collect')
+        self.assertEquals(collect_context_keys, self.keys_from_oper_context)
+        upper_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'upper')
+        self.assertEquals(upper_context_keys, self.keys_from_oper_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict['@type'], "bytes")
 
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
+    def test_options_for_feature_collection_projection_operation(self):
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/nome,geom")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['geom', 'nome'])
+
+        f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
+        self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "nome")
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
+
+        f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_dict['@type'], "FeatureCollection")
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['geom', 'nome', 'projection'])
+
+        s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
+        self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "nome")
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "projection")
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_dict['@type'], "FeatureCollection")
+
+    def test_options_for_feature_collection_projection_operation_only_geometric_attribute(self):
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/geom")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['geom'])
+
+        f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
+        self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
+
+        f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_dict['@type'], "GeometryCollection")
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/geom")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['geom', 'projection'])
+
+        s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
+        self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "projection")
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_dict['@type'], "GeometryCollection")
+
+    def test_options_for_feature_collection_projection_operation_only_alphanumeric_attributes(self):
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/nome")
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.collection_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['nome'])
+
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "nome")
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
+
+        f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_dict['@type'], "Collection")
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome")
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.collection_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['nome', 'projection'])
+
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "nome")
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "projection")
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_dict['@type'], "Collection")
+
+    def test_options_for_feature_collection_projection_operation_with_collect_operation(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom/collect/nome&geom/buffer/0.2")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_collection_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['buffer', 'collect', 'geom', 'nome'])
+
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
+        collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
+        self.assertEquals(collect_context_keys, self.keys_from_oper_context)
+        buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
+        self.assertEquals(buffer_context_keys, self.keys_from_oper_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict['@type'], "FeatureCollection")
+
+    def test_options_for_feature_collection_projection_operation_with_collect_operation_projection_list_different_from_collect_list(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom/collect/geom/buffer/0.2")
+        self.assertEquals(response.status_code, 400)
+
+    # Accept: application/octet-stream
+    def test_options_for_feature_collection_projection_operation_accept_octet_stream(self):
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/nome,geom",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['geom', 'nome'])
+
+        f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
+        self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "nome")
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
+
+        f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_dict['@type'], "GeobufCollection")
+
+        #explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['geom', 'nome', 'projection'])
+
+        s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
+        self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "nome")
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "projection")
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_dict['@type'], "GeobufCollection")
+
+    def test_options_for_feature_collection_projection_operation_only_geometric_attribute_accept_octet_stream(self):
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/geom",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['geom'])
+
+        f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
+        self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
+
+        f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_dict['@type'], "GeobufCollection")
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/geom",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['geom', 'projection'])
+
+        s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
+        self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "projection")
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_dict['@type'], "GeobufCollection")
+
+    def test_options_for_feature_collection_projection_operation_only_alphanumeric_attributes_accept_octet_stream(self):
+        implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/nome",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+
+        implicit_projection_resp_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(implicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        f_supported_operations_names = self.aux_get_supported_operations_names(implicit_projection_resp)
+        self.assertEquals(f_supported_operations_names, [])
+
+        f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
+        self.assertEquals(f_acontext_keys, ['nome'])
+
+        f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "nome")
+        self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
+
+        f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_dict['@type'], "bytes")
+
+        # explicit projection
+        explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome",
+                                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+
+        explicit_projection_resp_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(explicit_projection_resp_keys, self.non_simple_path_dict_keys)
+
+        s_supported_operations_names = self.aux_get_supported_operations_names(explicit_projection_resp)
+        self.assertEquals(s_supported_operations_names, [])
+
+        s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
+        self.assertEquals(s_acontext_keys, ['nome', 'projection'])
+
+        s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "nome")
+        self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
+        s_projection_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "projection")
+        self.assertEquals(s_projection_context_keys, self.keys_from_oper_context)
+
+        s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_dict['@type'], "bytes")
+
+    def test_options_for_feature_collection_projection_operation_with_collect_operation_accept_octet_stream(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom/collect/nome&geom/buffer/0.2",
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_collection_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['buffer', 'collect', 'geom', 'nome'])
+
+        nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
+        self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
+        geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
+        collect_context_keys = self.aux_get_keys_from_acontext_attrs(response, "collect")
+        self.assertEquals(collect_context_keys, self.keys_from_oper_context)
+        buffer_context_keys = self.aux_get_keys_from_acontext_attrs(response, "buffer")
+        self.assertEquals(buffer_context_keys, self.keys_from_oper_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict['@type'], "GeobufCollection")
 
 #python manage.py test hyper_resource.tests.FilterOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class FilterOperationTest(AbstractRequestTest):
@@ -2237,6 +2724,44 @@ class RequestOptionsTest(AbstractRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'Geobuf')
 
+    def test_options_for_feature_resource_pointfield_attribute(self):
+        response = requests.options(self.bcim_base_uri + 'aldeias-indigenas/623/geom')
+        self.assertEquals(response.status_code, 200)
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
+
+        operations_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operations_names, self.spatial_operation_names)
+
+        context_keys = self.aux_get_keys_from_response_context(response)
+        self.assertListEqual(context_keys, ['geom'])
+
+        geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'PointField')
+
+    def test_options_for_feature_resource_pointfield_attribute_accept_octet_stream(self):
+        response = requests.options(self.bcim_base_uri + 'aldeias-indigenas/623/geom', headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
+
+        operations_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(operations_names, self.spatial_operation_names)
+
+        context_keys = self.aux_get_keys_from_response_context(response)
+        self.assertListEqual(context_keys, ['geom'])
+
+        geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
+        self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'Geobuf')
+
 
     # tests for feature operations
     def test_options_for_feature_resource_operation_with_geometry_return(self):
@@ -2944,23 +3469,40 @@ class GetRequestContextTest(AbstractRequestTest):
 
     # ------------------- TESTS FOR ENTRY POINTS -------------------------------------
 
-#python manage.py test hyper_resource.tests.SpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
-class SpatializeOperationTest(AbstractGetRequestTest):
+#python manage.py test hyper_resource.tests.JoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class JoinOperationTest(AbstractGetRequestTest):
     def setUp(self):
-        super(SpatializeOperationTest, self).setUp()
+        super(JoinOperationTest, self).setUp()
         self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
         self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
+        self.pib_municipio = "http://172.30.10.86/api/pib-municipio/"
         self.feature_keys = ["geometry", "id", "properties", "type"]
 
-    def aux_get_first_feature_joined_properties(self, response):
+    def aux_get_first_joined_dict_attributes_from_first_feature(self, response):
         first_feature = self.aux_get_first_feature(response)
         first_joined_alfa_dict = first_feature['properties']['__joined__'][0]
         return sorted( list(first_joined_alfa_dict.keys()) )
 
+    def aux_get_first_feature_joined_length(self, response):
+        first_feature = self.aux_get_first_feature(response)
+        return len(first_feature['properties']['__joined__'])
+
+    # --------------- TESTS FOR NON SPATIAL RESOURCE ---------------------------------
+    def test_join_operation_for_non_spatial_resource_one_to_one_rel(self):
+        pass
+
+    def test_join_operation_for_non_spatial_resource_one_to_one_rel_accept_octet_stream(self):
+        pass
+
+    def test_join_operation_for_non_spatial_resource_one_to_many_rel(self):
+        pass
+
+    def test_join_operation_for_non_spatial_resource_one_to_many_rel_accept_octet_stream(self):
+        pass
 
     # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
-    def test_spatialize_operation__for_feature_resource(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/spatialize/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
+    def test_join_operation_for_feature_resource_one_to_one_rel(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
 
@@ -2970,7 +3512,10 @@ class SpatializeOperationTest(AbstractGetRequestTest):
         feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
         self.assertEquals(feature_properties_keys, ["__joined__", "anodereferencia", "geocodigo", "geometriaaproximada", "nome", "nomeabrev"])
 
-        joined_alfanumeric_attrs = self.aux_get_first_feature_joined_properties(response)
+        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
+        self.assertEquals(joined_dicts_len, 1)
+
+        joined_alfanumeric_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
         self.assertEquals(joined_alfanumeric_attrs, ['ano_lei_codigo_obras', 'ano_lei_criacao',
                                                      'ano_lei_legis_sob_area_zona_espe_inte_social',
                                                      'ano_lei_legis_sob_zona_area_espe_inter',
@@ -3016,15 +3561,41 @@ class SpatializeOperationTest(AbstractGetRequestTest):
                                                      'lei_perimetro_urba_existencia', 'nome',
                                                      'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia'] )
 
-    def test_spatialize_operation__for_feature_resource_accept_octet_stream(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/spatialize/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
+    def test_join_operation_for_feature_resource_one_to_one_rel_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
                                 headers={"accept": "application/octet-stream"})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/octet-stream')
 
+    def test_join_operation_for_feature_resource_one_to_many_rel(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio + "faturamento-list/filter/cod_municipio/eq/3304557")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.feature_keys)
+
+        feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(feature_properties_keys, ['__joined__', 'anodereferencia', 'geocodigo', 'geometriaaproximada', 'nome', 'nomeabrev'])
+
+        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_dict_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
+        self.assertEquals(joined_dict_attrs, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro',
+                                              'valor_bruto_ind', 'valor_bruto_serv'])
+
+    def test_join_operation_for_feature_resource_one_to_many_rel_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio + "faturamento-list/filter/cod_municipio/eq/3304557",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
-    def test_spatialize_operation_for_feature_collection_with_filter(self):
-        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
+    def test_join_operation_for_feature_collection_with_filter(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
 
@@ -3037,46 +3608,206 @@ class SpatializeOperationTest(AbstractGetRequestTest):
         first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
         self.assertEquals(first_feature_properties_keys, ["__joined__", "geocodigo", "nome", "nomeabrev", "sigla"])
 
-        joined_alfanumeric_attrs = self.aux_get_first_feature_joined_properties(response)
+        joined_alfanumeric_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
         self.assertEquals(joined_alfanumeric_attrs, ['ano', 'autodromo_func', 'autodromo_parado', 'cod_estado',
                                                      'compl_aqua_func', 'compl_aqua_parado', 'compl_esp_func',
                                                      'compl_esp_parado', 'est_func', 'est_parado', 'gin_func',
                                                      'gin_parado', 'id', 'id_estado', 'kartodromo_func',
                                                      'kartodromo_parado'] )
 
-    def test_spatialize_operation_for_feature_collection_with_filter_accept_octet_stream(self):
-        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/",
+    def test_join_operation_for_feature_collection_with_filter_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/",
                                 headers={"accept": "application/octet-stream"})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/octet-stream')
 
-#python manage.py test hyper_resource.tests.OptionsForSpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
-class OptionsForSpatializeOperationTest(AbstractRequestTest):
+#python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class OptionsForJoinOperationTest(AbstractRequestTest):
     def setUp(self):
-        super(OptionsForSpatializeOperationTest, self).setUp()
+        super(OptionsForJoinOperationTest, self).setUp()
         self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
+        self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
+        self.pib_municipio_base_uri = "http://172.30.10.86/api/pib-municipio/"
+        self.keys_from_external_attr_context = ['@id', '@type', 'hydra:Link', 'hydra:method']
 
     # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
+    # todo: provisory test, full context must be implemented
+    def test_options_for_feature_resource_join_operation_one_to_one_rel(self):
+
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.simple_path_options_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev'])
+
+        geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
+        self.assertEquals(geocodigo_acontext_keys, self.keys_from_attrs_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Feature")
+
+
+        # todo: test for join full context
+        '''
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['ano_lei_codigo_obras', 'ano_lei_criacao', 'ano_lei_legis_sob_area_zona_espe_inte_social',
+                                          'ano_lei_legis_sob_zona_area_espe_inter', 'ano_lei_legis_sobre_parc_solo',
+                                          'ano_lei_legis_sobre_zone_uso_ocupa_solo', 'ano_lei_legislacao_sobre_contri_melhoria',
+                                          'ano_lei_legislacao_sobre_dire_superficie', 'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                          'ano_lei_legislacao_sobre_estu_pre_impa_ambiental', 'ano_lei_legislacao_sobre_legitimacao_posse',
+                                          'ano_lei_legislacao_sobre_ope_urba_consorciada', 'ano_lei_legislacao_sobre_regula_fundiaria',
+                                          'ano_lei_legislacao_sobre_servi_administrativa', 'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                          'ano_lei_legislacao_sobre_tombamento', 'ano_lei_legislacao_sobre_uni_conservacao',
+                                          'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', 'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                          'ano_lei_lei_perimetro_urba', 'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia',
+                                          'ano_ultima_atualizacao', 'anodereferencia', 'caract_orgao_gestor_plane_urba_munic',
+                                          'codigo_municipio', 'codigo_obras_existencia', 'codigo_uf', 'geocodigo', 'geom',
+                                          'geometriaaproximada', 'http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:geocodigo',
+                                          'http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:nome', 'id_objeto',
+                                          'id_planejamento_urbano', 'informacoes_sob_gestor_escolaridade', 'iri_metadata',
+                                          'iri_style', 'legis_sobre_parc_solo_existencia', 'legislacao_sobre_area_zona_espec_inter_social_existencia',
+                                          'legislacao_sobre_conce_uso_espe_fins_moradia', 'legislacao_sobre_contri_melhoria_existencia',
+                                          'legislacao_sobre_dire_superficie', 'legislacao_sobre_estu_impa_vizinhanca_existencia',
+                                          'legislacao_sobre_estu_pre_impa_ambiental', 'legislacao_sobre_legitimacao_posse',
+                                          'legislacao_sobre_ope_urba_consorciada_existencia', 'legislacao_sobre_regula_fundiaria',
+                                          'legislacao_sobre_servi_administrativa', 'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist',
+                                          'legislacao_sobre_tombamento', 'legislacao_sobre_uni_conservacao', 'legislacao_sobre_usuca_espe_imovel_urbano',
+                                          'legislacao_sobre_zona_area_espe_inter_existencia', 'legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                          'legislacao_sobre_zonea_ambi_zonea_ecologico_economico', 'lei_perimetro_urba_existencia', 'nome',
+                                          'nomeabrev', 'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia'])
+
+        # 'geocodigo' is present in the feature and in the external resourse, hence 'geocodigo' in the external resource must be preffixed
+        external_geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:geocodigo")
+        self.assertEquals(external_geocodigo_acontext_keys, self.keys_from_external_attr_context)
+        external_codigo_municipio_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "codigo_municipio")
+        self.assertEquals(external_codigo_municipio_acontext_keys, self.keys_from_external_attr_context)
+        # 'geocodigo' (without preffix) comes from the feature
+        geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
+        self.assertEquals(geocodigo_acontext_keys, self.keys_from_attrs_context)
+        join_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "join")
+        self.assertEquals(join_acontext_keys, self.keys_from_oper_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Feature")
+        '''
+
+    """
+    def test_options_for_feature_resource_join_operation_one_to_many_rel(self):
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" +
+                                    self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['ano_lei_codigo_obras', 'ano_lei_criacao', 'ano_lei_legis_sob_area_zona_espe_inte_social',
+                                          'ano_lei_legis_sob_zona_area_espe_inter', 'ano_lei_legis_sobre_parc_solo',
+                                          'ano_lei_legis_sobre_zone_uso_ocupa_solo', 'ano_lei_legislacao_sobre_contri_melhoria',
+                                          'ano_lei_legislacao_sobre_dire_superficie', 'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                          'ano_lei_legislacao_sobre_estu_pre_impa_ambiental', 'ano_lei_legislacao_sobre_legitimacao_posse',
+                                          'ano_lei_legislacao_sobre_ope_urba_consorciada', 'ano_lei_legislacao_sobre_regula_fundiaria',
+                                          'ano_lei_legislacao_sobre_servi_administrativa', 'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                          'ano_lei_legislacao_sobre_tombamento', 'ano_lei_legislacao_sobre_uni_conservacao',
+                                          'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', 'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                          'ano_lei_lei_perimetro_urba', 'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia', 'ano_ultima_atualizacao',
+                                          'caract_orgao_gestor_plane_urba_munic', 'codigo_municipio', 'codigo_obras_existencia',
+                                          'codigo_uf', 'http://172.30.10.86/api/pib-municipio/faturamento-list:geocodigo', 'id_planejamento_urbano',
+                                          'informacoes_sob_gestor_escolaridade', 'legis_sobre_parc_solo_existencia',
+                                          'legislacao_sobre_area_zona_espec_inter_social_existencia', 'legislacao_sobre_conce_uso_espe_fins_moradia',
+                                          'legislacao_sobre_contri_melhoria_existencia', 'legislacao_sobre_dire_superficie',
+                                          'legislacao_sobre_estu_impa_vizinhanca_existencia', 'legislacao_sobre_estu_pre_impa_ambiental',
+                                          'legislacao_sobre_legitimacao_posse', 'legislacao_sobre_ope_urba_consorciada_existencia',
+                                          'legislacao_sobre_regula_fundiaria', 'legislacao_sobre_servi_administrativa',
+                                          'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist', 'legislacao_sobre_tombamento',
+                                          'legislacao_sobre_uni_conservacao', 'legislacao_sobre_usuca_espe_imovel_urbano',
+                                          'legislacao_sobre_zona_area_espe_inter_existencia', 'legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                          'legislacao_sobre_zonea_ambi_zonea_ecologico_economico', 'lei_perimetro_urba_existencia', '(joined) nome', # same attribute name on different resources
+                                          'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia',
+                                          'anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'spatialize'])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Feature")
+
+    def test_options_for_feature_resource_join_operation__one_to_one_rel_accept_octet_stream(self):
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['(joined) ano_lei_codigo_obras', '(joined) ano_lei_criacao', '(joined) ano_lei_legis_sob_area_zona_espe_inte_social',
+                                          '(joined) ano_lei_legis_sob_zona_area_espe_inter', '(joined) ano_lei_legis_sobre_parc_solo',
+                                          '(joined) ano_lei_legis_sobre_zone_uso_ocupa_solo', '(joined) ano_lei_legislacao_sobre_contri_melhoria',
+                                          '(joined) ano_lei_legislacao_sobre_dire_superficie', '(joined) ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                          '(joined) ano_lei_legislacao_sobre_estu_pre_impa_ambiental', '(joined) ano_lei_legislacao_sobre_legitimacao_posse',
+                                          '(joined) ano_lei_legislacao_sobre_ope_urba_consorciada', '(joined) ano_lei_legislacao_sobre_regula_fundiaria',
+                                          '(joined) ano_lei_legislacao_sobre_servi_administrativa', '(joined) ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                          '(joined) ano_lei_legislacao_sobre_tombamento', '(joined) ano_lei_legislacao_sobre_uni_conservacao',
+                                          '(joined) ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', '(joined) ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                          '(joined) ano_lei_lei_perimetro_urba', '(joined) ano_leilegislacao_sobre_conce_uso_espe_fins_moradia', '(joined) ano_ultima_atualizacao',
+                                          '(joined) caract_orgao_gestor_plane_urba_munic', '(joined) codigo_municipio', '(joined) codigo_obras_existencia',
+                                          '(joined) codigo_uf', '(joined) geocodigo', '(joined) id_planejamento_urbano',
+                                          '(joined) informacoes_sob_gestor_escolaridade', '(joined) legis_sobre_parc_solo_existencia',
+                                          '(joined) legislacao_sobre_area_zona_espec_inter_social_existencia', '(joined) legislacao_sobre_conce_uso_espe_fins_moradia',
+                                          '(joined) legislacao_sobre_contri_melhoria_existencia', '(joined) legislacao_sobre_dire_superficie',
+                                          '(joined) legislacao_sobre_estu_impa_vizinhanca_existencia', '(joined) legislacao_sobre_estu_pre_impa_ambiental',
+                                          '(joined) legislacao_sobre_legitimacao_posse', '(joined) legislacao_sobre_ope_urba_consorciada_existencia',
+                                          '(joined) legislacao_sobre_regula_fundiaria', '(joined) legislacao_sobre_servi_administrativa',
+                                          '(joined) legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist', '(joined) legislacao_sobre_tombamento',
+                                          '(joined) legislacao_sobre_uni_conservacao', '(joined) legislacao_sobre_usuca_espe_imovel_urbano',
+                                          '(joined) legislacao_sobre_zona_area_espe_inter_existencia', '(joined) legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                          '(joined) legislacao_sobre_zonea_ambi_zonea_ecologico_economico', '(joined) lei_perimetro_urba_existencia', '(joined) nome', # same attribute name on different resources
+                                          '(joined) o_municipio_elabo_plano_diretor', '(joined) plano_diretor_existencia',
+                                          'anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'spatialize'])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Geobuf")
 
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
-    def test_spatialize_operation_with_filter(self):
-        response = requests.options(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
+    def test_join_operation_with_filter(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" +
+                                    self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
         self.assertEquals(response.status_code, 200)
 
         response_dict_keys = self.aux_get_keys_from_response(response)
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["spatialize"])
+        self.assertEquals(acontext_keys, ["join"])
 
-        spatialize_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, 'spatialize')
-        self.assertListEqual(spatialize_context_keys_list, ["@id", "@type"])
+        join_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, 'join')
+        self.assertListEqual(join_context_keys_list, ["@id", "@type"])
 
         supported_operations_names = self.aux_get_supported_operations_names(response)
         self.assertListEqual(supported_operations_names, self.spatial_collection_operation_names)
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'FeatureCollection')
+    """
 
 #python manage.py test hyper_resource.tests.PaginationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class PaginationTest(AbstractRequestTest):

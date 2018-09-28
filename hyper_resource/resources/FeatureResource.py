@@ -288,30 +288,67 @@ class FeatureResource(SpatialResource):
             return self.response_request_attributes_functions_str_with_url(attributes_functions_str, request)
         return self.response_of_request(attributes_functions_str)
 
-    def get_objects_from_spatialize_operation(self, request, attributes_functions_str):
-        spatialize_operation = self.build_spatialize_operation(request, attributes_functions_str)
+    def get_objects_from_join_operation(self, request, attributes_functions_str):
+        join_operation = self.build_join_operation(request, attributes_functions_str)
 
-        if type(spatialize_operation.right_join_data) is list:
-            return self.join_feature_on_list_response(spatialize_operation)
-        return self.join_feature_on_dict_response(spatialize_operation)
+        if type(join_operation.right_join_data) is list:
+            return self.join_feature_on_list_response(join_operation)
+        return self.join_feature_on_dict_response(join_operation)
 
-    def join_feature_on_dict_response(self, spatialize_operation):
-        if  spatialize_operation.left_join_data['properties'][ spatialize_operation.left_join_attr ] !=\
-            spatialize_operation.right_join_data[ spatialize_operation.right_join_attr ]:
+    def join_feature_on_dict_response(self, join_operation):
+        if  join_operation.left_join_data['properties'][ join_operation.left_join_attr ] != join_operation.right_join_data[ join_operation.right_join_attr ]:
             return None # the datas isn't 'joinable'
 
-        spatialize_operation.left_join_data["properties"]["__joined__"] = []
-        spatialize_operation.left_join_data["properties"]["__joined__"].append( spatialize_operation.right_join_data )
-        return deepcopy(spatialize_operation.left_join_data)
+        join_operation.left_join_data["properties"]["__joined__"] = []
+        join_operation.left_join_data["properties"]["__joined__"].append(join_operation.right_join_data)
+        return deepcopy(join_operation.left_join_data)
 
-    def join_feature_on_list_response(self, spatialize_operation):
-        for k, dicti in enumerate(spatialize_operation.right_join_data):
-            if spatialize_operation.left_join_data['properties'][spatialize_operation.left_join_attr] == dicti[spatialize_operation.right_join_attr]:
-                spatialize_operation.left_join_data['properties']['joined__' + str(k)] = dicti
-                # To avoid insert a dict in Feature properties, you can duplicate the geometry for each
-                # alphanumeric resource whose joined attribute value coincides
+    def join_feature_on_list_response(self, join_operation):
+        join_operation.left_join_data['properties']['__joined__'] = []
 
-        return spatialize_operation.left_join_data
+        for dicti in join_operation.right_join_data:
+            if join_operation.left_join_data['properties'][join_operation.left_join_attr] == dicti[join_operation.right_join_attr]:
+                join_operation.left_join_data['properties']['__joined__'].append(dicti)
+
+        return join_operation.left_join_data
+
+    def get_context_for_join_operation(self, request, attributes_functions_str):
+        geometric_uri, join_attr, alphanumeric_uri = self.split_join_uri(request, attributes_functions_str)
+        return self.get_dict_from_response( requests.options(geometric_uri) )
+
+        #todo: code for 'join' full context - DO NOT DELETE
+        '''
+        resource_type = self.resource_type_or_default_resource_type(request)
+        context = self.context_resource.get_resource_type_identification(resource_type)
+        context["hydra:supportedOperations"] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        context["@context"] = self.context_resource.get_context_to_operation(self.operation_controller.join_operation_name)["@context"]
+        context["@context"].update( self.get_merged_acontext_from_join_operation(request, attributes_functions_str) )
+
+        return context
+        '''
+
+    #todo: code for 'join' full context - DO NOT DELETE
+    def get_merged_acontext_from_join_operation(self, request, attributes_functions_str):
+        geometric_uri, join_attr, alphanumeric_uri = self.split_join_uri(request, attributes_functions_str)
+
+        geometric_acontext = self.get_dict_from_response( requests.options(geometric_uri) )["@context"]
+        alphanumeric_acontext = self.get_dict_from_response( requests.options(alphanumeric_uri) )["@context"]
+
+        alpha_acontext_renamed_keys = {}
+        for k, v in alphanumeric_acontext.items():
+            if k in geometric_acontext.keys():
+                alpha_acontext_renamed_keys[alphanumeric_uri + "/" + k] = v
+            else:
+                alpha_acontext_renamed_keys[k] = v
+
+        geometric_acontext.update(alpha_acontext_renamed_keys)
+
+        return geometric_acontext
+        #if set(geometric_context.keys()).intersection( set(alphanumeric_context.keys()) ):
+
+    #todo: code for 'join' full context - DO NOT DELETE
+    def add_context_to_joined_external_attributes(self, external_attributes_context):
+        pass
 
     def get_object_serialized_by_only_attributes(self, attributes_functions_str, object):
         attrs_arr = self.remove_last_slash(attributes_functions_str).split(',')
@@ -351,22 +388,6 @@ class FeatureResource(SpatialResource):
 
     def basic_required_object(self, request, *args, **kwargs):
         return self.basic_get(request, *args, **kwargs)
-
-    '''
-    def basic_options(self, request, *args, **kwargs):
-        self.object_model = self.model_class()()
-        self.set_basic_context_resource(request)
-        attributes_functions_str = self.kwargs.get("attributes_functions", None)
-
-        if self.is_simple_path(attributes_functions_str):
-            return self.required_context_for_simple_path(request)
-        if self.path_has_only_attributes(attributes_functions_str):
-            return self.required_context_for_only_attributes(request, attributes_functions_str)
-        res = self.get_required_context_from_method_to_execute(request, attributes_functions_str)
-        if res is None:
-            return self.required_object_for_invalid_sintax(attributes_functions_str)
-        return res
-    '''
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)

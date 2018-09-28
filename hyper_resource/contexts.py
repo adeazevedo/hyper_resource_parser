@@ -316,6 +316,7 @@ def initialize_dict():
     dict['Geobuf'] = oc.geometry_operations_dict()
     dict[GEOSGeometry] = oc.geometry_operations_dict()
     dict[Point] = oc.point_operations_dict()
+    dict[PointField] = oc.point_operations_dict()
     dict[Polygon] = oc.polygon_operations_dict()
     dict[LineString] = oc.line_operations_dict()
     dict[MultiPoint] = oc.point_operations_dict()
@@ -323,7 +324,7 @@ def initialize_dict():
     dict[MultiLineString] = oc.line_operations_dict()
     dict[str] = oc.string_operations_dict()
     dict[CharField] = oc.string_operations_dict()
-    dict['Thing'] = {"spatialize": Type_Called('spatialize', [tuple, object], GEOSGeometry)}
+    dict['Thing'] = {"join": Type_Called('join', [tuple, object], GEOSGeometry)}
 
     ro = RasterOperationController()
     dict['Raster'] = ro.operation_dict()
@@ -494,7 +495,7 @@ class ContextResource:
         iri_templates.append(dict)
         return {"iri_templates": iri_templates}
 
-    def get_resource_type_context(self, resource_type):
+    def get_resource_type_identification(self, resource_type):
         resource_type_voc = vocabulary(resource_type)
         res_voc = resource_type_voc if resource_type_voc is not None else "http://schema.org/Thing"
         resource_type_str = resource_type.__name__ if inspect.isclass(resource_type) else str(resource_type)
@@ -564,7 +565,7 @@ class ContextResource:
         self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(self.resource.object_model, resource_type)
         self.dict_context["hydra:representationName"] = self.representationName()
         self.dict_context["hydra:iriTemplate"] = self.iriTemplates()
-        self.dict_context.update(self.get_resource_type_context(resource_type))
+        self.dict_context.update(self.get_resource_type_identification(resource_type))
         #self.dict_contex["hydra:resourceRepresentation"]
 
         return deepcopy(self.dict_context)

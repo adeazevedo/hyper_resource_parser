@@ -166,9 +166,9 @@ class AbstractCollectionResource(AbstractResource):
     def get_operation_name_from_path(self, attributes_functions_str):
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).lower().split('/')
 
-        # spatialize operation has priority
-        if self.path_has_spatialize_operation(attributes_functions_str):
-            return self.operation_controller.spatialize_operation_name
+        # join operation has priority
+        if self.path_has_join_operation(attributes_functions_str):
+            return self.operation_controller.join_operation_name
 
         if self.path_has_projection(attributes_functions_str):
             path_without_projection = self.remove_projection_from_path(attributes_functions_str)
@@ -556,8 +556,8 @@ class AbstractCollectionResource(AbstractResource):
         self.context_resource.set_context_to_operation(self.object_model, operation_name)
         context = self.context_resource.get_dict_context()
         context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        context['@id'] = self.context_resource.get_resource_type_context(resource_type)['@id']
-        context['@type'] = self.context_resource.get_resource_type_context(resource_type)['@type']
+        context['@id'] = self.context_resource.get_resource_type_identification(resource_type)['@id']
+        context['@type'] = self.context_resource.get_resource_type_identification(resource_type)['@type']
 
         return context
 
@@ -637,7 +637,7 @@ class AbstractCollectionResource(AbstractResource):
         operation_name = self.operation_controller.group_by_sum_collection_operation_name
         group_by_attr = self.remove_last_slash(attributes_functions_str).split("/")[1]
 
-        context = self.context_resource.get_resource_type_context(resource_type)
+        context = self.context_resource.get_resource_type_identification(resource_type)
         context["hydra:supportedOperations"] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
         context["@context"] = {
             operation_name: self.context_resource.get_context_to_operation( operation_name ),
@@ -645,10 +645,6 @@ class AbstractCollectionResource(AbstractResource):
             "sum": {"@id": "http://schema.org/Float", "@type": "http://schema.org/Float", "hydra:supportedOperations": []}
         }
         return context
-
-    def get_context_for_spatialize_operation(self, request, attributes_functions_str):
-        pass
-
 
     def transform_queryset_in_object_model_list(self, queryset):
         if type(queryset[0]) == self.model_class():
@@ -793,22 +789,6 @@ class AbstractCollectionResource(AbstractResource):
         if res is None:
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
-
-    '''
-    def basic_options(self, request, *args, **kwargs):
-        self.object_model = self.model_class()()
-        self.set_basic_context_resource(request)
-        attributes_functions_str = self.kwargs.get('attributes_functions', None)
-
-        if self.is_simple_path(attributes_functions_str):
-            return self.required_context_for_simple_path(request)
-        if self.path_has_only_attributes(attributes_functions_str):
-            return self.required_context_for_only_attributes(request, attributes_functions_str)
-        res = self.get_required_context_from_method_to_execute(request, attributes_functions_str)
-        if res is None:
-            return self.required_object_for_invalid_sintax(attributes_functions_str)
-        return res
-    '''
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)

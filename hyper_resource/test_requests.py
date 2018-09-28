@@ -1,5 +1,4 @@
 import requests, os, sys
-from time import sleep
 #se'rvidor = ''
 #servidor = 'http://LUC00557347.ibge.gov.br/'
 SERVER = 'http://LUC00557196:8000/'
@@ -187,35 +186,35 @@ arr_get_for_geometry_collection_operation = [
     RequestTest("api/bcim/aldeias-indigenas/projection/geom/within/"+ SERVER +"api/bcim/unidades-federativas/ES/*collect/geom&nome/upper", 400),
 ]
 
-arr_get_for_spatialize_operation = [
+arr_get_for_join_operation = [
         # NonSpatialResource (1 resource) join FeatureResource (1 resource) (Not joinable)
-    RequestTest("controle-list/usuario-list/1/spatialize/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/ES", 400),
+    RequestTest("controle-list/usuario-list/1/join/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/ES", 400),
 
         # NonSpatialResource (1 resource) join FeatureResource (n resources) (Not joinable)
-    RequestTest("controle-list/usuario-list/1/spatialize/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/", 400),
+    RequestTest("controle-list/usuario-list/1/join/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/", 400),
 
         # FeatureResource (1 resource) join NonSpatialResource (1 resource)
-    RequestTest("api/bcim/municipios/3304557/spatialize/geocodigo&geocodigo/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 200),
-    RequestTest('api/bcim/unidades-federativas/ES/spatialize/geocodigo&uf_geocodigo/{"uf_geocodigo":"32","pib_estimado":1000000000}', 200),
-    #("api/bcim/unidades-federativas/ES/spatialize/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/2/", 200),
+    RequestTest("api/bcim/municipios/3304557/join/geocodigo&geocodigo/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 200),
+    RequestTest('api/bcim/unidades-federativas/ES/join/geocodigo&uf_geocodigo/{"uf_geocodigo":"32","pib_estimado":1000000000}', 200),
+    #("api/bcim/unidades-federativas/ES/join/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/2/", 200),
 
         # FeatureResource (1 resource) join CollectionResource (n resources)
-    RequestTest("api/bcim/municipios/3304557/spatialize/geocodigo&cod_municipio/http://172.30.10.86/api/pib-municipio/faturamento-list/filter/cod_municipio/eq/3304557", 200),
-    #("api/bcim/unidades-federativas/ES/spatialize/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/", 200),
+    RequestTest("api/bcim/municipios/3304557/join/geocodigo&cod_municipio/http://172.30.10.86/api/pib-municipio/faturamento-list/filter/cod_municipio/eq/3304557", 200),
+    #("api/bcim/unidades-federativas/ES/join/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/", 200),
 
         # FeatureResource join NonSpatialResource (Not joinable)
-    RequestTest("api/bcim/municipios/3304557/spatialize/geocodigo&nome/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 400),
-    #("api/bcim/unidades-federativas/ES/spatialize/geocodigo&nome/http://gabriel:8880/estados-list/unidade-federativa-list/2/", 400),
+    RequestTest("api/bcim/municipios/3304557/join/geocodigo&nome/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 400),
+    #("api/bcim/unidades-federativas/ES/join/geocodigo&nome/http://gabriel:8880/estados-list/unidade-federativa-list/2/", 400),
 
         # FeatureCollection (n resources) join CollectionResource (n resources)
-    RequestTest("api/bcim/unidades-federativas/spatialize/geocodigo&cod_estado/http://172.30.10.86/esporte-list/cond-funcionamento-list/", 200),
-    #("api/bcim/unidades-federativas/spatialize/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/", 200),
+    RequestTest("api/bcim/unidades-federativas/join/geocodigo&cod_estado/http://172.30.10.86/esporte-list/cond-funcionamento-list/", 200),
+    #("api/bcim/unidades-federativas/join/geocodigo&geocodigo/http://gabriel:8880/estados-list/unidade-federativa-list/", 200),
 
         # CollectionResource (n resources) join FeatureCollection (n resources)
-    #("esporte-list/cond-funcionamento-list/spatialize/cod_estado&geocodigo/http://172.30.10.86/api/bcim/unidades-federativas/offset_limit/0&2/geocodigo,nome,geom", 200),
+    #("esporte-list/cond-funcionamento-list/join/cod_estado&geocodigo/http://172.30.10.86/api/bcim/unidades-federativas/offset_limit/0&2/geocodigo,nome,geom", 200),
 
         # FeatureCollection (n resources) join CollectionResource (n resources)
-    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG/spatialize/geocodigo&cod_estado/http://172.30.10.86/esporte-list/cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/", 200),
+    RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/http://172.30.10.86/esporte-list/cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/", 200),
 ]
 
 arr_options_for_collection_operation = [
@@ -348,41 +347,41 @@ def test_requests(request_test_list, test_label=''):
     fin_label_len = len(test_label) + len(default_fin_test_label) + 5
     print("\n\n" + fin_label_len * "*" + "\n* " + default_fin_test_label + " " + test_label + " *\n" + fin_label_len * "*" + "\n\n")
 
-'''
+
 test_requests(arr_get_for_non_spatial_resource, test_label = "Tests for NonSpatialResource")
 test_requests(arr_get_for_collection, test_label="Generic tests to collection operations")
 test_requests(arr_get_for_spatial_operations, test_label="Tests for spatial operations")
 test_requests(arr_get_for_complex_requests, test_label="Tests for complex requests")
 test_requests(arr_get_for_projection, test_label="Tests for FeatureCollection with and without projection")
 test_requests(arr_get_for_geometry_collection_operation, test_label="Tests for spatial collection operations")
-test_requests(arr_get_for_spatialize_operation, test_label="Tests for spatialize operation")
+test_requests(arr_get_for_join_operation, test_label="Tests for join operation")
 test_requests(arr_options_for_collection_operation, test_label = "Tests OPTIONS for Collection operations")
 test_requests(arr_get_for_collect_operation_context, test_label = "Tests GET for Collect operation context")
-'''
+
 
 print("\n\n" + 25 * "X" + "\nX End of all test sets  X\n" + 25 * "X" + "\n\n")
 
 args = sys.argv
 if '-a' in args:
-    print("<<< Testing CollectOperationTest >>>")
+    print("\n\n<<< Testing CollectOperationTest >>>")
     os.system("python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing OptionsForCollectOperationTest >>>")
+    print("\n\n<<< Testing OptionsForCollectOperationTest >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsForCollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing GroupBySumOperationTest >>>")
+    print("\n\n<<< Testing GroupBySumOperationTest >>>")
     os.system("python manage.py test hyper_resource.tests.GroupBySumOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing ProjectionOperationTest >>>")
+    print("\n\n<<< Testing ProjectionOperationTest >>>")
     os.system("python manage.py test hyper_resource.tests.ProjectionOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing OptionsForProjectionOperation >>>")
+    print("\n\n<<< Testing OptionsForProjectionOperation >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsForProjectionOperation --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing FilterOperationTest >>>")
+    print("\n\n<<< Testing FilterOperationTest >>>")
     os.system("python manage.py test hyper_resource.tests.FilterOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing RequestOptionsTest >>>")
+    print("\n\n<<< Testing RequestOptionsTest >>>")
     os.system("python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing GetRequestContextTest >>>")
+    print("\n\n<<< Testing GetRequestContextTest >>>")
     os.system("python manage.py test hyper_resource.tests.GetRequestContextTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing SpatializeOperationTest >>>")
-    os.system("python manage.py test hyper_resource.tests.SpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing OptionsForSpatializeOperationTest >>>")
-    os.system("python manage.py test hyper_resource.tests.OptionsForSpatializeOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("<<< Testing PaginationTest >>>")
+    print("\n\n<<< Testing JoinOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.JoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing OptionsForJoinOperationTest >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing PaginationTest >>>")
     os.system("python manage.py test hyper_resource.tests.PaginationTest --testrunner=hyper_resource.tests.NoDbTestRunner")

@@ -71,7 +71,7 @@ class Type_Called():
         self.parameters = params
         self.return_type = answer
 
-class SpatializeOperation():
+class JoinOperation():
     def __init__(self, left_join_data, left_join_attr, right_join_attr, right_join_data):
         self.left_join_data = left_join_data
         self.left_join_attr = left_join_attr
@@ -495,7 +495,7 @@ class BaseOperationController(object):
         self.x_operation_name = 'x'
         self.y_operation_name = 'y'
         self.z_operation_name = 'z'
-        self.spatialize_operation_name = 'spatialize'
+        self.join_operation_name = 'join'
         self.projection_operation_name = 'projection'
 
     #Spatial Operations
@@ -575,7 +575,7 @@ class BaseOperationController(object):
             dic[self.x_operation_name] = Type_Called('x', [], float)
             dic[self.y_operation_name] = Type_Called('y', [], float)
             dic[self.z_operation_name] = Type_Called('z', [], float)
-            dic[self.spatialize_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
+            dic[self.join_operation_name] = Type_Called('join', [tuple, object], GEOSGeometry)
             # dic['tuple'] = Type_Called('tuple', [], tuple)
             # dic['pop'] = Type_Called('pop', [], tuple)
             # dic['prepared'] = Type_Called('prepared', [], PreparedGeometry)
@@ -817,7 +817,7 @@ class CollectionResourceOperationController(BaseOperationController):
         self.filter_and_collect_collection_operation_name = 'filter_and_collect'
         self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
         self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
-        self.spatialize_operation_name = 'spatialize'
+        self.join_operation_name = 'join'
         self.group_by_sum_collection_operation_name = "group_by_sum"
         self.projection_operation_name = 'projection'
 
@@ -944,7 +944,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         d[self.extent_collection_operation_name] = Type_Called('extent', [GEOSGeometry], tuple)
         d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], GEOSGeometry)
         #d[self.spatialize_collection_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
-        d[self.spatialize_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
+        d[self.join_operation_name] = Type_Called('join', [tuple, object], GEOSGeometry)
         d['projection'] = Type_Called('projection', [list], object)
 
         return d
