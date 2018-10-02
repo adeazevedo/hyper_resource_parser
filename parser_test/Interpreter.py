@@ -3,13 +3,16 @@ import lark
 
 
 class Interpreter(lark.visitors.Interpreter):
+
+    PRIORITY_ENTRY_POINT_COMMAND = 1
+    PRIORITY_IMPLICIT_FILTER_COMMAND = 4
+    PRIORITY_FILTER_COMMAND = 5
+    PRIORITY_PROJECTION_COMMAND = 10
+
     def __init__(self, implementation):
         self._implementation = implementation
-        self.description = {
-            'entry_point': '',
-            'resource': '',
-            'filter': []
-        }
+
+        self.queue = PriorityQueue()
 
     def interpret(self, syntatic_tree):
         return self.visit(syntatic_tree)
@@ -20,19 +23,17 @@ class Interpreter(lark.visitors.Interpreter):
         entry_point_name = self.entry_point(tree.children.pop(0))
         resource_name = self.resource_locator(tree.children.pop(0))
 
-        self.description.update(
-            entry_point=entry_point_name,
-            resource=resource_name
-        )
+        self.queue.add_task(('entry_point', lambda: self._implementation.build_resource(entry_point_name, resource_name)),
+                            self.PRIORITY_ENTRY_POINT_COMMAND)
 
         # Expression chain interpretation
         for child in tree.children:
             self.visit(child)
 
         # implementation query the commands
-        query_set = self._implementation.build(self.description)
+        resource = self._implementation.build(self.queue)
 
-        return query_set
+        return resource
 
     def entry_point(self, tree):
         name = self.id(tree.children.pop(0))
@@ -43,7 +44,8 @@ class Interpreter(lark.visitors.Interpreter):
 
         if tree.children:
             implicit_id = self.implicit_expression(tree.children.pop(0))
-            self.description.update(implicit_filter=implicit_id)
+            command = lambda: self._implementation.build_implicit_filter(implicit_id)
+            self.queue.add_task(('implicit_filter', command), self.PRIORITY_IMPLICIT_FILTER_COMMAND)
 
         return resource_name
 
@@ -57,11 +59,13 @@ class Interpreter(lark.visitors.Interpreter):
 
             elif child.data == 'projection':
                 projection = self.projection(child)
-                self.description.update(projection=projection)
 
-        self.description.update(
-            filter=filter_description
-        )
+                command = lambda: self._implementation.exec_function('projection', *projection)
+                self.queue.add_task(('projection', command), self.PRIORITY_PROJECTION_COMMAND)
+
+        if filter_description:
+            command = lambda: self._implementation.build_filter(filter_description)
+            self.queue.add_task(('filter', command), self.PRIORITY_FILTER_COMMAND)
 
     def filter(self, tree):
         result = self.visit_children(tree)
@@ -69,7 +73,7 @@ class Interpreter(lark.visitors.Interpreter):
 
     def projection(self, tree):
         result = self.visit_children(tree)
-        return result[0]
+        return result[0] if isinstance(result[0], list) else [result[0]]
 
     def logical_expression(self, tree):
         result = self.visit(tree.children.pop(0))
@@ -168,7 +172,7 @@ class Filter:
         return self.__str__()
 
     def __str__(self):
-        return str(self.__class__) + ' -> ' + str(self.children)
+        return str(self.children)
 
 
 class AndFilter(Filter):
@@ -179,6 +183,9 @@ class AndFilter(Filter):
         for expr in list_expr:
             self.add(expr)
 
+    def __str__(self):
+        return '(' + ' AND '.join([str(child) for child in self.children]) + ')'
+
 
 class OrFilter(Filter):
     def __init__(self, list_expr):
@@ -188,6 +195,9 @@ class OrFilter(Filter):
         for expr in list_expr:
             self.add(expr)
 
+    def __str__(self):
+        return '(' + ' OR '.join([str(child) for child in self.children]) + ')'
+
 
 class NotFilter(Filter):
     def __init__(self, expr):
@@ -195,6 +205,9 @@ class NotFilter(Filter):
         self.operation = 'not'
 
         self.add(expr)
+
+    def __str__(self):
+        return ' NOT ' + str(self.children[0])
 
 
 
@@ -231,6 +244,4 @@ class PriorityQueue:
                 del self.entry_finder[task]
                 return task
 
-        raise KeyError('pop from an empty priority queue')
-
-
+        return None

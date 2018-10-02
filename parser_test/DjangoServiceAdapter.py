@@ -1,55 +1,62 @@
 
 from operator import or_, and_, invert
 from functools import reduce
-import pprint
 
 from django.db.models import Q
 
 from hyper_resource.HyperResource import HyperResource
-from parser_test.ServiceInterpreter import ServiceInterpreter
 
-
-class DjangoServiceInterpreter(ServiceInterpreter):
+class DjangoServiceAdapter:
     def __init__(self):
-        super().__init__()
-
         self.resource = None
 
     # Overridden
     # Method used by Interpreter obj
-    def build(self, description):
-        resource_class = HyperResource.query(description['entry_point'], description['resource'])
-
+    def build(self, queue):
+        entry_point_command = queue.pop_task()
+        resource_class = entry_point_command[1]()
         self.resource = resource_class()
 
-        if 'implicit_filter' in description:
-            data = description['implicit_filter']
-            field = self.resource.find_implicit_field(data)
+        command = queue.pop_task()
+        while command:
+            callback = command[1]
 
-            desc = (field, 'eq', data)
+            callback()
 
-            self.resource.set_filter(Filter.to_q(desc))
-
-        elif description['filter']:
-            self.resource.set_filter(self.build_filter(description['filter']))
-
-        if 'projection' in description:
-            self.resource.projection(*description['projection'])
+            command = queue.pop_task()
 
         return self.resource
 
-    def build_filter(self, representation):
-        if not representation:
+    def build_resource(self, entry_point, resource):
+        return HyperResource.get(entry_point, resource)
+
+    def build_implicit_filter(self, implicit_id):
+        field = self.resource.find_implicit_field(implicit_id)
+
+        filter_ = (field, 'eq', implicit_id)
+
+        return self.build_filter([filter_])
+
+    def build_filter(self, filter_description):
+        if not filter_description:
             return Q()
 
         q_list = [Q()]
         # User can chain several filter in url, so transform all in Q Object and unite with and expr
-        for expr in representation:
+        for expr in filter_description:
             q_list.append(self.process_logic(expr))
 
         q_objects_query = reduce(Filter.and_, q_list)
 
-        return q_objects_query
+        return self.resource.filter(q_objects_query)
+
+    def exec_function(self, func_name, *args, **kwargs):
+        # Check if function exists
+        if hasattr(self.resource, func_name):
+            method = getattr(self.resource, func_name)
+            return method(*args)
+
+        raise ValueError(func_name + ' method does not exists in ' + str(type(self.resource)))
 
     def process_logic(self, logic_tree):
         # If is a tuple, transform into Q Object

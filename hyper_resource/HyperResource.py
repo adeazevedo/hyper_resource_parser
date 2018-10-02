@@ -2,7 +2,7 @@
 from bcim import serializers
 
 from parser_test import resources
-
+from parser_test.resources import ProxyResource
 
 entry_points = {
     'bcim': {
@@ -76,5 +76,6 @@ entry_points = {
 
 class HyperResource:
     @staticmethod
-    def query(entry_point, resource_name):
-        return entry_points.get(entry_point).get(resource_name)
+    def get(entry_point, resource_name):
+        abs_resource = entry_points.get(entry_point).get(resource_name)
+        return lambda: ProxyResource(abs_resource())

@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from parser_test.Interpreter import Interpreter
 
-from parser_test.DjangoServiceInterpreter import DjangoServiceInterpreter
+from parser_test.DjangoServiceAdapter import DjangoServiceAdapter
 
 
 ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD']
@@ -66,7 +66,7 @@ class HyperView(APIView):
     def get(self, request, *args, **kwargs):
         tree = self.parser(request.path)
 
-        django_interp = DjangoServiceInterpreter()
+        django_interp = DjangoServiceAdapter()
         interpreter = Interpreter(django_interp)
         #interpreter = ServiceInterpreter()
 
