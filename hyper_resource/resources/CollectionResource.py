@@ -43,20 +43,21 @@ class CollectionResource(AbstractCollectionResource):
 
     def get_objects_from_join_operation(self, request, attributes_functions_str):
         join_operation = self.build_join_operation(request, attributes_functions_str)
-        return self.join_dict_list_on_spatial_collection(join_operation)
+        return self.join_collection_on_collection(join_operation)
 
-    def join_dict_list_on_spatial_collection(self, join_operation):
+    def join_collection_on_collection(self, join_operation):
         joined_data_list = []
-        for original_feature in join_operation.right_join_data['features']:
-            updated_feature = deepcopy(original_feature)
-            for position, dict_to_join in enumerate(join_operation.left_join_data):
-                if updated_feature['properties'][join_operation.right_join_attr] == dict_to_join[join_operation.left_join_attr]:
-                    updated_feature['properties']['joined__' + str(position) ] = deepcopy(dict_to_join)#.pop(position)
+        for original_element in join_operation.left_join_data:
+            updated_element = deepcopy(original_element)
+            updated_element["__joined__"] = []
+            for dict_to_join in join_operation.right_join_data:
+                if updated_element[join_operation.left_join_attr] == dict_to_join[join_operation.right_join_attr]:
+                    updated_element['__joined__'].append(deepcopy(dict_to_join))
 
-            if sorted(list(updated_feature['properties'].keys())) != sorted(list(original_feature['properties'].keys())):
-                joined_data_list.append(updated_feature)
+            if len(updated_element["__joined__"]) > 0:
+                joined_data_list.append(updated_element)
 
-        return {'type': 'FeatureCollection', 'features': joined_data_list}
+        return joined_data_list
 
     def get_objects_serialized(self):
         objects = self.model_class().objects.all()

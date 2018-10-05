@@ -188,10 +188,10 @@ arr_get_for_geometry_collection_operation = [
 
 arr_get_for_join_operation = [
         # NonSpatialResource (1 resource) join FeatureResource (1 resource) (Not joinable)
-    RequestTest("controle-list/usuario-list/1/join/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/ES", 400),
+    #RequestTest("controle-list/usuario-list/1/join/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/ES", 400),
 
         # NonSpatialResource (1 resource) join FeatureResource (n resources) (Not joinable)
-    RequestTest("controle-list/usuario-list/1/join/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/", 400),
+    #RequestTest("controle-list/usuario-list/1/join/data_nascimento&geocodigo/" + SERVER + "api/bcim/unidades-federativas/", 400),
 
         # FeatureResource (1 resource) join NonSpatialResource (1 resource)
     RequestTest("api/bcim/municipios/3304557/join/geocodigo&geocodigo/http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/", 200),

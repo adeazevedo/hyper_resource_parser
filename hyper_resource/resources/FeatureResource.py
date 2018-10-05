@@ -310,6 +310,8 @@ class FeatureResource(SpatialResource):
             if join_operation.left_join_data['properties'][join_operation.left_join_attr] == dicti[join_operation.right_join_attr]:
                 join_operation.left_join_data['properties']['__joined__'].append(dicti)
 
+        if len(join_operation.left_join_data['properties']['__joined__']) == 0:
+            return None
         return join_operation.left_join_data
 
     def get_context_for_join_operation(self, request, attributes_functions_str):

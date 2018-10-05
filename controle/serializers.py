@@ -8,7 +8,7 @@ class GastoSerializer(ModelSerializer):
     usuario = HyperlinkedRelatedField(view_name='controle_v1:Usuario_detail', many=False, read_only=True)
     class Meta:
         model = Gasto
-        fields = ['id','data','tipo_gasto','usuario','valor']
+        fields = ['id','data','tipo_gasto','usuario','valor','cod_municipio']
         identifier = 'id'
         identifiers = ['id', 'pk']
 

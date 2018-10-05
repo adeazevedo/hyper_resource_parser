@@ -412,9 +412,24 @@ class AbstractGetRequestTest(AbstractRequestTest):
         first_feature = self.aux_get_first_feature(response)
         return sorted( list(first_feature['properties'].keys()) )
 
+    def aux_get_first_element_from_response_list(self, response):
+        return self.aux_get_list_from_response(response)[0]
+
     def aux_get_first_element_keys_from_response_list(self, response):
-        response_list = self.aux_get_list_from_response(response)
-        return sorted( list(response_list[0].keys()) )
+        first_element = self.aux_get_first_element_from_response_list(response)
+        return sorted( list(first_element.keys()) )
+
+    def aux_get_first_element_joined_length(self, response):
+        first_element = self.aux_get_first_element_from_response_list(response)
+        return len(first_element["__joined__"])
+
+    def aux_get_single_element_from_response(self, response):
+        response_text = json.loads(response.text)
+        return dict( response_text )
+
+    def aux_get_sigle_element_keys_from_response(self, response):
+        first_element = self.aux_get_single_element_from_response(response)
+        return sorted( list(first_element.keys()) )
 
     def aux_get_first_geometry_keys_from_response_list(self, response):
         response_dict = self.aux_get_dict_from_response(response)
@@ -3475,7 +3490,7 @@ class JoinOperationTest(AbstractGetRequestTest):
         super(JoinOperationTest, self).setUp()
         self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
         self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
-        self.pib_municipio = "http://172.30.10.86/api/pib-municipio/"
+        self.pib_municipio_base_uri = "http://172.30.10.86/api/pib-municipio/"
         self.feature_keys = ["geometry", "id", "properties", "type"]
 
     def aux_get_first_joined_dict_attributes_from_first_feature(self, response):
@@ -3487,18 +3502,109 @@ class JoinOperationTest(AbstractGetRequestTest):
         first_feature = self.aux_get_first_feature(response)
         return len(first_feature['properties']['__joined__'])
 
+    def aux_get_first_joined_dict_attributes_from_single_element_response(self, response):
+        first_element = self.aux_get_single_element_from_response(response)
+        return sorted( first_element["__joined__"][0].keys() )
+
+    def aux_get_first_joined_dict_attributes_from_first_element_response(self, response):
+        first_element = self.aux_get_first_element_from_response_list(response)
+        return sorted( list(first_element["__joined__"][0].keys()) )
+
+    def aux_get_single_element_joined_length(self, response):
+        first_element = self.aux_get_single_element_from_response(response)
+        return len(first_element['__joined__'])
+
     # --------------- TESTS FOR NON SPATIAL RESOURCE ---------------------------------
     def test_join_operation_for_non_spatial_resource_one_to_one_rel(self):
-        pass
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/3243")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_sigle_element_keys_from_response(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_single_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 1)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_single_element_response(response)
+        self.assertEquals(joined_attrs_list, ['classe_tama_populacao_estimada_2015', 'codfigo_uf', 'geocodigo',
+                                              'id_variaveis_externas', 'nome_municipio', 'populacao_estimada_2015',
+                                              'regiao', 'sigla_unidade_federacao'])
 
     def test_join_operation_for_non_spatial_resource_one_to_one_rel_accept_octet_stream(self):
-        pass
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/3243",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
 
     def test_join_operation_for_non_spatial_resource_one_to_many_rel(self):
-        pass
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557/")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_sigle_element_keys_from_response(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_single_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_single_element_response(response)
+        self.assertEquals(joined_attrs_list, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro', 'valor_bruto_ind',
+                                              'valor_bruto_serv'])
 
     def test_join_operation_for_non_spatial_resource_one_to_many_rel_accept_octet_stream(self):
-        pass
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557/",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+
+    # --------------- TESTS FOR COLLECTION RESOURCE ---------------------------------
+    def test_join_operations_for_collection_resource_one_to_one_rel(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_first_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 1)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_first_element_response(response)
+        self.assertEquals(joined_attrs_list, ['classe_tama_populacao_estimada_2015', 'codfigo_uf', 'geocodigo',
+                                              'id_variaveis_externas', 'nome_municipio', 'populacao_estimada_2015',
+                                              'regiao', 'sigla_unidade_federacao'])
+
+    def test_join_operations_for_collection_resource_one_to_one_rel_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    def test_join_operations_for_collection_resource_one_to_many_rel(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3550308&3304557")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_first_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_first_element_response(response)
+        self.assertEquals(joined_attrs_list, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro', 'valor_bruto_ind',
+                                              'valor_bruto_serv'])
+
+    def test_join_operations_for_collection_resource_one_to_many_rel_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3550308&3304557",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
 
     # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
     def test_join_operation_for_feature_resource_one_to_one_rel(self):
@@ -3568,7 +3674,7 @@ class JoinOperationTest(AbstractGetRequestTest):
         self.assertEquals(response.headers['content-type'], 'application/octet-stream')
 
     def test_join_operation_for_feature_resource_one_to_many_rel(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio + "faturamento-list/filter/cod_municipio/eq/3304557")
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557")
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
 
@@ -3587,14 +3693,14 @@ class JoinOperationTest(AbstractGetRequestTest):
                                               'valor_bruto_ind', 'valor_bruto_serv'])
 
     def test_join_operation_for_feature_resource_one_to_many_rel_accept_octet_stream(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio + "faturamento-list/filter/cod_municipio/eq/3304557",
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557",
                                 headers={"Accept": "application/octet-stream"})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/octet-stream')
 
 
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
-    def test_join_operation_for_feature_collection_with_filter(self):
+    def test_join_operation_for_feature_collection_one_to_one_rel(self):
         response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
@@ -3615,11 +3721,39 @@ class JoinOperationTest(AbstractGetRequestTest):
                                                      'gin_parado', 'id', 'id_estado', 'kartodromo_func',
                                                      'kartodromo_parado'] )
 
-    def test_join_operation_for_feature_collection_with_filter_accept_octet_stream(self):
+    def test_join_operation_for_feature_collection_one_to_one_rel_accept_octet_stream(self):
         response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/",
                                 headers={"accept": "application/octet-stream"})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    def test_join_operation_for_feature_collection_one_to_many_rel(self):
+        response = requests.get(self.bcim_base_uri + "municipios/filter/nome/in/Rio de Janeiro&Belo Horizonte&São Paulo/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3304557&3106200&3550308&4106902")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/vnd.geo+json')
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.feature_collection_keys)
+
+        first_feature_keys = self.aux_get_first_feature_keys(response)
+        self.assertEquals(first_feature_keys, self.feature_keys)
+
+        first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(first_feature_properties_keys, ["__joined__", "anodereferencia", "geocodigo", "geometriaaproximada", "nome", "nomeabrev"])
+
+        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_dict_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
+        self.assertEquals(joined_dict_attrs, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro',
+                                              'valor_bruto_ind', 'valor_bruto_serv'])
+
+    def test_join_operation_for_feature_collection_one_to_many_rel_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "municipios/filter/nome/in/Rio de Janeiro&Belo Horizonte&São Paulo/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3304557&3106200&3550308&4106902",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/octet-stream')
 
 #python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class OptionsForJoinOperationTest(AbstractRequestTest):

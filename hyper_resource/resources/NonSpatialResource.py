@@ -42,10 +42,30 @@ class NonSpatialResource(AbstractResource):
     def get_objects_from_join_operation(self, request, attributes_functions_str):
         join_operation = self.build_join_operation(request, attributes_functions_str)
 
-        if join_operation.right_join_data['type'] == 'FeatureCollection':
-            return self.join_non_spatial_on_feature_collection(join_operation)
-        return self.join_non_spatial_on_feature(join_operation)
+        if type(join_operation.right_join_data) == list:
+            return self.join_dict_list_on_non_spatial_resource(join_operation)
+        return self.join_dict_on_non_spatial_resource(join_operation)
 
+    def join_dict_on_non_spatial_resource(self, join_operation):
+        if join_operation.left_join_data[ join_operation.left_join_attr ] != join_operation.right_join_data[ join_operation.right_join_attr ]:
+            return None
+
+        join_operation.left_join_data["__joined__"] = []
+        join_operation.left_join_data["__joined__"].append( join_operation.right_join_data )
+        return join_operation.left_join_data
+
+    def join_dict_list_on_non_spatial_resource(self, join_operation):
+        join_operation.left_join_data['__joined__'] = []
+
+        for dicti in join_operation.right_join_data:
+            if join_operation.left_join_data[ join_operation.left_join_attr ] == dicti[ join_operation.right_join_attr ]:
+                join_operation.left_join_data['__joined__'].append(dicti)
+
+        if len(join_operation.left_join_data['__joined__']) == 0:
+            return None
+        return join_operation.left_join_data
+
+    '''
     def join_non_spatial_on_feature(self, join_operation):
         if join_operation.left_join_data[ join_operation.left_join_attr] != \
         join_operation.right_join_data['properties'][ join_operation.right_join_attr]:
@@ -65,6 +85,7 @@ class NonSpatialResource(AbstractResource):
                 for alpha_attr, alpha_data in join_operation.left_join_data.items():
                     copied_feature['properties']['joined__' + alpha_attr] = alpha_data
                 return copied_feature # only one location joined on alphanumeric data
+    '''
 
     # todo: refactor 'response_request_with_attributes()' of the other classes to implement to behaviour of get_objects_serialized_by_only_attributes
     '''
