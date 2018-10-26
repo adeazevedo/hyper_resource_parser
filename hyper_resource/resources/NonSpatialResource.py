@@ -18,11 +18,14 @@ class NonSpatialResource(AbstractResource):
         serializer = self.serializer_class(self.object_model, context={'request': request})
         return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), self.object_model, 200)
 
+    '''
     def required_object_for_only_attributes(self, request, attributes_functions_str):
         object = self.get_object_by_only_attributes(attributes_functions_str)
         serialized_object = self.get_object_serialized_by_only_attributes(attributes_functions_str, object)
         return RequiredObject(serialized_object, self.content_type_or_default_content_type(request), object, 200)
+    '''
 
+    '''
     def get_object_by_only_attributes(self, attribute_names_str):
         attr_list = self.remove_last_slash(attribute_names_str).split(',')
         obj_dict = {}
@@ -30,14 +33,7 @@ class NonSpatialResource(AbstractResource):
             attr_value = self._value_from_object(self.object_model, attr_name, [])
             obj_dict[attr_name] = attr_value
         return obj_dict
-
-    def get_object_serialized_by_only_attributes(self, attribute_names_str, objects):
-        # NonSpatialObjects don't need a complex serialization, this method is here just to keep the code design
-        # remember these three steps:
-        # 1. get the object(s) by a "get_objects_by_something" method like
-        # 2. serialize the returned object(s) by a "get_objects_serialized_by_something" method like
-        # 3. and finally return a RequiredObject with the serialized_data, a content_type and the original object
-        return objects
+    '''
 
     def get_objects_from_join_operation(self, request, attributes_functions_str):
         join_operation = self.build_join_operation(request, attributes_functions_str)

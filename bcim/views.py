@@ -801,6 +801,10 @@ class TrechoDutoDetail(FeatureResource):
 
 class TrechoFerroviarioList(FeatureCollectionResource):
 
+    def __init__(self):
+        super(TrechoFerroviarioList, self).__init__()
+        self.iri_metadata = "http://www.metadados.inde.gov.br/geonetwork/srv/por/csw?service=CSW&version=2.0.2&request=GetRecordById&id=556709aa-69bf-4b18-b8ce-515190e59d22&elementsetname=full"
+
     queryset = TrechoFerroviario.objects.all()
     serializer_class = TrechoFerroviarioSerializer
     contextclassname = 'trechos-ferroviarios'

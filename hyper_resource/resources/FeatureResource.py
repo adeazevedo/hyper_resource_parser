@@ -33,6 +33,7 @@ class FeatureResource(SpatialResource):
     def operations_with_parameters_type(self):
         return self.object_model.operations_with_parameters_type()
 
+    '''
     def get_object_by_only_attributes(self, attribute_names_str):
         a_dict ={}
         attributes = self.remove_last_slash(attribute_names_str).split(',')
@@ -42,6 +43,7 @@ class FeatureResource(SpatialResource):
             a_dict[attr_name] = attr_val
 
         return a_dict
+    '''
 
     def response_request_attributes_functions_str_with_url(self, attributes_functions_str, request=None):
         # r':/+' matches string like: ':' followed by at least 1 occurence of '/'
@@ -85,6 +87,7 @@ class FeatureResource(SpatialResource):
         return RequiredObject(a_value, CONTENT_TYPE_JSON, self.object_model, 200)
 
 
+    '''
     def response_base_get(self, request, *args, **kwargs):
         resource = self.resource_in_cache(request)
 
@@ -94,14 +97,14 @@ class FeatureResource(SpatialResource):
         required_object = self.basic_get(request, *args, **kwargs)
         status = required_object.status_code
 
-        if status in [400,401,404]:
+        if status in [400, 401, 404]:
             return Response({'Error ': 'The request has problem. Status:' + str(status)}, status=status)
 
         if status in [500]:
-           return Response({'Error ': 'The server can not process this request. Status:' + str(status)}, status=status)
+            return Response({'Error ': 'The server can not process this request. Status:' + str(status)}, status=status)
 
         if self.is_image_content_type(request, **kwargs):
-           return self.response_base_get_with_image(request, required_object)
+            return self.response_base_get_with_image(request, required_object)
 
         if self.is_binary_content_type(required_object) or self.accept_is_binary(request):
             return self.response_base_get_binary(request, required_object)
@@ -114,6 +117,7 @@ class FeatureResource(SpatialResource):
         self.set_etag_in_header(resp, self.e_tag)
 
         return resp
+    '''
 
     def operation_name_method_dic(self):
         dict = super(FeatureResource, self).operation_name_method_dic()
@@ -278,15 +282,17 @@ class FeatureResource(SpatialResource):
         return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), self.object_model, 200)
 
     def required_object_for_only_attributes(self, request, attributes_functions_str):
-        object = self.get_object_by_only_attributes(attributes_functions_str)
-        serialized_data = self.get_object_serialized_by_only_attributes(attributes_functions_str, object)
-        content_type = self.define_content_type_by_only_attributes(request, attributes_functions_str)
-        return RequiredObject(serialized_data, content_type, object,  200)
+        required_object = super(FeatureResource, self).required_object_for_only_attributes(request, attributes_functions_str)
+        required_object.content_type = self.define_content_type_by_only_attributes(request, attributes_functions_str)
+        return required_object
+        #object = self.get_object_by_only_attributes(attributes_functions_str)
+        #serialized_data = self.get_object_serialized_by_only_attributes(attributes_functions_str, object)
+        #return RequiredObject(serialized_data, content_type, object,  200)
 
     def required_object_for_spatial_operation(self, request, attributes_functions_str):
         if self.path_has_url(attributes_functions_str.lower()):
             return self.response_request_attributes_functions_str_with_url(attributes_functions_str, request)
-        return self.response_of_request(attributes_functions_str)
+        return self.response_of_request( self.remove_last_slash(attributes_functions_str) )
 
     def get_objects_from_join_operation(self, request, attributes_functions_str):
         join_operation = self.build_join_operation(request, attributes_functions_str)
@@ -391,6 +397,7 @@ class FeatureResource(SpatialResource):
     def basic_required_object(self, request, *args, **kwargs):
         return self.basic_get(request, *args, **kwargs)
 
+    '''
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)
         if required_object.status_code == 200:
@@ -401,6 +408,7 @@ class FeatureResource(SpatialResource):
             response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)},
                                 status=required_object.status_code)
         return response
+    '''
 
     def default_content_type(self):
         return CONTENT_TYPE_GEOJSON#self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON

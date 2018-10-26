@@ -23,25 +23,6 @@ class APIRoot(RasterAPIRoot):
         ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
         return ordered_dict_of_link
 
-    '''
-    def __init__(self):
-        super(APIRoot, self).__init__()
-        self.base_context = BaseContext('api-root')
-
-    def options(self, request, *args, **kwargs):
-        context = self.base_context.getContextData(request)
-        root_links = get_root_response(request)
-        context.update(root_links)
-        response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")
-        response = self.base_context.addContext(request, response)
-        return response
-
-    def get(self, request, format=None, *args, **kwargs):
-        root_links = get_root_response(request)
-        response = Response(root_links)
-        return self.base_context.addContext(request, response)
-    '''
-
 class ImagemExemplo1List(TiffCollectionResource):
     queryset = ImagemExemplo1.objects.all()
     serializer_class = ImagemExemplo1Serializer

@@ -10,7 +10,7 @@ import requests
 from django.contrib.gis.db import models
 from django.contrib.gis.db.models import Q, RasterField
 # Create your models here.
-from django.contrib.gis.gdal import OGRGeometry
+from django.contrib.gis.gdal import OGRGeometry, GDALRaster
 from django.contrib.gis.gdal import SpatialReference
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import GeometryCollection
@@ -498,6 +498,12 @@ class BaseOperationController(object):
         self.join_operation_name = 'join'
         self.projection_operation_name = 'projection'
 
+    def user_friendly_resource_type_dict(self):
+        return {
+            'str': 'Text',
+            str: 'Text'
+        }
+
     #Spatial Operations
     def geometry_operations_dict(self):
         dic = {}
@@ -576,6 +582,7 @@ class BaseOperationController(object):
             dic[self.y_operation_name] = Type_Called('y', [], float)
             dic[self.z_operation_name] = Type_Called('z', [], float)
             dic[self.join_operation_name] = Type_Called('join', [tuple, object], GEOSGeometry)
+            dic[self.projection_operation_name] = Type_Called('projection', [list], object)
             # dic['tuple'] = Type_Called('tuple', [], tuple)
             # dic['pop'] = Type_Called('pop', [], tuple)
             # dic['prepared'] = Type_Called('prepared', [], PreparedGeometry)
@@ -595,6 +602,7 @@ class BaseOperationController(object):
 
     def generic_object_operations_dict(self):
         d = {}
+        d["join"] = Type_Called('join', [tuple, object], object)
         d['projection'] = Type_Called('projection', [list], object)
         return d
 
@@ -744,13 +752,24 @@ class BaseOperationController(object):
         # if 'attr_of_method_name' doesn't represent a operations of 'an_object' type, return False
         return False
 
-class RasterOperationController():
+class RasterOperationController(BaseOperationController):
     _instance = None
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = object.__new__(cls, *args, **kwargs)
             cls._instance.initialize()
         return cls._instance
+
+    def user_friendly_resource_type_dict(self):
+        d = super(RasterOperationController, self).user_friendly_resource_type_dict()
+        d.update({
+            GDALRaster: "Tiff",
+        })
+        return d
+
+    def get_user_friendly_resource_type_name(self, operation_return_type):
+        return self.user_friendly_resource_type_dict()[operation_return_type]
+
     def initialize(self):
         self.bands_operation_name = 'bands'
         self.destructor_operation_name = 'destructor'
@@ -772,29 +791,32 @@ class RasterOperationController():
         self.vsi_buffer_operation_name = 'vsi_buffer'
         self.warp_operation_name = 'warp'
         self.width_operation_name = 'width'
+        self.join_operation_name = 'join' # DUPLICATED
+        self.projection_operation_name = 'projection'# DUPLICATED
 
-    def operation_dict(self):
+    def dict_all_operation_dict(self):
         d = {}
         d[self.bands_operation_name] = Type_Called('bands', [], object)
-        d[self.destructor_operation_name] = Type_Called('destructor', [], object)
-        d[self.driver_operation_name] = Type_Called('driver', [], str)
-        d[self.extent_operation_name] = Type_Called('extent', [], str)
-        d[self.geotransform_operation_name] = Type_Called('geotransform', [], object)
-        d[self.height_operation_name] = Type_Called('height', [], int)
-        d[self.info_operation_name] = Type_Called('info', [], str)
-        d[self.metadata_operation_name] = Type_Called('metadata', [], str)
-        d[self.name_operation_name] = Type_Called('name', [], str)
-        d[self.origin_operation_name] = Type_Called('origin', [], str)
-        d[self.ptr_operation_name] = Type_Called('ptr', [], object)
-        d[self.ptr_type_operation_name] = Type_Called('ptr_type', [], object)
-        d[self.scale_operation_name] = Type_Called('scale', [], list)
-        d[self.skew_operation_name] = Type_Called('skew', [], object)
-        d[self.srid_operation_name] = Type_Called('srid', [], object)
-        d[self.srs_operation_name] = Type_Called('srs', [], object)
-        d[self.transform_operation_name] = Type_Called('transform', [], object)
-        d[self.vsi_buffer_operation_name] = Type_Called('vsi_buffer', [], object)
-        d[self.warp_operation_name] = Type_Called('warp', [], object)
-        d[self.width_operation_name] = Type_Called('width', [], object)
+        d[self.destructor_operation_name] = Type_Called('destructor', [], object)           # not a Raster operation (is Band operation)
+        d[self.driver_operation_name] = Type_Called('driver', [], str)                      # DONE
+        d[self.extent_operation_name] = Type_Called('extent', [], str)                      # DONE
+        d[self.geotransform_operation_name] = Type_Called('geotransform', [], object)       # DONE
+        d[self.height_operation_name] = Type_Called('height', [], int)                      # DONE
+        d[self.info_operation_name] = Type_Called('info', [], str)                          # DONE
+        d[self.metadata_operation_name] = Type_Called('metadata', [], str)                  # DONE
+        d[self.name_operation_name] = Type_Called('name', [], str)                          # DONE
+        d[self.origin_operation_name] = Type_Called('origin', [], str)                      # DONE
+        d[self.ptr_operation_name] = Type_Called('ptr', [], object)                         # not Raster operation (is Band operation)
+        d[self.ptr_type_operation_name] = Type_Called('ptr_type', [], object)               # not Raster operation (is Band operation)
+        d[self.scale_operation_name] = Type_Called('scale', [], list)                       # DONE
+        d[self.skew_operation_name] = Type_Called('skew', [], object)                       # DONE
+        d[self.srid_operation_name] = Type_Called('srid', [], int)                          # DONE
+        d[self.srs_operation_name] = Type_Called('srs', [], SpatialReference)               # DONE
+        d[self.transform_operation_name] = Type_Called('transform', [int], GDALRaster)      # missing 'srid' parameter
+        d[self.vsi_buffer_operation_name] = Type_Called('vsi_buffer', [], bytes)            # Encoding error
+        d[self.warp_operation_name] = Type_Called('warp', [], object)                       # missing arguments and Raster return type
+        d[self.width_operation_name] = Type_Called('width', [], object)                     # DONE
+        d[self.projection_operation_name] = Type_Called('projection', [list], object)       # DONE
         return d
 
 class CollectionResourceOperationController(BaseOperationController):
@@ -812,7 +834,7 @@ class CollectionResourceOperationController(BaseOperationController):
         self.count_resource_collection_operation_name = 'count_resource'
         self.offset_limit_collection_operation_name = 'offset_limit'
         self.distinct_collection_operation_name = 'distinct'
-        self.group_by_collection_operation_name = 'group_by'
+        #self.group_by_collection_operation_name = 'group_by'
         self.group_by_count_collection_operation_name = 'group_by_count'
         self.filter_and_collect_collection_operation_name = 'filter_and_collect'
         self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
@@ -853,7 +875,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
         dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int, list], object)
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
-        dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
+        #dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
         dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
         dict[self.group_by_sum_collection_operation_name] = Type_Called(self.group_by_sum_collection_operation_name, [str, str], object)
         #dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
@@ -1352,6 +1374,7 @@ class RasterModel(SpatialModel):
     def driver(self):
         "Responds to the name of the GDAL driver used to handle the input file"
         return self.get_spatial_object().driver.name
+
     def bands(self):
         #Responds a list of all bands of the source, as GDALBand instances.
         return self.get_spatial_object().bands
@@ -1390,8 +1413,8 @@ class RasterModel(SpatialModel):
     def width(self):
         #responds the width of the source in pixels (X-axis).
         return self.get_spatial_object().width
-    def vsi_buffer(self):
 
+    def vsi_buffer(self):
         return self.get_spatial_object().vsi_buffer
 
     def info(self):
@@ -1401,6 +1424,9 @@ class RasterModel(SpatialModel):
     def metadata(self):
         "Returns a string with a summary of the raster."
         return self.get_spatial_object().metadata
+
+    def name(self):
+        return self.get_spatial_object().name
 
 class TiffModel(RasterModel):
     class Meta:

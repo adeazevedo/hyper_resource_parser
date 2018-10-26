@@ -17,7 +17,40 @@ class BaseModel(object):
         setattr(obj_model,view_resource.spatial_field_name(), rst)
         return obj_model
 
+    '''
+    def get_raster_bands(self, queryset):
+        band_arr = []
+        for band in queryset.rast.bands:
+            band_arr.append({
+                "nodata_value": band.nodata_value,
+                "size": (queryset.rast.width, queryset.rast.height)
+            })
+        return band_arr
+
+
+    def queryset_as_gdal_raster(self, queryset):
+        gdal_raster = GDALRaster({
+            "srid": queryset.rast.srid,
+            "width": queryset.rast.width,
+            "height": queryset.rast.height,
+            "driver": queryset.rast.driver.name,
+            "name": "/vsimem/",
+            "origin": [queryset.rast.origin.x, queryset.rast.origin.y],
+            "scale": [queryset.rast.scale.x, queryset.rast.scale.y],
+            "skew": [queryset.rast.skew.x, queryset.rast.skew.y],
+            "bands": self.get_raster_bands(queryset)
+        })
+        return gdal_raster
+    '''
+
     def get_model_object_raster(self, view_resource, kwargs):
+        #obj_model = view_resource.model_class()()
+        #queryset = view_resource.model_class().objects.get(pk=61)
+        #raster_resource = self.queryset_as_gdal_raster(queryset)
+        #setattr(obj_model,view_resource.pk_name(), queryset.pk)
+        #setattr(obj_model,view_resource.spatial_field_name(), raster_resource)
+        #return obj_model
+
        pk_name = view_resource.pk_name()
        sql_string = "SELECT " + pk_name +  ", ST_AsGDALRaster(" + view_resource.spatial_field_name() +  ", 'GTiff') FROM " + view_resource.table_name() +  " WHERE " + pk_name + "  = " + kwargs['pk']
        with connection.cursor() as cursor:
@@ -40,6 +73,7 @@ class BaseModel(object):
         pk_name = view_resource.pk_name()
         sql_string = "SELECT " + pk_name + " FROM " + view_resource.table_name()
         iri= view_resource.request.build_absolute_uri()
+        iri = iri if iri[:-1] == "/" else iri + "/"
         with connection.cursor() as cursor:
             cursor.execute(sql_string)
             rows = cursor.fetchall()

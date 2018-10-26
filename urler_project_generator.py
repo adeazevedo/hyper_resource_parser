@@ -5,7 +5,7 @@ import django
 
 def generate_snippets_to_url(a_name, context_name = 'include'):
     arr = []
-    arr.append((' ' * 4) + 'url(r' + "'" + '^'+ a_name.replace('_', '-') +'-list/'+ "'" +',' + context_name +'(' +"'" +a_name+'.urls'+"'" +
+    arr.append((' ' * 4) + 'url(r' + "'" + '^api/'+ a_name.replace('_', '-') +'-list/'+ "'" +',' + context_name +'(' +"'" +a_name+'.urls'+"'" +
                ',namespace='+"'"+ a_name+"'" +')),\n')
     '''
     arr.append((' ' * 4) + 'url(r' + "'" + '^'+ a_name +'-list/contexts/' + "'" +','+ context_name + '(' + "'"+ 'context_api.urls' +"'"+

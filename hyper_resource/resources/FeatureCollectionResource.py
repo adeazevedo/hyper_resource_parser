@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from hyper_resource.resources.AbstractResource import *
 from hyper_resource.resources.AbstractResource import RequiredObject
 from hyper_resource.resources.SpatialCollectionResource import SpatialCollectionResource
+from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource
 from hyper_resource.models import SpatialCollectionOperationController, BaseOperationController, FactoryComplexQuery, \
     ConverterType, FeatureModel
 from copy import deepcopy
@@ -28,12 +29,14 @@ class FeatureCollectionResource(SpatialCollectionResource):
     def default_resource_type(self):
         return 'FeatureCollection'
 
+    '''
     def get_real_operation_name(self, operation_name_from_path):
         all_geometry_collection_operations = dict(self.operation_controller.feature_collection_operations_dict(),
                                                   **self.operation_controller.internal_collection_operations_dict())
         type_called = all_geometry_collection_operations[operation_name_from_path]
 
         return type_called.name
+    '''
 
     def geometry_operations(self):
         return self.operation_controller.feature_collection_operations_dict()
@@ -93,6 +96,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return res_type_by_accept
 
+    '''
     # todo: need refactoring to remove this method
     def define_resource_type(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
@@ -145,6 +149,26 @@ class FeatureCollectionResource(SpatialCollectionResource):
                         return res_type_or_default if type_called.return_type == object else type_called.return_type
 
         return res_type_or_default
+    '''
+
+    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
+        attr_arr = self.remove_last_slash(attributes_functions_str).split(",")
+        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
+        accept_content_type = request.META.get(HTTP_ACCEPT, '')
+
+        alpha_dict_by_accept = super(FeatureCollectionResource, self).dict_by_accept_resource_type()
+
+        if resource_type_by_accept != self.default_resource_type():
+            if self.geometry_field_name() in attr_arr:
+                return resource_type_by_accept
+            return alpha_dict_by_accept[ accept_content_type ] if accept_content_type in alpha_dict_by_accept else "Thing"
+
+        if self.geometry_field_name() in attr_arr:
+            if len(attr_arr) > 1:
+                return self.default_resource_type()
+            return GeometryCollection
+
+        return "Collection"
 
     #todo
     def path_request_is_ok(self, attributes_functions_str):
@@ -614,13 +638,13 @@ class FeatureCollectionResource(SpatialCollectionResource):
         resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else LineString
         return self.get_context_for_resource_type(resource_type, attributes_functions_str)
 
+    '''
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         attrs_context = super(FeatureCollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
         context = {}
         context.update(attrs_context)
-        resource_type = self.define_resource_type(request, attributes_functions_str)
+        resource_type = self.define_resource_type_by_only_attributes(request, attributes_functions_str)
 
-        self.resource_type = resource_type
         supported_operations_list = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
         context.update({'hydra:supportedOperations': supported_operations_list})
 
@@ -629,6 +653,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
         context.update(resource_type_context)
 
         return context
+    '''
 
     def set_resource_type_context_by_operation(self, request, oper_name):
         resource_type = self.resource_type_or_default_resource_type(request)

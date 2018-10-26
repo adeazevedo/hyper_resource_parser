@@ -16,7 +16,7 @@ def main(argv):
     has_to_generate_urls  = True
     has_to_generate_serializers  = True
     has_to_generate_contexters  = True
-    has_to_generate_settings = True
+    #has_to_generate_settings = True
 
     size_of_arguments = len(argv)
     if size_of_arguments < 3:
@@ -38,11 +38,12 @@ def main(argv):
         has_to_generate_serializers = ast.literal_eval(argv[5])
     if size_of_arguments > 6:
         has_to_generate_contexters = ast.literal_eval(argv[6])
-    if size_of_arguments > 7:
-        has_to_generate_settings = ast.literal_eval(argv[7])
+    #if size_of_arguments > 7:
+    #    has_to_generate_settings = ast.literal_eval(argv[7])
 
-    from settings_generator import generate_file as gf_settings
+    #from settings_generator import generate_file as gf_settings
 
+    '''
     if has_to_generate_settings:
 
         generate_db = rawInput('What database do i have to generate? (Leave blank to keep the databases original settings): ')
@@ -51,6 +52,7 @@ def main(argv):
             print('Database option not allowed, keeping the original database configuration')
 
         gf_settings(prj_name, app_name, generate_db.lower())
+    '''
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", prj_name + ".settings")
 

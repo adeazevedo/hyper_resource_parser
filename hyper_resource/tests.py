@@ -349,19 +349,22 @@ class AbstractRequestTest(SimpleTestCase):
                                         'crs', 'difference', 'dims', 'disjoint', 'distance', 'empty', 'envelope', 'equals', 'equals_exact', 'ewkb',
                                         'ewkt', 'extend', 'extent', 'geojson', 'geom_type', 'geom_typeid', 'get_coords', 'get_srid', 'get_x', 'get_y',
                                         'get_z', 'has_cs', 'hasz', 'hex', 'hexewkb', 'index', 'interpolate', 'intersection', 'intersects', 'join', 'json', 'kml',
-                                        'length', 'normalize', 'num_coords', 'num_geom', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'relate',
-                                        'relate_pattern', 'ring', 'simple', 'simplify', 'srid',
+                                        'length', 'normalize', 'num_coords', 'num_geom', 'num_points', 'ogr', 'overlaps', 'point_on_surface', 'projection',
+                                        'relate', 'relate_pattern', 'ring', 'simple', 'simplify', 'srid',
                                         'srs', 'sym_difference', 'touches', 'transform', 'union', 'valid', 'valid_reason', 'within', 'wkb', 'wkt', 'x', 'y', 'z']
          #'set_coords', 'set_srid', 'set_x', 'set_y', 'set_z',
         self.string_operations_names = ['capitalize', 'center', 'count', 'endswith', 'find', 'isalnum', 'isalpha', 'isdigit', 'islower', 'isupper',
                                         'join', 'lower', 'split', 'startswith', 'upper']
-        self.basic_operations_names = ['join']
+        self.basic_operations_names = ['join', 'projection']
         self.spatial_collection_operation_names = ['bbcontains', 'bboverlaps', 'collect', 'contained', 'contains', 'contains_properly', 'count_resource',
                                                     'covers', 'covers_by', 'crosses', 'disjoint', 'distance_gt', 'distance_gte', 'distance_lt', 'distance_lte',
-                                                    'distinct', 'dwithin', 'extent', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'intersects', 'isvalid', 'join', 'left',
+                                                    'distinct', 'dwithin', 'extent', 'filter', 'group_by_count', 'group_by_sum', 'intersects', 'isvalid', 'join', 'left',
                                                     'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right', 'projection',
                                                    'relate', 'right', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
-        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by', 'group_by_count', 'group_by_sum', 'offset_limit', 'projection']
+        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by_count', 'group_by_sum', 'offset_limit', 'projection']
+        self.raster_operation_names = ['bands', 'destructor', 'driver', 'extent', 'geotransform', 'height', 'info',
+                                       'metadata', 'name', 'origin', 'projection', 'ptr', 'ptr_type', 'scale', 'skew',
+                                       'srid', 'srs', 'transform', 'vsi_buffer', 'warp', 'width']
         self.non_simple_path_dict_keys = ["@context", '@id', '@type', 'hydra:supportedOperations']
 
     def aux_get_dict_from_response(self, response):
@@ -1111,6 +1114,56 @@ class ProjectionOperationTest(AbstractGetRequestTest):
         self.assertEquals(explicit_projection_resp.status_code, 200)
         self.assertEquals(explicit_projection_resp.headers['content-type'], 'application/octet-stream')
 
+    # --------------- TESTS FOR TIFF RESOURCE ---------------------------------
+    def test_projection_for_tiff_resource_all_attributes(self):
+        implicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid,rast')
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers["content-type"], 'image/tiff')
+
+        explicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/projection/rid,rast')
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers["content-type"], 'image/tiff')
+
+    def test_projection_for_tiff_resource_without_raster_attribute(self):
+        implicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid')
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers["content-type"], 'application/json')
+
+        f_response_keys = self.aux_get_keys_from_response(implicit_projection_resp)
+        self.assertEquals(f_response_keys, ["rid"])
+
+        explicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/projection/rid')
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers["content-type"], 'application/json')
+
+        s_response_keys = self.aux_get_keys_from_response(explicit_projection_resp)
+        self.assertEquals(s_response_keys, ["rid"])
+
+    def test_projection_for_tiff_resource_only_raster_attribute(self):
+        implicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rast')
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers["content-type"], 'image/tiff')
+
+        explicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/projection/rast')
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers["content-type"], 'image/tiff')
+
+    def test_projection_for_tiff_resource_all_attributes_accept_octet_stream(self):
+        pass
+
+    def test_projection_for_tiff_resource_without_raster_attribute_accept_octet_stream(self):
+        implicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid',
+                                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(implicit_projection_resp.status_code, 200)
+        self.assertEquals(implicit_projection_resp.headers["content-type"], 'application/octet-stream')
+
+        explicit_projection_resp = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/projection/rid',
+                                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(explicit_projection_resp.status_code, 200)
+        self.assertEquals(explicit_projection_resp.headers["content-type"], 'application/octet-stream')
+
+    def test_projection_for_tiff_resource_only_raster_attribute_accept_octet_stream(self):
+        pass
 
     # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
     def test_projection_for_feature_resource(self):
@@ -3997,3 +4050,434 @@ class PaginationTest(AbstractRequestTest):
         expected_link = '<http://luc00557196:8000/api/bcim/aldeias-indigenas/offset_limit/1001&100>; rel="next" '
         self.assertNotIn(expected_link, response.headers["link"])
 
+#python manage.py test hyper_resource.tests.RasterTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class RasterTest(AbstractRequestTest):
+
+    # simple path
+    def test_tiff_resource_simple_path(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'image/tiff')
+
+    # only attributes
+    def test_tiff_resource_all_attributes(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid,rast')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'image/tiff')
+
+    def test_tiff_resource_only_raster_attribute(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rast')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'image/tiff')
+
+    def test_tiff_resource_only_alphanumeric_attributes(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/json')
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, ["rid"])
+
+    def test_tiff_resource_only_alphanumeric_attributes_accept_octet_stream(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid',
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/octet-stream')
+
+    # operations
+    def test_tiff_resource_driver_operation(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/driver')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/json')
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, ["driver"])
+
+    def test_tiff_resource_transform_operation(self):
+        response = requests.get(self.raster_base_uri + "imagem-exemplo-tile1-list/61/transform/3086")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'image/tiff')
+
+    def test_tiff_resource_driver_operation_accept_octet_stream(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/driver',
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/octet-stream')
+
+    def test_tiff_resource_transform_operation_accept_octet_stream(self):
+        response = requests.get(self.raster_base_uri + "imagem-exemplo-tile1-list/61/transform/3086",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/octet-stream')
+
+#python manage.py test hyper_resource.tests.OptionsForRasterTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class OptionsForRasterTest(AbstractRequestTest):
+
+    def test_options_raster_resource_simple_path(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/')
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.simple_path_options_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rast", "rid"])
+
+        rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
+        self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
+        rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
+        self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.raster_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Tiff")
+
+    def test_options_raster_resource_simple_path_accept_octet_stream(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/',
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.simple_path_options_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rast", "rid"])
+
+        rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
+        self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
+        rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
+        self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "bytes")
+
+    # only attributes
+    def test_options_tiff_resource_all_attributes(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid,rast')
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rast", "rid"])
+
+        rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
+        self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
+        rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
+        self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.raster_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Tiff")
+
+    def test_options_tiff_resource_only_raster_attribute(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rast')
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rast"])
+
+        rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
+        self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.raster_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Tiff")
+
+    def test_options_tiff_resource_only_alphanumeric_attributes(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid')
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rid"])
+
+        rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
+        self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "AutoField")
+
+    def test_options_tiff_resource_all_attributes_accept_octet_stream(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid,rast',
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rast", "rid"])
+
+        rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
+        self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
+        rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
+        self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "bytes")
+
+    def test_options_tiff_resource_only_raster_attribute_accept_octet_stream(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rast',
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rast"])
+
+        rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
+        self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "bytes")
+
+    def test_options_tiff_resource_only_alphanumeric_attributes_accept_octet_stream(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/rid',
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["rid"])
+
+        rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
+        self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "bytes")
+
+    # operations
+    def test_options_tiff_resource_driver_operation(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/driver')
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["driver"])
+
+        driver_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "driver")
+        self.assertEquals(driver_acontext_keys, self.keys_from_oper_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.string_operations_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Text")
+
+    def test_options_tiff_resource_transform_operation(self):
+        response = requests.options(self.raster_base_uri + "imagem-exemplo-tile1-list/61/transform/3086")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["transform"])
+
+        transform_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "transform")
+        self.assertEquals(transform_acontext_keys, self.keys_from_oper_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.raster_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Tiff")
+
+#python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class FeatureCollectionTest(AbstractGetRequestTest):
+    pass
+
+#python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class OptionsFeatureCollectionTest(AbstractRequestTest):
+    # simple path
+    def test_options_feature_collection_simple_path(self):
+        pass
+
+    # simple path (binary)
+    def test_options_feature_collection_simple_path_accept_octet_stream(self):
+        pass
+
+    # simple path (image)
+    def test_options_feature_collection_simple_path_accept_image_png(self):
+        pass
+
+
+    # only attributes (default)
+    def test_options_feature_collection_with_geometry_attribute(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/geom,nome")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['geom', 'nome'])
+
+        geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
+        self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'FeatureCollection')
+
+    def test_options_feature_collection_only_geometry_attribute(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/nome")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['nome'])
+
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.collection_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'Collection')
+
+    def test_options_feature_collection_without_geometry_attribute(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/nome")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['nome'])
+
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.collection_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'Collection')
+
+    # only attributes (binary)
+    def test_options_feature_collection_with_geometry_attribute_accept_octet_stream(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/geom,nome",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['geom', 'nome'])
+
+        geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
+        self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'GeobufCollection')
+
+    def test_options_feature_collection_only_geometry_attribute_accept_octet_stream(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/geom",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['geom'])
+
+        geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
+        self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'GeobufCollection')
+
+    def test_options_feature_collection_without_geometry_attribute_accept_octet_stream(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/nome",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['nome'])
+
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, [])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'bytes')
+
+    # only attributes (image)
+    def test_options_feature_collection_with_geometry_attribute_accept_image_png(self):
+        pass
+
+    def test_options_feature_collection_only_geometry_attribute_accept_image_png(self):
+        pass
+
+    def test_options_feature_collection_without_geometry_attribute_accept_image_png(self):
+        pass
+
+
+    # operations (default)
+    def test_options_feature_collection_within_operation(self):
+        pass
+
+    # operations (binary)
+    def test_options_feature_collection_within_operation_accept_octet_stream(self):
+        pass
+
+    # operations (image)
+    def test_options_feature_collection_within_operation_accept_image_png(self):
+        pass

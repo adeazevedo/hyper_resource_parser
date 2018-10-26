@@ -75,7 +75,7 @@ arr_get_for_spatial_operations = [
     RequestTest("api/bcim/unidades-federativas/ES/hasz", 200),
     RequestTest("api/bcim/unidades-federativas/ES/hex", 200),
     RequestTest("api/bcim/unidades-federativas/ES/hexewkb", 200),
-    RequestTest("api/bcim/unidades-federativas/ES/intersection/" + SERVER + "api/bcim/unidades-federativas/RJ", 200),
+    RequestTest("api/bcim/unidades-federativas/ES/intersection/" + SERVER + "api/bcim/unidades-federativas/RJ/envelope/", 200),
     RequestTest("api/bcim/unidades-federativas/ES/intersects/" + SERVER + "api/bcim/unidades-federativas/RJ/", 200),
     RequestTest("api/bcim/aldeias-indigenas/587/json", 200),
     RequestTest("api/bcim/aldeias-indigenas/587/kml", 200),
@@ -226,7 +226,7 @@ arr_options_for_collection_operation = [
     RequestTest("controle-list/usuario-list/offset_limit/0&2/nome", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/offset_limit/0&2/nome,email", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/distinct/nome", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/group_by/nome", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/group_by/nome", 400, method="OPTIONS"), # the operation 'group_by' doesn't exists anymore
     RequestTest("controle-list/usuario-list/group_by_count/nome", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/filter/id/gt/5/*collect/nome/upper", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/filter/id/gt/5/*collect/id&email/upper", 200, method="OPTIONS"),
@@ -258,7 +258,7 @@ arr_options_for_collection_operation = [
     RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/nome,geom", 200, method="OPTIONS"),
     RequestTest("api/bcim/unidades-federativas/offset_limit/0&2/geom", 200, method="OPTIONS"),
     RequestTest("api/bcim/unidades-federativas/distinct/nome", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/group_by/nome", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/group_by/nome", 400, method="OPTIONS"), # the operation 'group_by' doesn't exists anymore
     RequestTest("api/bcim/unidades-federativas/group_by_count/nome", 200, method="OPTIONS"),
 
     RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/nome/upper", 200, method="OPTIONS"),
@@ -316,6 +316,34 @@ arr_get_for_collect_operation_context = [
 
 ]
 
+arr_get_for_tiff_resource = [
+    RequestTest('raster/imagem-exemplo-tile1-list/61/', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/bands', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/destructor', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/driver', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/extent', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/geotransform', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/height', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/info', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/metadata', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/name', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/origin', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/ptr', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/ptr_type', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/scale', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/skew', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/srid', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/srs', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/transform/3086', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/vsi_buffer', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/warp', 200),
+    RequestTest('raster/imagem-exemplo-tile1-list/61/width', 200),
+]
+
+arr_options_for_tiff_resource = [
+    RequestTest('raster/imagem-exemplo-tile1-list/61/', 200, method='OPTIONS')
+]
+
 def test_requests(request_test_list, test_label=''):
     default_init_test_label = "Initializing test set:"
     init_label_len = len(test_label) + len(default_init_test_label) + 5
@@ -347,7 +375,6 @@ def test_requests(request_test_list, test_label=''):
     fin_label_len = len(test_label) + len(default_fin_test_label) + 5
     print("\n\n" + fin_label_len * "*" + "\n* " + default_fin_test_label + " " + test_label + " *\n" + fin_label_len * "*" + "\n\n")
 
-
 test_requests(arr_get_for_non_spatial_resource, test_label = "Tests for NonSpatialResource")
 test_requests(arr_get_for_collection, test_label="Generic tests to collection operations")
 test_requests(arr_get_for_spatial_operations, test_label="Tests for spatial operations")
@@ -357,6 +384,8 @@ test_requests(arr_get_for_geometry_collection_operation, test_label="Tests for s
 test_requests(arr_get_for_join_operation, test_label="Tests for join operation")
 test_requests(arr_options_for_collection_operation, test_label = "Tests OPTIONS for Collection operations")
 test_requests(arr_get_for_collect_operation_context, test_label = "Tests GET for Collect operation context")
+test_requests(arr_get_for_tiff_resource, test_label = "Tests GET for TiffResource")
+test_requests(arr_options_for_tiff_resource, test_label = "Tests OPTIONS for TiffResource")
 
 
 print("\n\n" + 25 * "X" + "\nX End of all test sets  X\n" + 25 * "X" + "\n\n")
@@ -385,3 +414,11 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing PaginationTest >>>")
     os.system("python manage.py test hyper_resource.tests.PaginationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing RasterTest >>>")
+    os.system("python manage.py test hyper_resource.tests.RasterTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing OptionsForRasterTest >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsForRasterTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing FeatureCollectionTest >>>")
+    os.system("python manage.py test hyper_resource.tests.FeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing OptionsFeatureCollectionTest >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")

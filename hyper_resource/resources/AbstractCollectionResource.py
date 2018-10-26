@@ -156,12 +156,14 @@ class AbstractCollectionResource(AbstractResource):
         operations_dict = self._dict_all_operation_dict()
         return operations_dict[operation_name]
 
+    '''
     def get_real_operation_name(self, operation_name_from_path):
         all_collection_operations = dict(self.operation_controller.collection_operations_dict(),
                                                   **self.operation_controller.internal_collection_operations_dict())
         type_called = all_collection_operations[operation_name_from_path]
 
         return type_called.name
+    '''
 
     def get_operation_name_from_path(self, attributes_functions_str):
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).lower().split('/')
@@ -238,10 +240,12 @@ class AbstractCollectionResource(AbstractResource):
 
         return self.required_object(request, queryset_or_objects)
 
+    '''
     def required_object_for_group_by_operation(self, request, attributes_functions_str):
         objects =  self.get_objects_from_group_by_operation(attributes_functions_str)
         serialized_data = self.get_objects_serialized_by_aggregation_operation(attributes_functions_str, objects)
         return self.required_object_for_aggregation_operation(request, serialized_data)
+    '''
 
     def required_object_for_group_by_count_operation(self, request, attributes_functions_str):
         objects =  self.get_objects_from_group_by_count_operation(attributes_functions_str)
@@ -347,11 +351,12 @@ class AbstractCollectionResource(AbstractResource):
 
     def required_object_for_only_attributes(self, request, attributes_functions_str):
         attrs_funcs_str = self.remove_projection_from_path(attributes_functions_str, remove_only_name=True)
-        objects = self.get_object_by_only_attributes(attrs_funcs_str)
-        serialized_data = self.get_object_serialized_by_only_attributes(attrs_funcs_str, objects)
-        content_type = self.content_type_or_default_content_type(request)
+        return super(AbstractCollectionResource, self).required_object_for_only_attributes(request, attrs_funcs_str)
+        #objects = self.get_object_by_only_attributes(attrs_funcs_str)
+        #serialized_data = self.get_object_serialized_by_only_attributes(attrs_funcs_str, objects)
+        #content_type = self.content_type_or_default_content_type(request)
 
-        return RequiredObject(serialized_data, content_type, objects, 200)
+        #return RequiredObject(serialized_data, content_type, objects, 200)
 
     # ---------------------------------------- REQUIRED CONTEXT FOR OPERATIONS ----------------------------------------
     def required_context_for_filter_operation(self, request, attributes_functions_str):
@@ -407,9 +412,11 @@ class AbstractCollectionResource(AbstractResource):
         resource_type = self.resource_type_or_default_resource_type(request)
         return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
+    '''
     def required_context_for_only_attributes(self, request, attributes_functions_str):
         context = self.get_context_by_only_attributes(request, attributes_functions_str)
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+    '''
 
     def generics_collection_operation_name(self):
        return self.operation_controller.feature_collection_operations_dict().keys()
@@ -504,11 +511,13 @@ class AbstractCollectionResource(AbstractResource):
         else:
             return self.model_class().objects.distinct(*distinct_parameters)
 
+    '''
     def get_objects_from_group_by_operation(self, attributes_functions_str):
         attributes_functions_list = self.remove_last_slash(attributes_functions_str).split('/')
         parameters = attributes_functions_list[1:][0].split(',')
 
         return self.model_class().objects.values(*parameters)
+    '''
 
     def get_objects_from_group_by_count_operation(self, attributes_functions_str):
         attributes_functions_list = self.remove_last_slash(attributes_functions_str).split('/')
@@ -742,7 +751,7 @@ class AbstractCollectionResource(AbstractResource):
             self.operation_controller.filter_and_count_resource_collection_operation_name: self.required_object_for_filter_and_count_resource_collection_operation,
             self.operation_controller.count_resource_collection_operation_name: self.required_object_for_count_resource_operation,
             self.operation_controller.distinct_collection_operation_name: self.required_object_for_distinct_operation,
-            self.operation_controller.group_by_collection_operation_name: self.required_object_for_group_by_operation,
+            #self.operation_controller.group_by_collection_operation_name: self.required_object_for_group_by_operation,
             self.operation_controller.group_by_count_collection_operation_name: self.required_object_for_group_by_count_operation,
             self.operation_controller.filter_collection_operation_name: self.required_object_for_filter_operation,
             self.operation_controller.collect_collection_operation_name: self.required_object_for_collect_operation,
@@ -758,7 +767,7 @@ class AbstractCollectionResource(AbstractResource):
             self.operation_controller.count_resource_collection_operation_name: self.required_context_for_count_resource_operation,
             self.operation_controller.offset_limit_collection_operation_name: self.required_context_for_offset_limit_operation,
             self.operation_controller.distinct_collection_operation_name: self.required_context_for_distinct_operation,
-            self.operation_controller.group_by_collection_operation_name: self.required_context_for_group_by_operation,
+            #self.operation_controller.group_by_collection_operation_name: self.required_context_for_group_by_operation,
             self.operation_controller.group_by_count_collection_operation_name: self.required_context_for_group_by_count_operation,
             self.operation_controller.filter_and_collect_collection_operation_name: self.required_context_for_collect_operation,
             self.operation_controller.offset_limit_and_collect_collection_operation_name: self.required_context_for_offset_limit_and_collect_operation,

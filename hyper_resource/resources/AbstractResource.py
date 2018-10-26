@@ -254,6 +254,8 @@ class AbstractResource(APIView):
 
         self.add_url_in_header(iri_father, response, 'up')
         self.add_url_in_header(iri_base + '.jsonld', response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
+        if self.iri_metadata:
+            self.add_url_in_header(self.iri_metadata, response, rel="meta")
         self.add_cors_header_in_header(response)
 
         if self.is_entry_point:
@@ -346,7 +348,10 @@ class AbstractResource(APIView):
         raise NotImplementedError("'required_object_for_simple_path' must be implemented in subclasses")
 
     def required_object_for_only_attributes(self, request, attributes_functions_str):
-        pass
+        object = self.get_object_by_only_attributes(attributes_functions_str)
+        serialized_data = self.get_object_serialized_by_only_attributes(attributes_functions_str, object)
+        return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), object, 200)
+        #raise NotImplementedError("'required_object_for_only_attributes' must be implemented in subclasses")
 
     # todo
     def path_request_is_ok(self, a_path):
@@ -468,6 +473,9 @@ class AbstractResource(APIView):
     def define_content_type_by_only_attributes(self, request, attributes_functions_str):
         return self.content_type_or_default_content_type(request)
         #raise NotImplementedError("'define_content_type_by_only_attributes' must be implemented in subclasses")
+
+    def define_content_type_by_operation(self, request, operation_name):
+        raise NotImplementedError("'define_content_type_by_operation' must be implemented in subclasses")
 
     def content_type_or_default_content_type(self, request):
         if request is None:
@@ -618,7 +626,6 @@ class AbstractResource(APIView):
             return self.response_base_object_in_cache(request)
 
         required_object = self.basic_get(request, *args, **kwargs)
-
         status = required_object.status_code
 
         if status in [400, 401, 404]:
@@ -637,8 +644,7 @@ class AbstractResource(APIView):
 
         self.set_key_with_data_in_cache(key, self.e_tag, required_object.representation_object)
 
-        resp = Response(data=required_object.representation_object, status=200,
-                        content_type=required_object.content_type)
+        resp = Response(data=required_object.representation_object, status=200, content_type=required_object.content_type)
         self.set_etag_in_header(resp, self.e_tag)
 
         return resp
@@ -1231,11 +1237,26 @@ class AbstractResource(APIView):
     def execute_complex_request(self, request):
         raise NotImplementedError("'execute_complex_request' must be implemented in subclasses")
 
+    # must be overided (doesn't fits on collections)
     def get_object_by_only_attributes(self, attribute_names_str):
-        raise NotImplementedError("'get_objects_by_only_attributes' must be implemented in subclasses")
+        a_dict ={}
+        attributes = self.remove_last_slash(attribute_names_str).split(',')
+
+        for attr_name in attributes:
+            attr_val = self._value_from_object(self.object_model, attr_name, [])
+            a_dict[attr_name] = attr_val
+
+        return a_dict
+        #raise NotImplementedError("'get_objects_by_only_attributes' must be implemented in subclasses")
 
     def get_object_serialized_by_only_attributes(self, attributes_functions_str, object):
-        raise NotImplementedError("'get_objects_serialized_by_only_attributes' must be implemented in subclasses")
+        # Some object don't need a complex serialization, this method is here just to keep the code design
+        # remember these three steps:
+        # 1. get the object(s) by a "get_objects_by_something" method like
+        # 2. serialize the returned object(s) by a "get_objects_serialized_by_something" method like
+        # 3. and finally return a RequiredObject with the serialized_data, a content_type and the original object
+        return object
+        #raise NotImplementedError("'get_objects_serialized_by_only_attributes' must be implemented in subclasses")
 
     def required_object_for_invalid_sintax(self, attributes_functions_str, message=None):
         representation_object = {

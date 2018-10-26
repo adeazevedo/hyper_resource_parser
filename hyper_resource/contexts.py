@@ -49,7 +49,7 @@ def vocabularyDict():
     dict[False] = 'http://schema.org/Boolean'
     dict[FloatField] = 'http://schema.org/Float'
     dict[float] = 'http://schema.org/Float'
-    dict[ForeignKey] = 'http://schema.org/Integer'
+    dict[ForeignKey] = 'http://schema.org/URL'
     dict[IntegerField] = 'http://schema.org/Integer'
     dict[DecimalField] = 'http://schema.org/Float'
     dict[AutoField]= 'http://schema.org/Integer'
@@ -99,22 +99,28 @@ def vocabularyDict():
 
     #collection
     dict['filter'] = 'http://opengis.org/operations/filter'
+    dict['filter'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/1/'
     dict['map'] = 'http://opengis.org/operations/map'
     dict['annotate'] = 'http://opengis.org/operations/annotate'
     dict['group_by'] = "http://172.30.10.86/api/operations-list/collection-operation-interface-list/6/"
-    dict['group_by_sum'] = ''
+    dict['group_by_sum'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/10/'
     dict['group_by_count'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/7/'
     dict['distinct'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/5/'
     dict['count_resource'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/3/'
     dict['collect'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/2/'
-    dict['spatilize'] = ''
+    dict['join'] = 'http://172.30.10.86/api/operations-list/object-operations-interface-list/1/'
+    dict['projection'] = 'http://172.30.10.86/api/operations-list/object-operations-interface-list/2/'
     dict['make_line'] = 'http://172.30.10.86/api/operations-list/spatial-collection-operation-interface-list/30'
     dict['count_elements'] = 'http://opengis.org/operations/count_elements'
-    dict['offset_limit'] = 'http://opengis.org/operations/offset_limit'
+    #dict['offset_limit'] = 'http://opengis.org/operations/offset_limit'
+    dict['offset_limit'] = "http://172.30.10.86/api/operations-list/collection-operation-interface-list/4"
     dict['distance_lte'] = 'http://opengis.org/operations/distance_lte'
-    dict['area'] = 'http://opengis.org/operations/area'
-    dict['boundary'] = 'http://opengis.org/operations/boundary'
-    dict['buffer'] = 'http://opengis.org/operations/buffer'
+    #dict['area'] = 'http://opengis.org/operations/area'
+    dict['area'] = "http://172.30.10.86/api/operations-list/spatial-operation-interface-list/77"
+    #dict['boundary'] = 'http://opengis.org/operations/boundary'
+    dict['boundary'] = 'http://172.30.10.86/api/operations-list/spatial-operation-interface-list/78'
+    #dict['buffer'] = 'http://opengis.org/operations/buffer'
+    dict['buffer'] = 'http://172.30.10.86/api/operations-list/spatial-operation-interface-list/79'
     dict['centroid'] = 'http://opengis.org/operations/centroid'
     dict['contains'] = 'http://opengis.org/operations/contains'
     dict['convex_hull'] = 'http://opengis.org/operations/convex_hull'
@@ -217,9 +223,9 @@ def vocabularyDict():
 
 def OperationVocabularyDict():
     dic = {}
-    dic[int] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
-    dic[AutoField] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
-    dic[IntegerField] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
+    #dic[int] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
+    #dic[AutoField] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
+    #dic[IntegerField] = ["http://172.30.10.86/api/operations-list/integer-operations-interface/"]
 
     dic[str] = ["http://172.30.10.86/api/operations-list/string-operation-interface-list"]
     dic['str'] = ["http://172.30.10.86/api/operations-list/string-operation-interface-list"]
@@ -323,11 +329,14 @@ def initialize_dict():
     dict[MultiPolygon] = oc.polygon_operations_dict()
     dict[MultiLineString] = oc.line_operations_dict()
     dict[str] = oc.string_operations_dict()
+    dict['Text'] = oc.string_operations_dict()
     dict[CharField] = oc.string_operations_dict()
-    dict['Thing'] = {"join": Type_Called('join', [tuple, object], GEOSGeometry)}
+    dict['Thing'] = oc.generic_object_operations_dict()
 
     ro = RasterOperationController()
-    dict['Raster'] = ro.operation_dict()
+    dict['Raster'] = ro.dict_all_operation_dict()
+    dict['Tiff'] = ro.dict_all_operation_dict()
+    dict[GDALRaster] = ro.dict_all_operation_dict()
 
     soc = SpatialCollectionOperationController()
     dict[GeometryCollection] = soc.feature_collection_operations_dict()
@@ -349,6 +358,7 @@ class ContextResource:
         self.resource = None
 
     def get_dict_context(self):
+        '''use this method instead of reference self.dict_context directly'''
         return deepcopy(self.dict_context)
 
     #def attribute_name_list(self):
@@ -376,7 +386,7 @@ class ContextResource:
         if res_voc is None:
             res_voc  = "http://schema.org/Thing"
         if oper_res_voc_list is None:
-            oper_res_voc_list  = ["http://172.30.10.86/operations-interface-list/"]
+            oper_res_voc_list  = []
 
         oper_res_voc_dict_list = [{"hydra:Link": oper_res_voc} for oper_res_voc in oper_res_voc_list]
         #return res_voc #{ "@id": res_voc, "@type": "@id"}
