@@ -118,11 +118,6 @@ class RequiredObject(object):
 
 
 class AbstractResource(APIView):
-    """
-    AbstractResource is the main view class.
-    All other views are subclasses of this,
-    directly or indirectly
-    """
 
     __metaclass__ = ABCMeta
 
@@ -149,7 +144,7 @@ class AbstractResource(APIView):
     content_negotiation_class = IgnoreClientContentNegotiation
 
     def cache_enabled(self):
-        return False
+        return True
 
     def generate_e_tag(self, data):
         return str(hash(data))
@@ -318,10 +313,13 @@ class AbstractResource(APIView):
 
         resource_type = self.define_resource_type_by_only_attributes(request, attributes_functions_str)
         self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+
         supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        #supported_properties_dict = self.context_resource.supportedProperties(attribute_names=attrs_list)
 
         context = self.context_resource.get_dict_context()
         context['hydra:supportedOperations'] = supported_operation_dict
+        #context['hydra:supportedProperties'] = supported_properties_dict
         return context
 
     # WARNING: Not usefull for operations like 'projection' whose resource type depends of selected attribute
@@ -374,7 +372,7 @@ class AbstractResource(APIView):
         return self.model_class().objects.model._meta.pk.name
 
     def attribute_names_to_web(self):
-        return [field.name for field in self.object_model.fields()]
+        return self.serializer_class.Meta.fields
 
     def field_for(self, attribute_name):
         fields_model = self.object_model.fields()
@@ -392,10 +390,6 @@ class AbstractResource(APIView):
 
     def fields_to_web(self):
         return self.fields_to_web_for_attribute_names(self.attribute_names_to_web())
-
-        # OBS: AbstractResource.attribute_names_to_web() calls BusinessModel.fields() and returns names
-        # AbstractResource.fields_to_web() call BusinessModel.fields() and returns the fields
-        # Is really necessary or can i keep just one of their?
 
     def _base_path(self, full_path):
         arr = full_path.split('/')
@@ -695,10 +689,12 @@ class AbstractResource(APIView):
 
     # Could be overridden
     def head(self, request, *args, **kwargs):
-        resp = Response(data={}, status=status.HTTP_200_OK,
-                        content_type=self.content_type_or_default_content_type(request))
+        attributes_functions_str = self.kwargs.get("attributes_functions", None)
+        content_type = self.define_head_content_type(request, attributes_functions_str)
+        self.inject_e_tag()
+        resp = Response(data={}, status=status.HTTP_200_OK, content_type=content_type)
         self.add_base_headers(request, resp)
-
+        self.set_etag_in_header(resp, self.e_tag)
         return resp
 
     # Could be overridden
@@ -724,6 +720,16 @@ class AbstractResource(APIView):
         self.add_base_headers(request, response)
 
         return response
+
+    def define_head_content_type(self, request, attributes_functions_str):
+        self.object_model = self.model_class()()
+        if self.is_simple_path(attributes_functions_str):
+            return self.content_type_or_default_content_type(request)
+        if self.path_has_only_attributes(attributes_functions_str):
+            return self.define_content_type_by_only_attributes(request, attributes_functions_str)
+
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        return self.define_content_type_by_operation(request, operation_name)
 
     def basic_options(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
@@ -839,63 +845,41 @@ class AbstractResource(APIView):
         return operation_name in self.operation_controller.dict_all_operation_dict()
 
     def transform_path_with_url_as_array(self, arr_of_term):
-        """
-        Receive url parameters (arr_of_term) each parameter as a array element.
-        If there is some url inside this array (any element 'www.' or 'http:' or 'https:'),
-        each element of this array references to this url is merged in a single element.
-        :param arr_of_term - url parameters:
-        :return:
-        """
         arr = []
         http_str = ''
 
-        # remove empty strings from list
         arr_term = [ele for ele in arr_of_term if ele != '']
         found_url = False
 
-        # storing the number of elements of the list
         size_of_term = len(arr_term)
 
         for idx, token in enumerate(arr_term):  # token is each url parameter
 
-            # if 'token' is 'https', 'http' or has 'www.', 'found_url' turns True
             if self.token_is_http_or_https_or_www(token.lower()):
                 found_url = True
 
             if found_url:
                 if self.token_is_http_or_https(token):
-                    # if token is 'http' or 'https', append it to 'http_str' with '//'
                     http_str += token + '//'
 
                 elif self.is_end_of_term(token):
-                    # if 'token' is a logical operator (or, and, *or, *and), 'found_url' turns False
                     found_url = False
 
-                    # append 'http_str' (may be a empty string or 'http//' or 'https//') and 'token' to 'arr'
                     arr.append(http_str)
                     arr.append(token)
 
-                    # 'http_str' turn a empty string
                     http_str = ''
 
                 elif idx == size_of_term - 1:
-                    # if the current index represents the penultimate element
-                    # of the array of terms, 'found_url' turns False
                     found_url = False
-
-                    # so, we concatenate 'token' to '/' and append to 'arr'. 'http_str' turns a empty string again
                     http_str += token + '/'
                     arr.append(http_str)
                     http_str = ''
 
                 else:
-                    # if 'token' isn't 'http:', 'https:', a logical operator nor the penultimate element of list
-                    # we just concatenate 'token' with '/' and then concatenate with 'http_str'
                     http_str += token + '/'
             else:
-                # if token, in this iteration, hasn't 'http', 'https' nor 'www.', just append token to 'arr'
                 arr.append(token)
-
         return arr
 
     def dict_as_geojson(self, a_dict):
@@ -1153,31 +1137,21 @@ class AbstractResource(APIView):
             except ValueError:
                 pass
             try:
-                # if the parameter starts with 'http', we make a request to this parameter
                 http_str = (value[0:4]).lower()
 
                 if http_str == 'http':
                     resp = requests.get(value)
 
-                    # if this request return a response status between 400 and 599, we raise a HttpError
                     if 400 <= resp.status_code <= 599:
                         raise HTTPError({resp.status_code: resp.reason})
 
-                    # if the request not return an error status, we get the response body in JSON format
                     js = resp.json()
 
-                    # if 'type' is 'feature' or 'featurecollection' it has an 'geometry'
                     if js.get('type') and js['type'].lower() in ['feature', 'featurecollection']:
-                        # in this case, we get the geometric data from this JSON response
                         a_geom = js['geometry']
 
                     else:
-                        # otherwise, we simply get the entire dict
                         a_geom = js
-
-                    # finally, we convert 'a_geom' to json and then convert the result to GEOSGeometry
-                    # appending this to params_converted list. OBS: you must notice that we consider that
-                    # the request from the parameter will bring us a geometric resource
                     parameters_converted.append(GEOSGeometry((json.dumps(a_geom))))
 
             except (ConnectionError, HTTPError) as err:

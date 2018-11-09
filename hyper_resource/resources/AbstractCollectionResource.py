@@ -16,6 +16,9 @@ class AbstractCollectionResource(AbstractResource):
     def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
         raise NotImplementedError("'define_resource_type_by_collect_operation' must be implemented in subclasses")
 
+    def define_content_type_by_operation(self, request, operation_name):
+        return self.content_type_or_default_content_type(request)
+
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
         arr_str = attributes_functions_str.split('/')[1:]
 
@@ -92,7 +95,7 @@ class AbstractCollectionResource(AbstractResource):
 
         if as_string:
             if len(offset_limit_oper_snippet_arr) == 3:
-                return offset_limit_oper_snippet_arr[-1],
+                return offset_limit_oper_snippet_arr[-1]
 
             return None
 
@@ -156,15 +159,6 @@ class AbstractCollectionResource(AbstractResource):
         operations_dict = self._dict_all_operation_dict()
         return operations_dict[operation_name]
 
-    '''
-    def get_real_operation_name(self, operation_name_from_path):
-        all_collection_operations = dict(self.operation_controller.collection_operations_dict(),
-                                                  **self.operation_controller.internal_collection_operations_dict())
-        type_called = all_collection_operations[operation_name_from_path]
-
-        return type_called.name
-    '''
-
     def get_operation_name_from_path(self, attributes_functions_str):
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).lower().split('/')
 
@@ -185,19 +179,20 @@ class AbstractCollectionResource(AbstractResource):
             or first_part_name == self.operation_controller.filter_collection_operation_name) \
                 and '/*collect' in attributes_functions_str:
 
-            return first_part_name + '_and_collect'
+            return first_part_name + '-and-collect'
 
         if first_part_name == self.operation_controller.collect_collection_operation_name and '/*filter' in attributes_functions_str:
-            return first_part_name + '_and_filter'
+            return first_part_name + '-and-filter'
 
-        if first_part_name == self.operation_controller.filter_collection_operation_name and '/*count_resource' in attributes_functions_str:
-            return first_part_name + '_and_count_resource'
+        if first_part_name == self.operation_controller.filter_collection_operation_name and '/*count-resource' in attributes_functions_str:
+            return first_part_name + '-and-count-resource'
 
         return first_part_name
 
     # ---------------------------------------- REQUIRED OBJECT FOR OPERATIONS ----------------------------------------
     def required_object_for_count_resource_operation(self,request, attributes_functions_str):
-        return RequiredObject({'count_resource': self.model_class().objects.count()}, CONTENT_TYPE_JSON, self.object_model, 200)
+        c_type_by_operation = self.define_content_type_by_operation(request, self.get_operation_name_from_path(attributes_functions_str))
+        return RequiredObject({'count_resource': self.model_class().objects.count()}, c_type_by_operation, self.object_model, 200)
 
     def required_object_for_offset_limit_operation(self, request, attributes_functions_str):
         offset_limit_snippet = self.remove_last_slash(attributes_functions_str)

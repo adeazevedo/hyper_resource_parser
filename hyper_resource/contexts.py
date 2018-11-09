@@ -218,6 +218,7 @@ def vocabularyDict():
     dict['same_as'] = 'http://opengis.org/operations/same_as'
     dict['coveredby'] = 'http://opengis.org/operations/coveredby'
     dict['strictly_above'] = 'http://opengis.org/operations/strictly_above'
+    dict['hydra:operation'] = 'https://www.hydra-cg.com/spec/latest/core/#hydra:operation'
 
     return dict
 
@@ -434,13 +435,17 @@ class ContextResource:
             return  {"hydra:property":ide_field.name , "@type": "hydra:SupportedProperty"}
         return {}
 
-    def supportedProperties(self):
-        arr_dict = []
+    def supportedProperties(self, attribute_names=None):
         if self.resource is None:
             return []
-        fields = self.resource.fields_to_web()
+
+        fields = self.resource.fields_to_web() if attribute_names is None else self.resource.fields_to_web_for_attribute_names(attribute_names)
+
+        arr_dict = []
         for field in fields:
-            arr_dict.append(SupportedProperty(property_name=field.name, required=field.null, readable=True, writeable=True, is_unique=False, is_identifier=field.primary_key, is_external=False))
+            arr_dict.append(
+                SupportedProperty(property_name=field.name, required=field.null, readable=True, writeable=True, is_unique=False, is_identifier=field.primary_key, is_external=False)
+            )
         return [supportedAttribute.context() for supportedAttribute in arr_dict]
 
     def supportedOperationsFor(self, object, object_type=None):
@@ -473,6 +478,7 @@ class ContextResource:
 
         return [supportedOperation.context() for supportedOperation in arr]
 
+    '''
     def supportedOperators(self, field_voc_type):
         arr = []
         if self.resource is None:
@@ -494,6 +500,7 @@ class ContextResource:
             link_id = vocabulary(v_typed_called.name)
             arr.append( SupportedOperator(operator=k, expects=exps, returns=rets, link=link_id))
         return [supportedOperator.context() for supportedOperator in arr]
+    '''
 
     def iriTemplates(self):
         iri_templates = []
@@ -533,6 +540,7 @@ class ContextResource:
     def set_context_to_attributes(self, attributes_name):
         self.dict_context = {}
         self.dict_context["@context"] = self.selectedAttributeContextualized_dict(attributes_name)
+        self.dict_context["@context"]["hydra"] = "http://www.w3.org/ns/hydra/core#"
 
     def set_context_to_only_one_attribute(self, object, attribute_name, attribute_type=None):
         self.set_context_to_attributes([attribute_name])
@@ -550,9 +558,6 @@ class ContextResource:
 
         dict [operation_name] = { "@id": vocabulary(operation_name),"@type": "@id" }
         self.dict_context["@context"] = dict
-        #isGeometry = isinstance(object, GEOSGeometry)
-        #if isGeometry:
-        #self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
 
     def set_context_to_object(self, object, attribute_name):
         self.dict_context = {}
@@ -570,13 +575,12 @@ class ContextResource:
     def initalize_context(self, resource_type):
         self.dict_context = {}
         self.dict_context["@context"] = self.attributes_contextualized_dict()
+        self.dict_context["@context"]["hydra"] = "http://www.w3.org/ns/hydra/core#"
         self.dict_context["hydra:supportedProperties"] = self.supportedProperties()
-        #self.dict_context["hydra:supportedOperations"] = self.supportedOperations()
         self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(self.resource.object_model, resource_type)
         self.dict_context["hydra:representationName"] = self.representationName()
         self.dict_context["hydra:iriTemplate"] = self.iriTemplates()
         self.dict_context.update(self.get_resource_type_identification(resource_type))
-        #self.dict_contex["hydra:resourceRepresentation"]
 
         return deepcopy(self.dict_context)
 
@@ -586,8 +590,10 @@ class ContextResource:
             self.initalize_context(resource_type)
         return deepcopy(self.dict_context)
 
+    '''
     def set_context_(self, dictionary):
         self.dict_context = dictionary
+    '''
 
 class FeatureResouceContext(ContextResource):
 

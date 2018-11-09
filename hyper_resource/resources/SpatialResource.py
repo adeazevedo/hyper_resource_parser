@@ -16,6 +16,11 @@ class SpatialResource(AbstractResource):
     def spatial_field_name(self):
         return self.serializer_class.Meta.geo_field
 
+    def attribute_names_to_web(self):
+        alpha_attrs_names = super(SpatialResource, self).attribute_names_to_web()
+        alpha_attrs_names.append(self.serializer_class.Meta.geo_field)
+        return alpha_attrs_names
+
     def make_geometrycollection_from_featurecollection(self, feature_collection):
         geoms = []
         features = json.loads(feature_collection)
@@ -56,14 +61,6 @@ class SpatialResource(AbstractResource):
 
         return self.parametersConverted(parameters)
 
-    '''
-    def options(self, request, *args, **kwargs):
-        self.basic_get(request, *args, **kwargs)
-        resp = Response(data=self.context_resource.context(), content_type='application/ld+json' )
-        self.add_base_headers(request, resp)
-
-        return resp
-    '''
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)
         if required_object.status_code == 200:

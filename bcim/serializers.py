@@ -10,7 +10,7 @@ class UnidadeFederacaoSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = UnidadeFederacao
         geo_field = 'geom'
-        fields = ['id_objeto', 'nome', 'nomeabrev', 'sigla', 'geocodigo']
+        fields = ['id_objeto', 'nome', 'nomeabrev', 'sigla', 'geocodigo', 'geometriaaproximada']
         identifiers = ['id_objeto', 'sigla', 'geocodigo']
         identifier = 'id_objeto'
 

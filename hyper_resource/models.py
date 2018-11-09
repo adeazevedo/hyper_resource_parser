@@ -831,16 +831,16 @@ class CollectionResourceOperationController(BaseOperationController):
         #abstract_collection
         self.filter_collection_operation_name = 'filter'
         self.collect_collection_operation_name = 'collect'
-        self.count_resource_collection_operation_name = 'count_resource'
-        self.offset_limit_collection_operation_name = 'offset_limit'
+        self.count_resource_collection_operation_name = 'count-resource'
+        self.offset_limit_collection_operation_name = 'offset-limit'
         self.distinct_collection_operation_name = 'distinct'
         #self.group_by_collection_operation_name = 'group_by'
-        self.group_by_count_collection_operation_name = 'group_by_count'
-        self.filter_and_collect_collection_operation_name = 'filter_and_collect'
-        self.filter_and_count_resource_collection_operation_name = 'filter_and_count_resource'
-        self.offset_limit_and_collect_collection_operation_name = 'offset_limit_and_collect'
+        self.group_by_count_collection_operation_name = 'group-by-count'
+        self.filter_and_collect_collection_operation_name = 'filter-and-collect'
+        self.filter_and_count_resource_collection_operation_name = 'filter-and-count-resource'
+        self.offset_limit_and_collect_collection_operation_name = 'offset-limit-and-collect'
         self.join_operation_name = 'join'
-        self.group_by_sum_collection_operation_name = "group_by_sum"
+        self.group_by_sum_collection_operation_name = "group-by-sum"
         self.projection_operation_name = 'projection'
 
     # operations that return a subcollection of an collection
@@ -871,7 +871,7 @@ class CollectionResourceOperationController(BaseOperationController):
     def collection_operations_dict(self):
         dict = {}
         dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
-        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [object], object)
+        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [list, 'hydra:operation'], object)
         dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
         dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int, list], object)
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
@@ -880,7 +880,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.group_by_sum_collection_operation_name] = Type_Called(self.group_by_sum_collection_operation_name, [str, str], object)
         #dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
         #dict[self.spatialize_operation_name] = Type_Called(self.spatialize_operation_name, [tuple, object], GEOSGeometry)
-        dict[self.projection_operation_name] = Type_Called('projection', [list], object)
+        dict[self.projection_operation_name] = Type_Called(self.projection_operation_name, [list], object)
         return dict
 
     def dict_all_operation_dict(self):
@@ -901,8 +901,8 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         self.bboverlaping_operation_name = 'bboverlaps'
         self.contained_operation_name = 'contained'
         self.containing_operation_name = 'contains'
-        self.containing_properly_operation_name = 'contains_properly'
-        self.covering_by_operation_name = 'covers_by'
+        self.containing_properly_operation_name = 'contains-properly'
+        self.covering_by_operation_name = 'covers-by'
         self.covering_operation_name = 'covers'
         self.crossing_operation_name = 'crosses'
         self.disjointing_operation_name = 'disjoint'
@@ -914,60 +914,59 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         self.within_operation_name = 'within'
         self.on_left_operation_name = 'left'
         self.on_right_operation_name = 'right'
-        self.overlaping_left_operation_name = 'overlaps_left'
-        self.overlaping_right_operation_name = 'overlaps_right'
-        self.overlaping_above_operation_name = 'overlaps_above'
-        self.overlaping_below_operation_name = 'overlaps_below'
-        self.strictly_above_operation_name = 'strictly_above'
-        self.strictly_below_operation_name = 'strictly_below'
-        self.distance_gt_operation_name = 'distance_gt'
-        self.distance_gte_operation_name = 'distance_gte'
-        self.distance_lt_operation_name = 'distance_lt'
-        self.distance_lte_operation_name = 'distance_lte'
+        self.overlaping_left_operation_name = 'overlaps-left'
+        self.overlaping_right_operation_name = 'overlaps-right'
+        self.overlaping_above_operation_name = 'overlaps-above'
+        self.overlaping_below_operation_name = 'overlaps-below'
+        self.strictly_above_operation_name = 'strictly-above'
+        self.strictly_below_operation_name = 'strictly-below'
+        self.distance_gt_operation_name = 'distance-gt'
+        self.distance_gte_operation_name = 'distance-gte'
+        self.distance_lt_operation_name = 'distance-lt'
+        self.distance_lte_operation_name = 'distance-lte'
         self.dwithin_operation_name = 'dwithin'
 
         self.union_collection_operation_name = 'union'
         self.extent_collection_operation_name = 'extent'
-        self.make_line_collection_operation_name = 'make_line'
+        self.make_line_collection_operation_name = 'make-line'
 
     #Abstract spatial collection Operations
     def spatial_collection_operations_dict(self):
         d = {}
-        d[self.bbcontaining_operation_name] = Type_Called('bbcontains', [GEOSGeometry], GEOSGeometry)
-        d[self.bboverlaping_operation_name] = Type_Called('bboverlaps', [GEOSGeometry], GEOSGeometry)
-        d[self.contained_operation_name]  = Type_Called('contained', [GEOSGeometry], GEOSGeometry)
-        d[self.containing_operation_name]  = Type_Called('contains', [GEOSGeometry], GEOSGeometry)
-        d[self.containing_properly_operation_name] = Type_Called('contains_properly', [GEOSGeometry], GEOSGeometry)
-        d[self.covering_by_operation_name] = Type_Called('coveredby', [GEOSGeometry], GEOSGeometry)
-        d[self.covering_operation_name]= Type_Called('covers', [GEOSGeometry], GEOSGeometry)
-        d[self.crossing_operation_name] = Type_Called('crosses', [GEOSGeometry], GEOSGeometry)
-        d[self.disjointing_operation_name]= Type_Called('disjoint', [GEOSGeometry], GEOSGeometry)
-        d[self.intersecting_operation_name]  = Type_Called('intersects', [GEOSGeometry], GEOSGeometry)
-        d[self.isvalid_operation_name]  = Type_Called('isvalid', [GEOSGeometry], GEOSGeometry)
-        d[self.overlaping_operation_name] = Type_Called('overlaps', [GEOSGeometry], GEOSGeometry)
-        d[self.relating_operation_name] = Type_Called('relate', [tuple], GEOSGeometry)
-        d[self.touching_operation_name] = Type_Called('touches', [GEOSGeometry], GEOSGeometry)
-        d[self.within_operation_name] = Type_Called('within', [GEOSGeometry], GEOSGeometry)
-        d[self.on_left_operation_name] = Type_Called('left', [GEOSGeometry], GEOSGeometry)
-        d[self.on_right_operation_name] = Type_Called('right', [GEOSGeometry], GEOSGeometry)
-        d[self.overlaping_left_operation_name]  = Type_Called('overlaps_left', [GEOSGeometry], GEOSGeometry)
-        d[self.overlaping_right_operation_name] = Type_Called('overlaps_right', [GEOSGeometry], GEOSGeometry)
-        d[self.overlaping_above_operation_name] = Type_Called('overlaps_above', [GEOSGeometry], GEOSGeometry)
-        d[self.overlaping_below_operation_name] = Type_Called('overlaps_below', [GEOSGeometry], GEOSGeometry)
-        d[self.strictly_above_operation_name] = Type_Called('strictly_above', [GEOSGeometry], GEOSGeometry)
-        d[self.strictly_below_operation_name] = Type_Called('strictly_below', [GEOSGeometry], GEOSGeometry)
-        d[self.distance_gt_operation_name] = Type_Called('distance_gt', [GEOSGeometry], GEOSGeometry)
-        d[self.distance_gte_operation_name] = Type_Called('distance_gte', [GEOSGeometry], GEOSGeometry)
-        d[self.distance_lt_operation_name] = Type_Called('distance_lt', [GEOSGeometry], GEOSGeometry)
-        d[self.distance_lte_operation_name] = Type_Called('distance_lte', [GEOSGeometry], GEOSGeometry)
-        d[self.dwithin_operation_name] = Type_Called('dwithin', [GEOSGeometry], bool)
+        d[self.bbcontaining_operation_name] = Type_Called(self.bbcontaining_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.bboverlaping_operation_name] = Type_Called(self.bboverlaping_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.contained_operation_name]  = Type_Called(self.contained_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.containing_operation_name]  = Type_Called(self.containing_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.containing_properly_operation_name] = Type_Called(self.containing_properly_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.covering_by_operation_name] = Type_Called(self.covering_by_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.covering_operation_name]= Type_Called(self.covering_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.crossing_operation_name] = Type_Called(self.crossing_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.disjointing_operation_name]= Type_Called(self.disjointing_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.intersecting_operation_name]  = Type_Called(self.intersecting_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.isvalid_operation_name]  = Type_Called(self.isvalid_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.overlaping_operation_name] = Type_Called(self.overlaping_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.relating_operation_name] = Type_Called(self.relating_operation_name, [tuple], GEOSGeometry)
+        d[self.touching_operation_name] = Type_Called(self.touching_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.within_operation_name] = Type_Called(self.within_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.on_left_operation_name] = Type_Called(self.on_left_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.on_right_operation_name] = Type_Called(self.on_right_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.overlaping_left_operation_name]  = Type_Called(self.overlaping_left_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.overlaping_right_operation_name] = Type_Called(self.overlaping_right_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.overlaping_above_operation_name] = Type_Called(self.overlaping_above_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.overlaping_below_operation_name] = Type_Called(self.overlaping_below_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.strictly_above_operation_name] = Type_Called(self.strictly_above_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.strictly_below_operation_name] = Type_Called(self.strictly_below_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.distance_gt_operation_name] = Type_Called(self.distance_gt_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.distance_gte_operation_name] = Type_Called(self.distance_gte_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.distance_lt_operation_name] = Type_Called(self.distance_lt_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.distance_lte_operation_name] = Type_Called(self.distance_lte_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.dwithin_operation_name] = Type_Called(self.dwithin_operation_name, [GEOSGeometry], bool)
 
-        d[self.union_collection_operation_name] = Type_Called('union', [GEOSGeometry], GEOSGeometry)
-        d[self.extent_collection_operation_name] = Type_Called('extent', [GEOSGeometry], tuple)
-        d[self.make_line_collection_operation_name] = Type_Called('make_line', [GEOSGeometry], GEOSGeometry)
-        #d[self.spatialize_collection_operation_name] = Type_Called('spatialize', [tuple, object], GEOSGeometry)
-        d[self.join_operation_name] = Type_Called('join', [tuple, object], GEOSGeometry)
-        d['projection'] = Type_Called('projection', [list], object)
+        d[self.union_collection_operation_name] = Type_Called(self.union_collection_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.extent_collection_operation_name] = Type_Called(self.extent_collection_operation_name, [GEOSGeometry], tuple)
+        d[self.make_line_collection_operation_name] = Type_Called(self.make_line_collection_operation_name, [GEOSGeometry], GEOSGeometry)
+        d[self.join_operation_name] = Type_Called(self.join_operation_name, [tuple, object], GEOSGeometry)
+        d[self.projection_operation_name] = Type_Called(self.projection_operation_name, [list], object)
 
         return d
 

@@ -26,35 +26,44 @@ class APIAbstractResourceCacheTestCase(SimpleTestCase):
     def setUp(self):
         #self.host = 'luc00557347.ibge.gov.br'
         self.host = 'luc00557196.ibge.gov.br:8000'
-        self.url_feature_resource_collection = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
-        self.url_feature_resource = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
+        self.bcim_base_uri = 'http://' + self.host + "/api/bcim/"
+        #self.url_feature_resource_collection = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
+        #self.url_feature_resource = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
         self.headers = {'accept': 'application/octet-stream', 'If-None-Match': '48200128876656848'}
 
 
-    def test_headers_for_lists(self):
-        self.url_feature_resource_collection = 'http://' + self.host + '/ibge/bcim/aldeias-indigenas/'
-        res = requests.get(self.url_feature_resource_collection, headers=self.headers)
-        self.assertEquals(res.headers['content-type'], 'application/octet-stream')
-        res = requests.get(self.url_feature_resource_collection, headers=self.headers)
-        self.assertTrue(res.status_code == 200)
-        self.headers = {'accept': 'application/octet-stream', 'If-None-Match': res.headers['etag']}
-        res = requests.get(self.url_feature_resource_collection, headers=self.headers)
-        self.assertTrue(res.status_code == 304)
+    def test_headers_for_feature_collection(self):
+        # Accept: application/octet-stream
+        first_response = requests.get(self.bcim_base_uri + 'aldeias-indigenas/', headers={"Accept": "application/octet-stream"})
+        self.assertEquals(first_response.status_code, 200)
+        self.assertEquals(first_response.headers['content-type'], 'application/octet-stream')
 
-        self.headers = {'accept': 'application/vnd.geo+json'}
-        res = requests.get(self.url_feature_resource_collection, headers=self.headers)
-        self.assertTrue(res.headers['content-type'] == 'application/vnd.geo+json')
-        res = requests.get(self.url_feature_resource_collection, headers=self.headers)
-        self.assertTrue(res.status_code == 200)
-        self.headers = {'accept': 'application/vnd.geo+json', 'If-None-Match': res.headers['etag']}
-        res = requests.get(self.url_feature_resource_collection, headers=self.headers)
-        self.assertTrue(res.status_code == 304)
+        second_response = requests.get(self.bcim_base_uri + 'aldeias-indigenas/',
+                           headers={'Accept': 'application/octet-stream', 'If-None-Match': first_response.headers['etag']})
+        self.assertEquals(second_response.status_code, 304)
+
+        # change Accept to application/vnd.geo+json
+        third_response = requests.get(self.bcim_base_uri + 'aldeias-indigenas/', headers={'Accept': 'application/vnd.geo+json'})
+        self.assertEquals(third_response.status_code, 200)
+        self.assertEquals(third_response.headers['content-type'], 'application/vnd.geo+json')
+
+        # WARNING: What if i request a resource with a given (existent in cache) E-tag with a different Accept?
+        fourth_response = requests.get(self.bcim_base_uri + 'aldeias-indigenas/', headers={'Accept': 'application/vnd.geo+json'})
+        self.assertEquals(fourth_response.status_code, 200)
+        self.assertEquals(fourth_response.headers['content-type'], 'application/vnd.geo+json')
+
+        fifth_response = requests.get(self.bcim_base_uri + 'aldeias-indigenas/',
+                           headers={'Accept': 'application/vnd.geo+json', 'If-None-Match': fourth_response.headers['etag']})
+        self.assertEquals(fifth_response.status_code, 304)
+
+        '''
         self.headers = {'accept': 'application/octet-stream'}
         res = requests.get(self.url_feature_resource, headers=self.headers)
-        self.assertTrue(res.status_code == 200)
+        self.assertEquals(res.status_code, 200)
         self.headers = {'accept': 'application/octet-stream', 'If-None-Match': res.headers['etag']}
         res = requests.get(self.url_feature_resource, headers=self.headers)
-        self.assertTrue(res.status_code == 304)
+        self.assertEquals(res.status_code, 304)
+        '''
 
     def test_headers_feature_resource_operations(self):
         self.url_feature_resource = 'http://' + self.host + '/ibge/bcim/unidades-federativas/ES/buffer/1.2'

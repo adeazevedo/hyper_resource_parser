@@ -9,6 +9,11 @@ class SpatialCollectionResource(AbstractCollectionResource):
         self.queryset = None
         self.operation_controller = SpatialCollectionOperationController()
 
+    def attribute_names_to_web(self):
+        alpha_attrs_names = super(SpatialCollectionResource, self).attribute_names_to_web()
+        alpha_attrs_names.append(self.serializer_class.Meta.geo_field)
+        return alpha_attrs_names
+
     #todo
     def path_request_is_ok(self, attributes_functions_str):
         return True

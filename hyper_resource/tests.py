@@ -188,11 +188,11 @@ class AbstractCollectionResourceTestCase(SimpleTestCase):
         self.assertEquals(self.acr.get_operation_name_from_path('filter/geom/buffer/0.2'), 'filter')
         self.assertEquals(self.acr.get_operation_name_from_path('filter/geom/containing/http://host/aldeias-indigenas/821/*collect/nome.geom/buffer/0.2'), 'filter_collect')
         self.assertEquals(self.acr.get_operation_name_from_path('collect/nome&geom/buffer/0.2/containing/http://host/aldeias-indigenas/821/*filter/nome/startswith/rio'), 'collect_filter')
-        self.assertEquals(self.acr.get_operation_name_from_path('count_resource'), 'count_resource')
-        self.assertEquals(self.acr.get_operation_name_from_path('group_by/nome'), 'group_by')
-        self.assertEquals(self.acr.get_operation_name_from_path('group_by_count/nome'), 'group_by_count')
+        self.assertEquals(self.acr.get_operation_name_from_path('count-resource'), 'count-resource')
+        self.assertEquals(self.acr.get_operation_name_from_path('group-by/nome'), 'group-by')
+        self.assertEquals(self.acr.get_operation_name_from_path('group-by-count/nome'), 'group-by-count')
         self.assertEquals(self.acr.get_operation_name_from_path('distinct'), 'distinct')
-        self.assertEquals(self.acr.get_operation_name_from_path('offset_limit/1&10'), 'offset_limit')
+        self.assertEquals(self.acr.get_operation_name_from_path('offset-limit/1&10'), 'offset-limit')
         self.assertEquals(self.acr.get_operation_name_from_path('nadahaver'), None)
     def test_attributes_functions_str_is_filter_with_spatial_operation(self):
         pass
@@ -356,12 +356,12 @@ class AbstractRequestTest(SimpleTestCase):
         self.string_operations_names = ['capitalize', 'center', 'count', 'endswith', 'find', 'isalnum', 'isalpha', 'isdigit', 'islower', 'isupper',
                                         'join', 'lower', 'split', 'startswith', 'upper']
         self.basic_operations_names = ['join', 'projection']
-        self.spatial_collection_operation_names = ['bbcontains', 'bboverlaps', 'collect', 'contained', 'contains', 'contains_properly', 'count_resource',
-                                                    'covers', 'covers_by', 'crosses', 'disjoint', 'distance_gt', 'distance_gte', 'distance_lt', 'distance_lte',
-                                                    'distinct', 'dwithin', 'extent', 'filter', 'group_by_count', 'group_by_sum', 'intersects', 'isvalid', 'join', 'left',
-                                                    'make_line', 'offset_limit', 'overlaps', 'overlaps_above', 'overlaps_below', 'overlaps_left', 'overlaps_right', 'projection',
-                                                   'relate', 'right', 'strictly_above', 'strictly_below', 'touches', 'union', 'within']
-        self.collection_operation_names = ['collect', 'count_resource', 'distinct', 'filter', 'group_by_count', 'group_by_sum', 'offset_limit', 'projection']
+        self.spatial_collection_operation_names = ['bbcontains', 'bboverlaps', 'collect', 'contained', 'contains', 'contains-properly', 'count-resource',
+                                                    'covers', 'covers-by', 'crosses', 'disjoint', 'distance-gt', 'distance-gte', 'distance-lt', 'distance-lte',
+                                                    'distinct', 'dwithin', 'extent', 'filter', 'group-by-count', 'group-by-sum', 'intersects', 'isvalid', 'join', 'left',
+                                                    'make-line', 'offset-limit', 'overlaps', 'overlaps-above', 'overlaps-below', 'overlaps-left', 'overlaps-right', 'projection',
+                                                   'relate', 'right', 'strictly-above', 'strictly-below', 'touches', 'union', 'within']
+        self.collection_operation_names = ['collect', 'count-resource', 'distinct', 'filter', 'group-by-count', 'group-by-sum', 'offset-limit', 'projection']
         self.raster_operation_names = ['bands', 'destructor', 'driver', 'extent', 'geotransform', 'height', 'info',
                                        'metadata', 'name', 'origin', 'projection', 'ptr', 'ptr_type', 'scale', 'skew',
                                        'srid', 'srs', 'transform', 'vsi_buffer', 'warp', 'width']
@@ -442,6 +442,21 @@ class AbstractGetRequestTest(AbstractRequestTest):
     def aux_get_single_feature_properties_keys_from_response(self, response):
         response_dict = self.aux_get_dict_from_response(response)
         return sorted( list(response_dict['properties'].keys()) )
+
+
+class AbstractOptionsRequestTest(AbstractRequestTest):
+    pass
+    '''
+    def aux_get_supported_properties_names(self, response):
+        response_dict = self.aux_get_dict_from_response(response)
+        supp_props_names = [ supp_props["hydra:property"] for supp_props in response_dict["hydra:supportedProperties"] ]
+        return sorted(supp_props_names)
+    '''
+
+class AbstractHeadRequestTest(AbstractRequestTest):
+
+    def aux_get_headers_list_from_response(self, response):
+        return sorted( list(response.headers.keys()) )
 
 #python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class CollectOperationTest(AbstractGetRequestTest):
@@ -1082,7 +1097,7 @@ class GroupBySumOperationTest(AbstractRequestTest):
         super(GroupBySumOperationTest, self).setUp()
 
     def test_group_by_sum_operation(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/group_by_sum/data/valor")
+        response = requests.get(self.controle_base_uri + "gasto-list/group-by-sum/data/valor")
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.headers['content-type'], 'application/json')
 
@@ -1408,7 +1423,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.basic_operations_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+        self.assertEquals(f_acontext_keys, ['email', 'hydra', 'nome'])
 
         f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
         self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
@@ -1429,7 +1444,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.basic_operations_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['email', 'hydra', 'nome', 'projection'])
 
         s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
         self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
@@ -1454,7 +1469,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, [])
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+        self.assertEquals(f_acontext_keys, ['email', 'hydra', 'nome'])
 
         f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
         self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
@@ -1476,7 +1491,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, [])
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['email', 'hydra', 'nome', 'projection'])
 
         s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
         self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
@@ -1501,7 +1516,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.spatial_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['geom', 'nome'])
+        self.assertEquals(f_acontext_keys, ['geom', 'hydra', 'nome'])
 
         f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'geom')
         self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
@@ -1522,7 +1537,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.spatial_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['geom', 'nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['geom', 'hydra', 'nome', 'projection'])
 
         s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'geom')
         self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
@@ -1546,7 +1561,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.spatial_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['geom'])
+        self.assertEquals(f_acontext_keys, ['geom', 'hydra'])
 
         f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'geom')
         self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
@@ -1565,7 +1580,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.spatial_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['geom', 'projection'])
+        self.assertEquals(s_acontext_keys, ['geom', 'hydra', 'projection'])
 
         s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'geom')
         self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
@@ -1587,7 +1602,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.string_operations_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['nome'])
+        self.assertEquals(f_acontext_keys, ['hydra', 'nome'])
 
         f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'nome')
         self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
@@ -1606,7 +1621,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.string_operations_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['hydra', 'nome', 'projection'])
 
         s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'nome')
         self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
@@ -1628,7 +1643,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.collection_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+        self.assertEquals(f_acontext_keys, ['email', 'hydra', 'nome'])
 
         f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
         self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
@@ -1649,7 +1664,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.collection_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['email', 'hydra', 'nome', 'projection'])
 
         s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
         self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
@@ -1672,7 +1687,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(supported_operations_names, self.collection_operation_names)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'hydra', 'nome', 'upper'])
 
         email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
         self.assertEquals(email_context_keys, self.keys_from_attrs_context)
@@ -1702,7 +1717,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, [])
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['email', 'nome'])
+        self.assertEquals(f_acontext_keys, ['email', 'hydra', 'nome'])
 
         f_email_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, 'email')
         self.assertEquals(f_email_context_keys, self.keys_from_attrs_context)
@@ -1724,7 +1739,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, [])
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['email', 'nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['email', 'hydra', 'nome', 'projection'])
 
         s_email_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, 'email')
         self.assertEquals(s_email_context_keys, self.keys_from_attrs_context)
@@ -1748,7 +1763,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(supported_operations_names, [])
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'hydra', 'nome', 'upper'])
 
         email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
         self.assertEquals(email_context_keys, self.keys_from_attrs_context)
@@ -1774,7 +1789,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['geom', 'nome'])
+        self.assertEquals(f_acontext_keys, ['geom', 'hydra', 'nome'])
 
         f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
         self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
@@ -1795,7 +1810,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['geom', 'nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['geom', 'hydra', 'nome', 'projection'])
 
         s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
         self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
@@ -1818,7 +1833,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['geom'])
+        self.assertEquals(f_acontext_keys, ['geom', 'hydra'])
 
         f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
         self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
@@ -1837,7 +1852,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['geom', 'projection'])
+        self.assertEquals(s_acontext_keys, ['geom', 'hydra', 'projection'])
 
         s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
         self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
@@ -1858,7 +1873,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.collection_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['nome'])
+        self.assertEquals(f_acontext_keys, ['hydra', 'nome'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "nome")
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -1877,7 +1892,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.collection_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['hydra', 'nome', 'projection'])
 
         s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "nome")
         self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
@@ -1898,7 +1913,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(supported_operations_names, self.spatial_collection_operation_names)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['buffer', 'collect', 'geom', 'nome'])
+        self.assertEquals(acontext_keys, ['buffer', 'collect', 'geom', 'hydra', 'nome'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -1929,7 +1944,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['geom', 'nome'])
+        self.assertEquals(f_acontext_keys, ['geom', 'hydra', 'nome'])
 
         f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
         self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
@@ -1951,7 +1966,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['geom', 'nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['geom', 'hydra', 'nome', 'projection'])
 
         s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
         self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
@@ -1975,7 +1990,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, self.spatial_collection_operation_names)
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['geom'])
+        self.assertEquals(f_acontext_keys, ['geom', 'hydra'])
 
         f_geom_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "geom")
         self.assertEquals(f_geom_context_keys, self.keys_from_attrs_context)
@@ -1995,7 +2010,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, self.spatial_collection_operation_names)
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['geom', 'projection'])
+        self.assertEquals(s_acontext_keys, ['geom', 'hydra', 'projection'])
 
         s_geom_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "geom")
         self.assertEquals(s_geom_context_keys, self.keys_from_attrs_context)
@@ -2017,7 +2032,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(f_supported_operations_names, [])
 
         f_acontext_keys = self.aux_get_keys_from_response_context(implicit_projection_resp)
-        self.assertEquals(f_acontext_keys, ['nome'])
+        self.assertEquals(f_acontext_keys, ['hydra', 'nome'])
 
         f_nome_context_keys = self.aux_get_keys_from_acontext_attrs(implicit_projection_resp, "nome")
         self.assertEquals(f_nome_context_keys, self.keys_from_attrs_context)
@@ -2037,7 +2052,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(s_supported_operations_names, [])
 
         s_acontext_keys = self.aux_get_keys_from_response_context(explicit_projection_resp)
-        self.assertEquals(s_acontext_keys, ['nome', 'projection'])
+        self.assertEquals(s_acontext_keys, ['hydra', 'nome', 'projection'])
 
         s_nome_context_keys = self.aux_get_keys_from_acontext_attrs(explicit_projection_resp, "nome")
         self.assertEquals(s_nome_context_keys, self.keys_from_attrs_context)
@@ -2059,7 +2074,7 @@ class OptionsForProjectionOperation(AbstractRequestTest):
         self.assertEquals(supported_operations_names, self.spatial_collection_operation_names)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['buffer', 'collect', 'geom', 'nome'])
+        self.assertEquals(acontext_keys, ['buffer', 'collect', 'geom', 'hydra', 'nome'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -2202,7 +2217,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, attrs)
+        self.assertListEqual(context_keys, ["geom", "hydra", "nome"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2225,7 +2240,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, attrs)
+        self.assertListEqual(context_keys, ["geom", "hydra", "nome"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2247,7 +2262,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, attrs)
+        self.assertListEqual(acontext_keys, ["geom", "hydra"])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -2268,7 +2283,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, attrs)
+        self.assertListEqual(context_keys, ["geom", "hydra"])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -2288,7 +2303,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, alpha_attrs)
+        self.assertListEqual(context_dict_keys, ["hydra", "nome", "nomeabrev"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2311,7 +2326,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, alpha_attrs)
+        self.assertListEqual(context_dict_keys, ["hydra", "nome", "nomeabrev"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2334,7 +2349,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, ['within'])
+        self.assertListEqual(context_dict_keys, ["hydra", 'within'])
 
         within_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "within")
         self.assertListEqual(within_context_keys_list, ["@id", "@type"])
@@ -2356,7 +2371,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, ['within'])
+        self.assertListEqual(context_dict_keys, ["hydra", 'within'])
 
         within_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "within")
         self.assertListEqual(within_context_keys_list, ["@id", "@type"])
@@ -2368,7 +2383,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_dict["@type"], 'GeobufCollection')
 
     def test_options_for_feature_collection_count_resource(self):
-        response = requests.options(self.bcim_base_uri + "aldeias-indigenas/count_resource")
+        response = requests.options(self.bcim_base_uri + "aldeias-indigenas/count-resource")
         self.assertEquals(response.status_code, 200)
 
         response_dict_keys = self.aux_get_keys_from_response(response)
@@ -2378,16 +2393,16 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(supported_operations_names, [])
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, ['count_resource'])
+        self.assertListEqual(context_dict_keys, ['count-resource', "hydra"])
 
-        count_resource_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "count_resource")
+        count_resource_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "count-resource")
         self.assertListEqual(count_resource_context_keys_list, ["@id", "@type"])
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'int')
 
     def test_options_for_feature_collection_count_resource_accept_octet_stream(self):
-        response = requests.options(self.bcim_base_uri + "aldeias-indigenas/count_resource",
+        response = requests.options(self.bcim_base_uri + "aldeias-indigenas/count-resource",
                                     headers={'accept': 'application/octet-stream'})
         self.assertEquals(response.status_code, 200)
 
@@ -2398,9 +2413,9 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(supported_operations_names, [])
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, ['count_resource'])
+        self.assertListEqual(context_dict_keys, ['count-resource', "hydra"])
 
-        count_resource_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "count_resource")
+        count_resource_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "count-resource")
         self.assertListEqual(count_resource_context_keys_list, ["@id", "@type"])
 
         response_dict = self.aux_get_dict_from_response(response)
@@ -2466,7 +2481,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, ['data', 'valor'])
+        self.assertListEqual(context_keys, ['data', 'hydra', 'valor'])
 
         data_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "data")
         self.assertListEqual(data_context_keys_list, self.keys_from_attrs_context)
@@ -2489,7 +2504,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, attrs)
+        self.assertListEqual(context_keys, ["data", "hydra", "valor"])
 
         data_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "data")
         self.assertListEqual(data_context_keys_list, self.keys_from_attrs_context)
@@ -2504,14 +2519,14 @@ class RequestOptionsTest(AbstractRequestTest):
 
     # tests for collection operation
     def test_options_for_collection_operation_with_collection_return(self):
-        response = requests.options(self.controle_base_uri + 'usuario-list/group_by_count/nome')
+        response = requests.options(self.controle_base_uri + 'usuario-list/group-by-count/nome')
         self.assertEquals(response.status_code, 200)
 
         response_keys = self.aux_get_keys_from_response(response)
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['count', 'nome'])
+        self.assertEquals(acontext_keys, ['count', 'hydra', 'nome'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -2525,7 +2540,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_dict['@type'], "Collection")
 
     def test_options_for_collection_operation_with_collection_return_and_accept_header(self):
-        response = requests.options(self.controle_base_uri + 'usuario-list/group_by_count/nome',
+        response = requests.options(self.controle_base_uri + 'usuario-list/group-by-count/nome',
                                 headers={"Accept": "application/octet-stream"})
         self.assertEquals(response.status_code, 200)
 
@@ -2533,7 +2548,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['count', 'nome'])
+        self.assertEquals(acontext_keys, ['count', 'hydra', 'nome'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -2547,16 +2562,16 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_dict['@type'], "bytes")
 
     def test_options_for_collection_operation_with_integer_return(self):
-        response = requests.options(self.controle_base_uri + 'usuario-list/count_resource')
+        response = requests.options(self.controle_base_uri + 'usuario-list/count-resource')
         self.assertEquals(response.status_code, 200)
 
         response_keys = self.aux_get_keys_from_response(response)
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['count_resource'])
+        self.assertEquals(acontext_keys, ['count-resource', 'hydra'])
 
-        count_resource_context_keys = self.aux_get_keys_from_acontext_attrs(response, "count_resource")
+        count_resource_context_keys = self.aux_get_keys_from_acontext_attrs(response, "count-resource")
         self.assertEquals(count_resource_context_keys, ['@id', '@type'])
 
         supported_operations_names = self.aux_get_supported_operations_names(response)
@@ -2566,7 +2581,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_dict['@type'], "int")
 
     def test_options_for_collection_operation_with_integer_return_and_accept_header(self):
-        response = requests.options(self.controle_base_uri + 'usuario-list/count_resource',
+        response = requests.options(self.controle_base_uri + 'usuario-list/count-resource',
                                 headers={"Accept": "application/octet-stream"})
         self.assertEquals(response.status_code, 200)
 
@@ -2574,9 +2589,9 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['count_resource'])
+        self.assertEquals(acontext_keys, ['count-resource', 'hydra'])
 
-        count_resource_context_keys = self.aux_get_keys_from_acontext_attrs(response, "count_resource")
+        count_resource_context_keys = self.aux_get_keys_from_acontext_attrs(response, "count-resource")
         self.assertEquals(count_resource_context_keys, ['@id', '@type'])
 
         supported_operations_names = self.aux_get_supported_operations_names(response)
@@ -2596,7 +2611,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'sigla'])
+        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev', 'sigla'])
 
         id_objeto_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "id_objeto")
         self.assertListEqual(id_objeto_context_keys_list, self.keys_from_attrs_context)
@@ -2612,10 +2627,10 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(sigla_context_keys_list, self.keys_from_attrs_context)
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
-        iri_metadata_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_metadata")
-        self.assertListEqual(iri_metadata_context_keys_list, self.keys_from_attrs_context)
-        iri_style_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_style")
-        self.assertListEqual(iri_style_context_keys_list, self.keys_from_attrs_context)
+        #iri_metadata_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_metadata")
+        #self.assertListEqual(iri_metadata_context_keys_list, self.keys_from_attrs_context)
+        #iri_style_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_style")
+        #self.assertListEqual(iri_style_context_keys_list, self.keys_from_attrs_context)
 
         operations_names = self.aux_get_supported_operations_names(response)
         self.assertListEqual(operations_names, self.spatial_operation_names)
@@ -2632,7 +2647,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'sigla'])
+        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev', 'sigla'])
 
         id_objeto_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "id_objeto")
         self.assertListEqual(id_objeto_context_keys_list, self.keys_from_attrs_context)
@@ -2648,10 +2663,10 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(sigla_context_keys_list, self.keys_from_attrs_context)
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
-        iri_metadata_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_metadata")
-        self.assertListEqual(iri_metadata_context_keys_list, self.keys_from_attrs_context)
-        iri_style_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_style")
-        self.assertListEqual(iri_style_context_keys_list, self.keys_from_attrs_context)
+        #iri_metadata_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_metadata")
+        #self.assertListEqual(iri_metadata_context_keys_list, self.keys_from_attrs_context)
+        #iri_style_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "iri_style")
+        #self.assertListEqual(iri_style_context_keys_list, self.keys_from_attrs_context)
 
         operations_names = self.aux_get_supported_operations_names(response)
         self.assertListEqual(operations_names, self.spatial_operation_names)
@@ -2670,7 +2685,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, attrs)
+        self.assertListEqual(context_keys, ["geom", "hydra", "nome"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2693,7 +2708,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, attrs)
+        self.assertListEqual(context_keys, ["geom", "hydra", "nome"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2715,7 +2730,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, alpha_attrs)
+        self.assertListEqual(context_keys, ["geocodigo", "hydra", "nome"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2738,7 +2753,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, alpha_attrs)
+        self.assertListEqual(context_keys, ["geocodigo", "hydra", "nome"])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -2760,7 +2775,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, geom_attrs)
+        self.assertListEqual(context_keys, ["geom", "hydra"])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -2781,7 +2796,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, alpha_attrs)
+        self.assertListEqual(context_keys, ["geom", "hydra"])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -2803,7 +2818,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(operations_names, self.spatial_operation_names)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, ['geom'])
+        self.assertListEqual(context_keys, ['geom', 'hydra'])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -2822,7 +2837,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(operations_names, self.spatial_operation_names)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, ['geom'])
+        self.assertListEqual(context_keys, ['geom', 'hydra'])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -2960,7 +2975,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['avatar', 'data_nascimento', 'email', 'id', 'nome', 'nome_usuario', 'senha'])
+        self.assertListEqual(acontext_keys, ['data_nascimento', 'email', 'hydra', 'id', 'nome', 'nome_usuario', 'senha'])
 
         id_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "id")
         self.assertListEqual(id_context_keys_list, self.keys_from_attrs_context)
@@ -2974,8 +2989,8 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(data_nascimento_context_keys_list, self.keys_from_attrs_context)
         email_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "email")
         self.assertListEqual(email_context_keys_list, self.keys_from_attrs_context)
-        avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
-        self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
+        #avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
+        #self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
 
         operation_names = self.aux_get_supported_operations_names(response)
         self.assertListEqual(operation_names, self.basic_operations_names)
@@ -2992,7 +3007,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['avatar', 'data_nascimento', 'email', 'id', 'nome', 'nome_usuario', 'senha'])
+        self.assertListEqual(acontext_keys, ['data_nascimento', 'email', 'hydra', 'id', 'nome', 'nome_usuario', 'senha'])
 
         id_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "id")
         self.assertListEqual(id_context_keys_list, self.keys_from_attrs_context)
@@ -3006,8 +3021,8 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(data_nascimento_context_keys_list, self.keys_from_attrs_context)
         email_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "email")
         self.assertListEqual(email_context_keys_list, self.keys_from_attrs_context)
-        avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
-        self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
+        #avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
+        #self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
 
         operation_names = self.aux_get_supported_operations_names(response)
         self.assertListEqual(operation_names, [])
@@ -3024,7 +3039,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['email', 'nome'])
+        self.assertListEqual(acontext_keys, ['email', 'hydra', 'nome'])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -3046,7 +3061,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['email', 'nome'])
+        self.assertListEqual(acontext_keys, ['email', 'hydra', 'nome'])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -3138,7 +3153,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'sigla'])
+        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev', 'sigla'])
 
         id_objeto_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "id_objeto")
         self.assertListEqual(id_objeto_context_keys_list, self.keys_from_attrs_context)
@@ -3170,7 +3185,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'sigla'])
+        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'hydra', 'sigla'])
 
         geocodigo_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
         self.assertListEqual(geocodigo_context_keys_list, self.keys_from_attrs_context)
@@ -3193,7 +3208,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geocodigo', 'sigla'])
+        self.assertListEqual(acontext_keys, ['geocodigo', 'hydra', 'sigla'])
 
         geocodigo_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
         self.assertListEqual(geocodigo_context_keys_list, self.keys_from_attrs_context)
@@ -3214,7 +3229,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geom'])
+        self.assertListEqual(acontext_keys, ['geom', 'hydra'])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -3294,7 +3309,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'sigla'])
+        self.assertListEqual(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev', 'sigla'])
 
         id_objeto_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "id_objeto")
         self.assertListEqual(id_objeto_context_keys_list, self.keys_from_attrs_context)
@@ -3326,7 +3341,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geom', 'nome'])
+        self.assertListEqual(acontext_keys, ['geom', 'hydra', 'nome'])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -3347,7 +3362,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['geom'])
+        self.assertListEqual(acontext_keys, ['geom', 'hydra'])
 
         geom_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertListEqual(geom_context_keys_list, self.keys_from_attrs_context)
@@ -3366,7 +3381,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, ['nome', 'nomeabrev'])
+        self.assertListEqual(context_dict_keys, ['hydra', 'nome', 'nomeabrev'])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -3388,7 +3403,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, ['within'])
+        self.assertListEqual(context_dict_keys, ['hydra', 'within'])
 
         within_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "within")
         self.assertListEqual(within_context_keys_list, ["@id", "@type"])
@@ -3400,7 +3415,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertEquals(response_dict["@type"], 'FeatureCollection')
 
     def test_suffixed_request_feature_collection_operation_with_integer_return(self):
-        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/count_resource.jsonld")
+        response = requests.get(self.bcim_base_uri + "aldeias-indigenas/count-resource.jsonld")
         self.assertEquals(response.status_code, 200)
 
         response_dict_keys = self.aux_get_keys_from_response(response)
@@ -3410,9 +3425,9 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertEquals(supported_operations_names, [])
 
         context_dict_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_dict_keys, ['count_resource'])
+        self.assertListEqual(context_dict_keys, ['count-resource', 'hydra'])
 
-        count_resource_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "count_resource")
+        count_resource_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "count-resource")
         self.assertListEqual(count_resource_context_keys_list, ["@id", "@type"])
 
         response_dict = self.aux_get_dict_from_response(response)
@@ -3429,10 +3444,10 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['avatar', 'data_nascimento', 'email', 'id', 'nome', 'nome_usuario', 'senha'])
+        self.assertListEqual(acontext_keys, ['data_nascimento', 'email', 'hydra', 'id', 'nome', 'nome_usuario', 'senha'])
 
-        avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
-        self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
+        #avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
+        #self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
         data_nascimento_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "data_nascimento")
         self.assertListEqual(data_nascimento_context_keys_list, self.keys_from_attrs_context)
         email_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "email")
@@ -3461,7 +3476,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['email', 'nome'])
+        self.assertListEqual(acontext_keys, ['email', 'hydra', 'nome'])
 
         nome_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertListEqual(nome_context_keys_list, self.keys_from_attrs_context)
@@ -3485,10 +3500,10 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(acontext_keys, ['avatar', 'data_nascimento', 'email', 'id', 'nome', 'nome_usuario', 'senha'])
+        self.assertListEqual(acontext_keys, ['data_nascimento', 'email', 'hydra', 'id', 'nome', 'nome_usuario', 'senha'])
 
-        avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
-        self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
+        #avatar_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "avatar")
+        #self.assertListEqual(avatar_context_keys_list, self.keys_from_attrs_context)
         data_nascimento_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "data_nascimento")
         self.assertListEqual(data_nascimento_context_keys_list, self.keys_from_attrs_context)
         email_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "email")
@@ -3517,7 +3532,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_keys, self.non_simple_path_dict_keys)
 
         context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(context_keys, ['data', 'valor'])
+        self.assertListEqual(context_keys, ['data', 'hydra', 'valor'])
 
         data_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "data")
         self.assertListEqual(data_context_keys_list, self.keys_from_attrs_context)
@@ -3765,7 +3780,7 @@ class JoinOperationTest(AbstractGetRequestTest):
         self.assertEquals(first_feature_keys, self.feature_keys)
 
         first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
-        self.assertEquals(first_feature_properties_keys, ["__joined__", "geocodigo", "nome", "nomeabrev", "sigla"])
+        self.assertEquals(first_feature_properties_keys, ["__joined__", "geocodigo", "geometriaaproximada", "nome", "nomeabrev", "sigla"])
 
         joined_alfanumeric_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
         self.assertEquals(joined_alfanumeric_attrs, ['ano', 'autodromo_func', 'autodromo_parado', 'cod_estado',
@@ -3831,7 +3846,7 @@ class OptionsForJoinOperationTest(AbstractRequestTest):
         self.assertEquals(supported_operations_names, self.spatial_operation_names)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev'])
+        self.assertEquals(acontext_keys, ['anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev'])
 
         geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
         self.assertEquals(geocodigo_acontext_keys, self.keys_from_attrs_context)
@@ -4003,8 +4018,8 @@ class PaginationTest(AbstractRequestTest):
         response = requests.get(self.controle_base_uri + "gasto-list/")
         self.assertEquals(response.status_code, 200)
         # the string must be hardcoded, if not, the test fails
-        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/101&100>; rel="next" '
-        #expected_link = '<' + HOST + 'api/bcim/>; rel="up" , <' + HOST + 'api/bcim/aldeias-indigenas.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <' + HOST + 'api/bcim/aldeias-indigenas/offset_limit/101&100>; rel="next" '
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset-limit/101&100>; rel="next" '
+        #expected_link = '<' + HOST + 'api/bcim/>; rel="up" , <' + HOST + 'api/bcim/aldeias-indigenas.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <' + HOST + 'api/bcim/aldeias-indigenas/offset-limit/101&100>; rel="next" '
         self.assertEquals(response.headers["link"], expected_link)
     '''
 
@@ -4027,19 +4042,19 @@ class PaginationTest(AbstractRequestTest):
     def test_options_for_collection_simple_path_pagination(self):
         response = requests.options(self.controle_base_uri + "gasto-list/")
         self.assertEquals(response.status_code, 200)
-        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/1001&1000>; rel="next" '
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset-limit/1001&1000>; rel="next" '
         self.assertEquals(response.headers["link"], expected_link)
 
     def test_collection_pagination_with_offset_limit_operation(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/offset_limit/1001&1000")
+        response = requests.get(self.controle_base_uri + "gasto-list/offset-limit/1001&1000")
         self.assertEquals(response.status_code, 200)
-        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/1001&1000.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/2001&1000>; rel="next" '
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list/offset-limit/1001&1000.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset-limit/2001&1000>; rel="next" '
         self.assertEquals(response.headers["link"], expected_link)
 
     def test_options_for_collection_pagination_with_offset_limit_operation(self):
-        response = requests.options(self.controle_base_uri + "gasto-list/offset_limit/1001&1000")
+        response = requests.options(self.controle_base_uri + "gasto-list/offset-limit/1001&1000")
         self.assertEquals(response.status_code, 200)
-        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/1001&1000.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset_limit/2001&1000>; rel="next" '
+        expected_link = '<http://luc00557196:8000/controle-list/>; rel="up" , <http://luc00557196:8000/controle-list/gasto-list/offset-limit/1001&1000.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" , <http://luc00557196:8000/controle-list/gasto-list/offset-limit/2001&1000>; rel="next" '
         self.assertEquals(response.headers["link"], expected_link)
 
     # Pagination for feature collection must be specific for each case
@@ -4047,7 +4062,7 @@ class PaginationTest(AbstractRequestTest):
     def test_feature_collection_simple_path_pagination(self):
         response = requests.get(self.bcim_base_uri + "aldeias-indigenas/")
         self.assertEquals(response.status_code, 200)
-        expected_link = '<http://luc00557196:8000/api/bcim/aldeias-indigenas/offset_limit/1001&100>; rel="next" '
+        expected_link = '<http://luc00557196:8000/api/bcim/aldeias-indigenas/offset-limit/1001&100>; rel="next" '
         self.assertNotIn(expected_link, response.headers["link"])
 
 #python manage.py test hyper_resource.tests.RasterTest --testrunner=hyper_resource.tests.NoDbTestRunner
@@ -4121,7 +4136,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rast", "rid"])
+        self.assertEquals(acontext_keys, ["hydra", "rast", "rid"])
 
         rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
         self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
@@ -4143,7 +4158,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.simple_path_options_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rast", "rid"])
+        self.assertEquals(acontext_keys, ["hydra", "rast", "rid"])
 
         rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
         self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
@@ -4165,7 +4180,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rast", "rid"])
+        self.assertEquals(acontext_keys, ["hydra", "rast", "rid"])
 
         rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
         self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
@@ -4186,7 +4201,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rast"])
+        self.assertEquals(acontext_keys, ["hydra", "rast"])
 
         rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
         self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
@@ -4205,7 +4220,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rid"])
+        self.assertEquals(acontext_keys, ["hydra", "rid"])
 
         rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
         self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
@@ -4225,7 +4240,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rast", "rid"])
+        self.assertEquals(acontext_keys, ["hydra", "rast", "rid"])
 
         rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
         self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
@@ -4247,7 +4262,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rast"])
+        self.assertEquals(acontext_keys, ["hydra", "rast"])
 
         rast_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rast")
         self.assertEquals(rast_acontext_keys, self.keys_from_attrs_context)
@@ -4267,7 +4282,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["rid"])
+        self.assertEquals(acontext_keys, ["hydra", "rid"])
 
         rid_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "rid")
         self.assertEquals(rid_acontext_keys, self.keys_from_attrs_context)
@@ -4287,7 +4302,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["driver"])
+        self.assertEquals(acontext_keys, ["hydra", "driver"])
 
         driver_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "driver")
         self.assertEquals(driver_acontext_keys, self.keys_from_oper_context)
@@ -4306,7 +4321,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["transform"])
+        self.assertEquals(acontext_keys, ["hydra", "transform"])
 
         transform_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "transform")
         self.assertEquals(transform_acontext_keys, self.keys_from_oper_context)
@@ -4322,14 +4337,57 @@ class FeatureCollectionTest(AbstractGetRequestTest):
     pass
 
 #python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner
-class OptionsFeatureCollectionTest(AbstractRequestTest):
+class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
     # simple path
     def test_options_feature_collection_simple_path(self):
-        pass
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.simple_path_options_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev', 'sigla'])
+
+        geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
+        self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['geom', 'nome'])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'FeatureCollection')
 
     # simple path (binary)
     def test_options_feature_collection_simple_path_accept_octet_stream(self):
-        pass
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/",
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.simple_path_options_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev', 'sigla'])
+
+        geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
+        self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
+
+        supported_operations = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['geom', 'nome'])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'GeobufCollection')
 
     # simple path (image)
     def test_options_feature_collection_simple_path_accept_image_png(self):
@@ -4345,7 +4403,7 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['geom', 'nome'])
+        self.assertEquals(acontext_keys, ['geom', 'hydra', 'nome'])
 
         geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
         self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
@@ -4355,27 +4413,33 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
         supported_operations = self.aux_get_supported_operations_names(response)
         self.assertEquals(supported_operations, self.spatial_collection_operation_names)
 
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['geom', 'nome'])
+
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'FeatureCollection')
 
     def test_options_feature_collection_only_geometry_attribute(self):
-        response = requests.options(self.bcim_base_uri + "unidades-federativas/nome")
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/geom")
         self.assertEquals(response.status_code, 200)
 
         response_keys = self.aux_get_keys_from_response(response)
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['nome'])
+        self.assertEquals(acontext_keys, ['geom', 'hydra'])
 
-        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
+        nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
         self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
 
         supported_operations = self.aux_get_supported_operations_names(response)
-        self.assertEquals(supported_operations, self.collection_operation_names)
+        self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['geom'])
 
         response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@type"], 'Collection')
+        self.assertEquals(response_dict["@type"], 'GeometryCollection')
 
     def test_options_feature_collection_without_geometry_attribute(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/nome")
@@ -4385,13 +4449,16 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['nome'])
+        self.assertEquals(acontext_keys, ['hydra', 'nome'])
 
         nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
 
         supported_operations = self.aux_get_supported_operations_names(response)
         self.assertEquals(supported_operations, self.collection_operation_names)
+
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['nome'])
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'Collection')
@@ -4406,7 +4473,7 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['geom', 'nome'])
+        self.assertEquals(acontext_keys, ['geom', 'hydra', 'nome'])
 
         geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
         self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
@@ -4415,6 +4482,9 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
 
         supported_operations = self.aux_get_supported_operations_names(response)
         self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['geom', 'nome'])
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'GeobufCollection')
@@ -4428,13 +4498,16 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['geom'])
+        self.assertEquals(acontext_keys, ['geom', 'hydra'])
 
         geom_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'geom')
         self.assertEquals(geom_acontext_keys, self.keys_from_attrs_context)
 
         supported_operations = self.aux_get_supported_operations_names(response)
         self.assertEquals(supported_operations, self.spatial_collection_operation_names)
+
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['geom'])
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'GeobufCollection')
@@ -4448,13 +4521,16 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['nome'])
+        self.assertEquals(acontext_keys, ['hydra', 'nome'])
 
         nome_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_acontext_keys, self.keys_from_attrs_context)
 
         supported_operations = self.aux_get_supported_operations_names(response)
         self.assertEquals(supported_operations, [])
+
+        #supported_properties = self.aux_get_supported_properties_names(response)
+        #self.assertEquals(supported_properties, ['nome'])
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@type"], 'bytes')
@@ -4480,4 +4556,344 @@ class OptionsFeatureCollectionTest(AbstractRequestTest):
 
     # operations (image)
     def test_options_feature_collection_within_operation_accept_image_png(self):
+        pass
+
+#python manage.py test hyper_resource.tests.HeadFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class HeadFeatureCollectionTest(AbstractHeadRequestTest):
+
+    # simple path
+    def test_head_feature_collection_simple_path(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/")
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/")
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    # simple path (binary)
+    def test_head_feature_collection_simple_path_accept_octet_stream(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    # simple path (image)
+    def test_head_feature_collection_simple_path_accept_image_png(self):
+        pass
+
+
+    # only attributes (default)
+    def test_head_feature_collection_with_geometry_attribute(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/nome,geom")
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/nome,geom")
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    def test_head_feature_collection_only_geometry_attribute(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/geom")
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/geom")
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    def test_head_feature_collection_without_geometry_attribute(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/nome")
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/nome")
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    # only attributes (binary)
+    def test_head_feature_collection_with_geometry_attribute_accept_octet_stream(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/nome,geom",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/nome,geom",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    def test_head_feature_collection_only_geometry_attribute_accept_octet_stream(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/geom",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/geom",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    def test_head_feature_collection_without_geometry_attribute_accept_octet_stream(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/nome",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/nome",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    # only attributes (image)
+    def test_head_feature_collection_with_geometry_attribute_accept_image_png(self):
+        pass
+
+    def test_head_feature_collection_only_geometry_attribute_accept_image_png(self):
+        pass
+
+    def test_head_feature_collection_without_geometry_attribute_accept_image_png(self):
+        pass
+
+
+    # operations (default)
+    def test_head_feature_collection_within_operation(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/within/" + self.bcim_base_uri + 'unidades-federativas/ES')
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/within/" + self.bcim_base_uri + 'unidades-federativas/ES')
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    def test_head_feature_collection_count_resource_operations(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/count-resource")
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/count-resource")
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    # operations (binary)
+    def test_head_feature_collection_within_operation_accept_octet_stream(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/within/" + self.bcim_base_uri + 'unidades-federativas/ES',
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/within/" + self.bcim_base_uri + 'unidades-federativas/ES',
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    def test_head_feature_collection_count_resource_operations_accept_octet_stream(self):
+        response_head = requests.head(self.bcim_base_uri + "aldeias-indigenas/count-resource",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri + "aldeias-indigenas/count-resource",
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        self.assertIn("Etag", head_headers)
+        self.assertIn("Etag", get_headers)
+
+    # operations (image)
+    def test_head_feature_collection_within_operation_accept_image_png(self):
+        pass
+
+    def test_head_feature_collection_count_resource_operations_accept_image_png(self):
         pass

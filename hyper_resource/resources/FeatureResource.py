@@ -394,20 +394,9 @@ class FeatureResource(SpatialResource):
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
+    '''
     def basic_required_object(self, request, *args, **kwargs):
         return self.basic_get(request, *args, **kwargs)
-
-    '''
-    def options(self, request, *args, **kwargs):
-        required_object = self.basic_options(request, *args, **kwargs)
-        if required_object.status_code == 200:
-            response = Response(required_object.representation_object, content_type=required_object.content_type,
-                                status=200)
-            self.add_base_headers(request, response)
-        else:
-            response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)},
-                                status=required_object.status_code)
-        return response
     '''
 
     def default_content_type(self):
