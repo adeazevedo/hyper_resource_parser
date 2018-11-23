@@ -22,20 +22,31 @@ Before any procedure, certify yourself that your python installations has the re
 4. Copy the follow folders and files from 'hyper_resource_py' to your project folder
 
 	Files: 
-		context_generator.py\n
-		generator_files.py\n
-		generator_models_setting_files.py\n
-		modeler_generator.py\n
-		serializer_generator.py\n
-		settings_generator.py\n
-		settings_template.py\n
+		context_generator.py
+		
+		generator_files.py
+		
+		generator_models_setting_files.py
+		
+		modeler_generator.py
+		
+		serializer_generator.py
+		
+		settings_generator.py
+		
+		settings_template.py
+		
 		urler_generator.py\n
-		urler_project_generator.py\n
-		viewer_generator.py\n	
+		
+		urler_project_generator.py
+		
+		viewer_generator.py
 	Folders:
-		expression_interface\n
-		hyper_resource\n
-		image_generator\n
+		expression_interface
+		
+		hyper_resource
+		
+		image_generator
 
 5. Type the command below and fallow the instructions on console
 
