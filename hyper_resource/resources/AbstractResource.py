@@ -250,7 +250,7 @@ class AbstractResource(APIView):
         self.add_url_in_header(iri_father, response, 'up')
         self.add_url_in_header(iri_base + '.jsonld', response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
         if self.iri_metadata:
-            self.add_url_in_header(self.iri_metadata, response, rel="meta")
+            self.add_url_in_header(self.iri_metadata, response, rel="metadata")
         self.add_cors_header_in_header(response)
 
         if self.is_entry_point:
@@ -331,6 +331,7 @@ class AbstractResource(APIView):
         context.update(self.context_resource.get_resource_type_identification(resource_type))
 
         context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+        context['@context']['hydra'] = "http://www.w3.org/ns/hydra/core#"
         return context
 
     def get_context_for_projection_operation(self, request, attributes_functions_str):
@@ -1019,6 +1020,7 @@ class AbstractResource(APIView):
         res_type_context.update( self.context_resource.get_resource_type_identification(resource_type) )
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         res_type_context['@context'] = self.context_resource.get_context_to_operation(operation_name)['@context']
+        res_type_context['@context']['hydra'] = "http://www.w3.org/ns/hydra/core#"
         return res_type_context
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):

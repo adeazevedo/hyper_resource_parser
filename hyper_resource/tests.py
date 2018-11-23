@@ -641,7 +641,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "hydra", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -667,7 +667,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "hydra", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -692,7 +692,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "geom", "lower", "sigla"])
+        self.assertEquals(acontext_keys, ["collect", "geom", "hydra", "lower", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -718,7 +718,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "geom", "lower", "sigla"])
+        self.assertEquals(acontext_keys, ["collect", "geom", "hydra", "lower", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -744,7 +744,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "hydra"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -768,7 +768,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "hydra"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -792,7 +792,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["area", "collect", "geom"])
+        self.assertEquals(acontext_keys, ["area", "collect", "geom", "hydra"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -816,7 +816,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["area", "collect", "geom"])
+        self.assertEquals(acontext_keys, ["area", "collect", "geom", "hydra"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -839,7 +839,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "lower", "sigla"])
+        self.assertEquals(acontext_keys, ["collect", "hydra", "lower", "sigla"])
 
         lower_context_keys = self.aux_get_keys_from_acontext_attrs(response, "lower")
         self.assertEquals(lower_context_keys, self.keys_from_oper_context)
@@ -863,7 +863,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["collect", "lower", "sigla"])
+        self.assertEquals(acontext_keys, ["collect", "hydra", "lower", "sigla"])
 
         sigla_context_keys = self.aux_get_keys_from_acontext_attrs(response, "sigla")
         self.assertEquals(sigla_context_keys, self.keys_from_attrs_context)
@@ -887,7 +887,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "hydra", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -913,7 +913,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "sigla"])
+        self.assertEquals(acontext_keys, ["buffer", "collect", "geom", "hydra", "sigla"])
 
         geom_context_keys = self.aux_get_keys_from_acontext_attrs(response, "geom")
         self.assertEquals(geom_context_keys, self.keys_from_attrs_context)
@@ -945,7 +945,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'hydra', 'nome', 'upper'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -969,7 +969,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'hydra', 'nome', 'upper'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -992,7 +992,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'hydra', 'nome', 'upper'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -1018,7 +1018,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'hydra', 'nome', 'upper'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'nome')
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
@@ -1044,7 +1044,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'hydra', 'nome', 'upper'])
 
         email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
         self.assertEquals(email_context_keys, self.keys_from_attrs_context)
@@ -1070,7 +1070,7 @@ class OptionsForCollectOperationTest(AbstractRequestTest):
         self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['collect', 'email', 'nome', 'upper'])
+        self.assertEquals(acontext_keys, ['collect', 'email', 'hydra', 'nome', 'upper'])
 
         email_context_keys = self.aux_get_keys_from_acontext_attrs(response, 'email')
         self.assertEquals(email_context_keys, self.keys_from_attrs_context)
@@ -2526,12 +2526,14 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['count', 'hydra', 'nome'])
+        self.assertEquals(acontext_keys, ['count', 'group-by-count', 'hydra', 'nome'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
         count_context_keys = self.aux_get_keys_from_acontext_attrs(response, "count")
         self.assertEquals(count_context_keys, self.keys_from_attrs_context)
+        group_by_count_context_keys = self.aux_get_keys_from_acontext_attrs(response, "group-by-count")
+        self.assertEquals(group_by_count_context_keys, self.keys_from_oper_context)
 
         supported_operations_names = self.aux_get_supported_operations_names(response)
         self.assertEquals(supported_operations_names, self.collection_operation_names)
@@ -2548,12 +2550,14 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['count', 'hydra', 'nome'])
+        self.assertEquals(acontext_keys, ['count', 'group-by-count', 'hydra', 'nome'])
 
         nome_context_keys = self.aux_get_keys_from_acontext_attrs(response, "nome")
         self.assertEquals(nome_context_keys, self.keys_from_attrs_context)
         count_context_keys = self.aux_get_keys_from_acontext_attrs(response, "count")
         self.assertEquals(count_context_keys, self.keys_from_attrs_context)
+        group_by_count_context_keys = self.aux_get_keys_from_acontext_attrs(response, "group-by-count")
+        self.assertEquals(group_by_count_context_keys, self.keys_from_oper_context)
 
         supported_operations_names = self.aux_get_supported_operations_names(response)
         self.assertEquals(supported_operations_names, [])
@@ -2855,7 +2859,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['buffer'])
+        self.assertListEqual(a_context_keys, ['buffer', 'hydra'])
 
         buffer_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "buffer")
         self.assertListEqual(buffer_context_keys_list, ["@id", "@type"])
@@ -2875,7 +2879,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['buffer'])
+        self.assertListEqual(a_context_keys, ['buffer', 'hydra'])
 
         buffer_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "buffer")
         self.assertListEqual(buffer_context_keys_list, ["@id", "@type"])
@@ -2894,7 +2898,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['area'])
+        self.assertListEqual(a_context_keys, ['area', 'hydra'])
 
         area_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "area")
         self.assertListEqual(area_context_keys_list, ["@id", "@type"])
@@ -2914,7 +2918,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['area'])
+        self.assertListEqual(a_context_keys, ['area', 'hydra'])
 
         area_context_keys_list_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "area")
         self.assertListEqual(area_context_keys_list_context_keys_list, ["@id", "@type"])
@@ -2933,7 +2937,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['point_on_surface'])
+        self.assertListEqual(a_context_keys, ['hydra', 'point_on_surface'])
 
         point_on_surface_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "point_on_surface")
         self.assertListEqual(point_on_surface_context_keys_list, ["@id", "@type"])
@@ -2953,7 +2957,7 @@ class RequestOptionsTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['point_on_surface'])
+        self.assertListEqual(a_context_keys, ['hydra', 'point_on_surface'])
 
         point_on_surface_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "point_on_surface")
         self.assertListEqual(point_on_surface_context_keys_list, ["@id", "@type"])
@@ -3249,7 +3253,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['area'])
+        self.assertListEqual(a_context_keys, ['area', 'hydra'])
 
         area_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "area")
         self.assertListEqual(area_context_keys_list, ["@id", "@type"])
@@ -3268,7 +3272,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['buffer'])
+        self.assertListEqual(a_context_keys, ['buffer', 'hydra'])
 
         buffer_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "buffer")
         self.assertListEqual(buffer_context_keys_list, ["@id", "@type"])
@@ -3287,7 +3291,7 @@ class GetRequestContextTest(AbstractRequestTest):
         self.assertListEqual(response_dict_keys, self.non_simple_path_dict_keys)
 
         a_context_keys = self.aux_get_keys_from_response_context(response)
-        self.assertListEqual(a_context_keys, ['point_on_surface'])
+        self.assertListEqual(a_context_keys, ['hydra', 'point_on_surface'])
 
         point_on_surface_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, "point_on_surface")
         self.assertListEqual(point_on_surface_context_keys_list, ["@id", "@type"])
@@ -4302,7 +4306,7 @@ class OptionsForRasterTest(AbstractRequestTest):
         self.assertEquals(response_keys, self.non_simple_path_dict_keys)
 
         acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["hydra", "driver"])
+        self.assertEquals(acontext_keys, ["driver", "hydra"])
 
         driver_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "driver")
         self.assertEquals(driver_acontext_keys, self.keys_from_oper_context)

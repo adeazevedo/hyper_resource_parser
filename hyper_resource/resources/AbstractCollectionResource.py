@@ -632,7 +632,7 @@ class AbstractCollectionResource(AbstractResource):
                                                 }
                                         }
         group_by_count_acontext_dict.update(context_dict_for_attr)
-        context["@context"] = group_by_count_acontext_dict
+        context["@context"].update(group_by_count_acontext_dict)
         return context
 
     def get_context_for_group_by_sum_operation(self, request, attributes_functions_str):
