@@ -37,7 +37,7 @@ Before any procedure, certify yourself that your python installations has the re
 		
 		settings_template.py
 		
-		urler_generator.py\n
+		urler_generator.py
 		
 		urler_project_generator.py
 		
