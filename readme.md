@@ -22,6 +22,7 @@ Before any procedure, certify yourself that your python installations has the re
 4. Copy the follow folders and files from 'hyper_resource_py' to your project folder
 
 	Files: 
+	
 		context_generator.py
 		
 		generator_files.py
@@ -42,6 +43,7 @@ Before any procedure, certify yourself that your python installations has the re
 		
 		viewer_generator.py
 	Folders:
+	
 		expression_interface
 		
 		hyper_resource
