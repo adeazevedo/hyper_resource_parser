@@ -6,6 +6,15 @@ from hyper_resource.resources.RasterResource import RasterResource
 
 
 class TiffResource(RasterResource):
+
+    def __init__(self):
+        super(TiffResource, self).__init__()
+        self.iri_described_by = ''
+
+    def add_base_headers(self, request, response):
+        super(TiffResource, self).add_base_headers(request, response)
+        self.add_url_in_header(self.iri_style, response, rel="describedBy")
+
     def default_content_type(self):
         return CONTENT_TYPE_IMAGE_TIFF
 

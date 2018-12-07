@@ -13,18 +13,22 @@ def generate_get_root_response(a_name_space, model_class_name):
 
     return "'"+ context_name +"'"+': reverse(' + "'" +a_name_space +':'+ model_class_name+'_list'+"'"+' , request=request, format=format),\n'
 
-
-
 def convert_camel_case_to_hifen(camel_case_string):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', camel_case_string)
     return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
-def generate_snippets_to_view(model_class_name, is_spatial):
+def get_unique_field_name_or_none(model_class):
+    obj = model_class()
+    unique_field_name_arr = [field.name for field in obj._meta.fields if field.unique and not field.primary_key]
+    return unique_field_name_arr[0] if len(unique_field_name_arr) == 1 else None
+
+def generate_snippets_to_view(model_class_name, model_class, is_spatial):
     super_class_collection_name = 'FeatureCollectionResource' if is_spatial else 'CollectionResource'
     super_class_name = 'FeatureResource' if is_spatial else 'NonSpatialResource'
     serializer_class_snippet = (' ' * 4) + 'serializer_class = ' + model_class_name + 'Serializer\n'
     context_name = convert_camel_case_to_hifen(model_class_name)
     context = convert_camel_case_to_hifen((' ' * 4) + 'contextclassname = ' + "'" + context_name + "-list'\n")
+    unique_field_name = get_unique_field_name_or_none(model_class)
     arr = []
     arr.append('class ' + model_class_name + 'List('+ super_class_collection_name +'):\n')
     arr.append((' ' * 4) + 'queryset = ' + model_class_name + '.objects.all()' + '\n')
@@ -40,6 +44,21 @@ def generate_snippets_to_view(model_class_name, is_spatial):
     arr.append((' ' * 4) + 'def initialize_context(self):\n')
     arr.append((' ' * 8) + 'self.context_resource = ' + model_class_name + 'DetailContext()\n')
     arr.append((' ' * 8) + 'self.context_resource.resource = self\n')
+
+    if unique_field_name:
+        arr.append('\n')
+        arr.append((' ' * 4) + 'def get(self, request, format=None, *args, **kwargs):\n')
+        arr.append((' ' * 8) + "if kwargs.get('" + unique_field_name + "') is not None:\n")
+        arr.append((' ' * 12) + "kwargs['" + unique_field_name + "'] = kwargs.get('" + unique_field_name + "')\n")
+        arr.append((' ' * 12) + "self.kwargs['" + unique_field_name + "'] = kwargs.get('" + unique_field_name + "')\n")
+        arr.append((' ' * 8) + 'return super(' + model_class_name + 'Detail, self).get(request, *args, **self.kwargs)\n')
+
+        arr.append('\n')
+        arr.append((' ' * 4) + 'def options(self, request, *args, **kwargs):\n')
+        arr.append((' ' * 8) + "if kwargs.get('" + unique_field_name + "') is not None:\n")
+        arr.append((' ' * 12) + "kwargs['" + unique_field_name + "'] = kwargs.get('" + unique_field_name + "')\n")
+        arr.append((' ' * 12) + "self.kwargs['" + unique_field_name + "'] = kwargs.get('" + unique_field_name + "')\n")
+        arr.append((' ' * 8) + 'return super(' + model_class_name + 'Detail, self).options(request, *args, **self.kwargs)\n')
 
     return arr
 
@@ -127,7 +146,7 @@ def generate_file(package_name, default_name='views.py'):
         '''
         for tuple_name_and_class in arr_tuple_name_and_class:
 
-            for str in generate_snippets_to_view(tuple_name_and_class[0], is_spatial(tuple_name_and_class[1])):
+            for str in generate_snippets_to_view(tuple_name_and_class[0], tuple_name_and_class[1], is_spatial(tuple_name_and_class[1])):
                 sr.write(str)
             sr.write('\n')
         sr.close()

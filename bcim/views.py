@@ -89,64 +89,6 @@ class APIRoot(FeatureAPIRoot):
         ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
         return ordered_dict_of_link
 
-    '''
-    def __init__(self):
-        super(APIRoot, self).__init__()
-        self.base_context = BaseContext('api-root')
-
-    def add_url_in_header(self, url, response, rel):
-        link = ' <'+url+'>; rel=\"'+rel+'\" '
-        if "Link" not in response:
-            response['Link'] = link
-        else:
-            response['Link'] += "," + link
-        return response
-
-    def add_cors_headers_in_header(self, response):
-        response["access-control-allow-origin"] = "*"
-        access_control_allow_headers_str = ''
-        for value in CORS_ALLOW_HEADERS:
-            access_control_allow_headers_str += ', ' + value
-
-        access_control_expose_headers_str = ''
-        for value in CORS_EXPOSE_HEADERS:
-            access_control_expose_headers_str += ', ' + value
-
-        access_control_allow_methods_str = ''
-        for value in ACCESS_CONTROL_ALLOW_METHODS:
-            access_control_allow_methods_str += ', ' + value
-        response['access-control-allow-headers'] = access_control_allow_headers_str
-        response['access-control-expose-headers'] = access_control_expose_headers_str
-        response['access-control-allow-methods'] = access_control_allow_methods_str
-
-    def create_context_as_dict(self, dict_of_name_link):
-        a_context = {}
-        dicti = {"@context": a_context}
-        for key in dict_of_name_link.keys():
-            a_context[key] = {"@id": "http://geojson.org/geojson-ld/vocab.html#FeatureCollection", "@type": "@id" }
-
-        return dicti
-
-    def options(self, request, *args, **kwargs):
-        context = self.base_context.getContextData(request)
-        root_links = get_root_response(request)
-        #self.base_context.addRootLinks(context, root_links)
-        context.update( self.create_context_as_dict(root_links) )
-        response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")
-        entry_pointURL = reverse('bcim_v1:api_root', request=request)
-        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
-        response = self.base_context.addContext(request, response)
-        return response
-
-    def get(self, request, format=None, *args, **kwargs):
-        root_links = get_root_response(request)
-        response = Response(root_links)
-        self.add_cors_headers_in_header(response)
-        entry_pointURL = reverse('bcim_v1:api_root', request=request)
-        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
-        return self.base_context.addContext(request, response)
-    '''
-
 class UnidadeFederacaoDetail(FeatureResource):
 
     serializer_class = UnidadeFederacaoSerializer

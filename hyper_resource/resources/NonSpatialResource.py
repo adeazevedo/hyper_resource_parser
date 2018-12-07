@@ -18,23 +18,6 @@ class NonSpatialResource(AbstractResource):
         serializer = self.serializer_class(self.object_model, context={'request': request})
         return RequiredObject(serializer.data, self.content_type_or_default_content_type(request), self.object_model, 200)
 
-    '''
-    def required_object_for_only_attributes(self, request, attributes_functions_str):
-        object = self.get_object_by_only_attributes(attributes_functions_str)
-        serialized_object = self.get_object_serialized_by_only_attributes(attributes_functions_str, object)
-        return RequiredObject(serialized_object, self.content_type_or_default_content_type(request), object, 200)
-    '''
-
-    '''
-    def get_object_by_only_attributes(self, attribute_names_str):
-        attr_list = self.remove_last_slash(attribute_names_str).split(',')
-        obj_dict = {}
-        for attr_name in attr_list:
-            attr_value = self._value_from_object(self.object_model, attr_name, [])
-            obj_dict[attr_name] = attr_value
-        return obj_dict
-    '''
-
     def get_objects_from_join_operation(self, request, attributes_functions_str):
         join_operation = self.build_join_operation(request, attributes_functions_str)
 
@@ -100,6 +83,7 @@ class NonSpatialResource(AbstractResource):
         self.object_model = self.get_object(kwargs)
         self.current_object_state = self.object_model
         self.set_basic_context_resource(request)
+        self.inject_e_tag()
         attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
 
         if self.is_simple_path(attributes_functions_str):
@@ -133,3 +117,8 @@ class NonSpatialResource(AbstractResource):
             response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)},
                                 status=required_object.status_code)
         return response
+
+    def head(self, request, *args, **kwargs):
+        if self.is_simple_path(self.kwargs.get('attributes_functions')):
+            self.add_allowed_methods(['delete', 'put'])
+        return super(NonSpatialResource, self).head(request, *args, **kwargs)

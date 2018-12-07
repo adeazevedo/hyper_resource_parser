@@ -18,8 +18,8 @@ arr_get_for_non_spatial_resource = [
 
 arr_get_for_collection = [
     RequestTest('controle-list/gasto-list/count-resource', 200),
-    RequestTest('controle-list/gasto-list/offset-limit/1&10', 200),
-    RequestTest('controle-list/gasto-list/offset-limit/1&10/data,valor', 200),
+    RequestTest('controle-list/gasto-list/offset-limit/1/10', 200),
+    RequestTest('controle-list/gasto-list/offset-limit/1/10/data,valor', 400),
     RequestTest('controle-list/gasto-list/group-by-count/tipo_gasto', 200),
     RequestTest('controle-list/gasto-list/filter/tipo_gasto/eq/3', 200),
     RequestTest('api/bcim/unidades-federativas/filter/geom/within/' + SERVER + 'api/bcim/municipios/3159407/geom/*', 200),
@@ -46,8 +46,8 @@ arr_get_for_collection = [
     RequestTest('api/bcim/aldeias-indigenas/within/' + SERVER + 'api/bcim/unidades-federativas/PA', 200),
     RequestTest('api/bcim/aldeias-indigenas/collect/nome&geom/buffer/0.5', 200),
     RequestTest('api/bcim/unidades-federativas/filter/sigla/in/RJ&ES/*collect/nome&geom/buffer/0.2', 200),
-    RequestTest('api/bcim/aldeias-indigenas/offset-limit/0&2/nome,geom,nomeabrev/*collect/nome&geom/buffer/0.5', 400),
-    RequestTest('api/bcim/aldeias-indigenas/offset-limit/0&2/nome,geom/*collect/geom/buffer/0.5', 400),
+    RequestTest('api/bcim/aldeias-indigenas/offset-limit/0/2/nome,geom,nomeabrev/*collect/nome&geom/buffer/0.5', 400), # WRONG SINTAX (SERVER EXECUTE ONLY api/bcim/aldeias-indigenas/offset-limit/0/2/ and ignore the rest - act as offset-limit operation)
+    RequestTest('api/bcim/aldeias-indigenas/offset-limit/0/2/nome,geom/*collect/geom/buffer/0.5', 400), # WRONG SINTAX (SERVER EXECUTE ONLY api/bcim/aldeias-indigenas/offset-limit/0/2/ and ignore the rest - act as offset-limit operation)
 ]
 
 arr_get_for_spatial_operations = [
@@ -134,23 +134,23 @@ arr_get_for_projection = [
     RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES/*count-resource", 200),
     RequestTest("api/bcim/unidades-federativas/projection/nome,geocodigo/filter/sigla/in/RJ&ES/*count-resource", 200),
     # offset_limit
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/", 200),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/nome,geocodigo/", 200),
-    RequestTest("api/bcim/unidades-federativas/projection/geocodigo,sigla/offset-limit/0&2/", 200),
-    RequestTest("api/bcim/unidades-federativas/projection/geocodigo,sigla/offset-limit/0&2/sigla,geocodigo/", 200),
-    RequestTest("api/bcim/unidades-federativas/projection/geocodigo,sigla/offset-limit/0&2/nome,geocodigo,sigla/", 400),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/", 200),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/nome,geocodigo/", 400),
+    RequestTest("api/bcim/unidades-federativas/projection/geocodigo,sigla/offset-limit/0/2/", 200),
+    RequestTest("api/bcim/unidades-federativas/projection/geocodigo,sigla/offset-limit/0/2/sigla,geocodigo/", 400),
+    RequestTest("api/bcim/unidades-federativas/projection/geocodigo,sigla/offset-limit/0/2/nome,geocodigo,sigla/", 400), # WRONG SINTAX (SERVER EXECUTE ONLY api/bcim/unidades-federativas/projection/geocodigo,sigla/offset-limit/0/2/ and ignore the rest - act as offset-limit operation)
     # distinct
     RequestTest("controle-list/usuario-list/distinct/email", 200),
     RequestTest("controle-list/usuario-list/distinct/id&nome&email", 200),
     RequestTest("controle-list/usuario-list/projection/nome,email,data_nascimento/distinct/nome&email", 200),
     # offset_limit_and_collect
-    RequestTest("api/bcim/unidades-federativas/offset-limit/5&2/*collect/sigla&geom/buffer/0.8", 200),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/5&2/geom,sigla/*collect/sigla&geom/buffer/0.8", 200),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/5&2/sigla,geom,nome/*collect/sigla&geom/buffer/0.8", 400), # (must fail)
-    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5&2/*collect/sigla&geom/buffer/0.8", 200),
-    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5&2/sigla,geocodigo/*collect/sigla&geom/buffer/0.8", 400), # projection list == collect list != offset_limit list
-    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5&2/sigla,geom/*collect/nome&sigla&geom/buffer/0.8", 400), # projection list == offset_limit list != collect list
-    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5&2/sigla,geom/*collect/sigla&geom/buffer/0.8", 200), # projection list == offset_limit list == collect list
+    RequestTest("api/bcim/unidades-federativas/offset-limit/5/2/collect/sigla&geom/buffer/0.8", 200),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/5/2/geom,sigla/*collect/sigla&geom/buffer/0.8", 400),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/5/2/sigla,geom,nome/*collect/sigla&geom/buffer/0.8", 400), # WRONG SINTAX (SERVER EXECUTE ONLY api/bcim/unidades-federativas/offset-limit/5/2/ and ignore the rest - act as offset-limit operation)
+    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5/2/collect/sigla&geom/buffer/0.8", 200),
+    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5/2/sigla,geocodigo/*collect/sigla&geom/buffer/0.8", 400), # projection list == collect list != offset_limit list # WRONG SINTAX (SERVER EXECUTE ONLY api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5/2/ and ignore the rest - act as offset-limit operation)
+    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5/2/sigla,geom/*collect/nome&sigla&geom/buffer/0.8", 400), # projection list == offset_limit list != collect list # WRONG SINTAX (SERVER EXECUTE ONLY api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5/2/ and ignore the rest - act as offset-limit operation)
+    RequestTest("api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5/2/sigla,geom/collect/sigla&geom/buffer/0.8", 400), # projection list == offset_limit list == collect list # WRONG SINTAX (SERVER EXECUTE ONLY api/bcim/unidades-federativas/projection/sigla,geom/offset-limit/5/2/ and ignore the rest - act as offset-limit operation)
 
     #FeatureCollection operations
     RequestTest("api/bcim/aldeias-indigenas/within/" + SERVER + "api/bcim/unidades-federativas/ES/", 200),
@@ -222,20 +222,20 @@ arr_options_for_collection_operation = [
     RequestTest("controle-list/usuario-list/collect/nome/upper", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/collect/id&email/upper", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/count-resource", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2/nome", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2/nome,email", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2/nome", 400, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2/nome,email", 400, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/distinct/nome", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/group-by/nome", 400, method="OPTIONS"), # the operation 'group_by' doesn't exists anymore
     RequestTest("controle-list/usuario-list/group-by-count/nome", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/filter/id/gt/5/*collect/nome/upper", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/filter/id/gt/5/*collect/id&email/upper", 200, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/filter/id/gt/5/*count-resource", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2/*collect/nome/upper", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2/*collect/id&nome/upper", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2/nome/*collect/nome/upper", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2/nome,id/*collect/id&nome/upper", 200, method="OPTIONS"),
-    RequestTest("controle-list/usuario-list/offset-limit/0&2/nome/*collect/id&nome/upper", 400, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2/collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2/collect/id&nome/upper", 200, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2/nome/collect/nome/upper", 400, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2/nome,id/collect/id&nome/upper", 400, method="OPTIONS"),
+    RequestTest("controle-list/usuario-list/offset-limit/0/2/nome/collect/id&nome/upper", 400, method="OPTIONS"),
     RequestTest("controle-list/usuario-list/filter/id/gt/5/*count-resource", 200, method="OPTIONS"),
 
     # Collection operation used by FeatureCollection
@@ -252,11 +252,11 @@ arr_options_for_collection_operation = [
     RequestTest("api/bcim/unidades-federativas/collect/geom/point_on_surface", 200, method="OPTIONS"),
 
     RequestTest("api/bcim/unidades-federativas/count-resource", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/nome", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/nome,sigla", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/nome,geom", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/geom", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/nome", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/nome,sigla", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/nome,geom", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/geom", 400, method="OPTIONS"),
     RequestTest("api/bcim/unidades-federativas/distinct/nome", 200, method="OPTIONS"),
     RequestTest("api/bcim/unidades-federativas/group-by/nome", 400, method="OPTIONS"), # the operation 'group_by' doesn't exists anymore
     RequestTest("api/bcim/unidades-federativas/group-by-count/nome", 200, method="OPTIONS"),
@@ -271,25 +271,25 @@ arr_options_for_collection_operation = [
     RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
     RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*collect/geom/point_on_surface", 200, method="OPTIONS"),
 
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/nome/upper", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/nome&sigla/lower", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/geom&sigla/lower", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/sigla&geom/buffer/0.2", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/geom/buffer/0.2", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/geom/area", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/sigla&geom/area", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/*collect/geom/point_on_surface", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/nome/upper", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/nome&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/geom&sigla/lower", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/sigla&geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/geom/buffer/0.2", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/sigla&geom/area", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/collect/geom/point_on_surface", 200, method="OPTIONS"),
 
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/nome/*collect/nome/upper", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/nome,sigla/*collect/nome&sigla/lower", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/sigla,geom/*collect/geom&sigla/lower", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/sigla,geom/*collect/sigla&geom/buffer/0.2", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/geom/*collect/geom/buffer/0.2", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/geom/*collect/geom/area", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/sigla,geom/*collect/sigla&geom/area", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/sigla,geom/*collect/sigla&geom/point_on_surface", 200, method="OPTIONS"),
-    RequestTest("api/bcim/unidades-federativas/offset-limit/0&2/geom/*collect/geom/point_on_surface", 200, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/nome/collect/nome/upper", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/nome,sigla/collect/nome&sigla/lower", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/sigla,geom/collect/geom&sigla/lower", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/sigla,geom/collect/sigla&geom/buffer/0.2", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/geom/collect/geom/buffer/0.2", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/geom/collect/geom/area", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/sigla,geom/collect/sigla&geom/area", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/sigla,geom/collect/sigla&geom/point_on_surface", 400, method="OPTIONS"),
+    RequestTest("api/bcim/unidades-federativas/offset-limit/0/2/geom/collect/geom/point_on_surface", 400, method="OPTIONS"),
 
     RequestTest("api/bcim/unidades-federativas/filter/sigla/in/RJ&ES&MG&SP/*count-resource", 200, method="OPTIONS"),
 ]
@@ -376,13 +376,19 @@ def test_requests(request_test_list, test_label=''):
     print("\n\n" + fin_label_len * "*" + "\n* " + default_fin_test_label + " " + test_label + " *\n" + fin_label_len * "*" + "\n\n")
 
 test_requests(arr_get_for_non_spatial_resource, test_label = "Tests for NonSpatialResource")
+
 test_requests(arr_get_for_collection, test_label="Generic tests to collection operations")
+
 test_requests(arr_get_for_spatial_operations, test_label="Tests for spatial operations")
 test_requests(arr_get_for_complex_requests, test_label="Tests for complex requests")
+
 test_requests(arr_get_for_projection, test_label="Tests for FeatureCollection with and without projection")
+
 test_requests(arr_get_for_geometry_collection_operation, test_label="Tests for spatial collection operations")
 test_requests(arr_get_for_join_operation, test_label="Tests for join operation")
+
 test_requests(arr_options_for_collection_operation, test_label = "Tests OPTIONS for Collection operations")
+
 test_requests(arr_get_for_collect_operation_context, test_label = "Tests GET for Collect operation context")
 test_requests(arr_get_for_tiff_resource, test_label = "Tests GET for TiffResource")
 test_requests(arr_options_for_tiff_resource, test_label = "Tests OPTIONS for TiffResource")
@@ -424,3 +430,19 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing HeadFeatureCollectionTest >>>")
     os.system("python manage.py test hyper_resource.tests.HeadFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing AllowedMethodsForFeatureCollectionResourceTest >>>")
+    os.system("python manage.py test hyper_resource.tests.AllowedMethodsForFeatureCollectionResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing AllowedMethodsForFeatureResourceTest >>>")
+    os.system("python manage.py test hyper_resource.tests.AllowedMethodsForFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing LinkHeaderTest >>>")
+    os.system("python manage.py test hyper_resource.tests.LinkHeaderTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing AllowedMethodsForEntryPoint >>>")
+    os.system("python manage.py test hyper_resource.tests.AllowedMethodsForEntryPoint --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing AllowedMethodsForNonSpatialResource >>>")
+    os.system("python manage.py test hyper_resource.tests.AllowedMethodsForNonSpatialResource --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing AllowedMethodsForCollectionResource >>>")
+    os.system("python manage.py test hyper_resource.tests.AllowedMethodsForCollectionResource --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing AllowedMethodsForTiffResourceTest >>>")
+    os.system("python manage.py test hyper_resource.tests.AllowedMethodsForTiffResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing AllowedMethodsForTiffCollectionResource >>>")
+    os.system("python manage.py test hyper_resource.tests.AllowedMethodsForTiffCollectionResource --testrunner=hyper_resource.tests.NoDbTestRunner")

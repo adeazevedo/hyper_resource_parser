@@ -25,6 +25,11 @@ def generate_snippet_field_relationship_to_validate_dict(field_names):
     new_str += (" " * 8) + "return a_dict\n"
     return new_str
 
+def get_unique_field_name_or_none(model_class):
+    obj = model_class()
+    unique_field_name_arr = [field.name for field in obj._meta.fields if field.unique and not field.primary_key]
+    return unique_field_name_arr[0] if len(unique_field_name_arr) == 1 else None
+
 def generate_snippets_to_serializer(package_name, model_class_name, model_class):
     arr = []
     field_names_fk = []
@@ -63,7 +68,13 @@ def generate_snippets_to_serializer(package_name, model_class_name, model_class)
     if geom is not None:
         arr.append((' ' * 8) + "geo_field = '" + geom + "'\n")
     arr.append((' ' * 8) + "identifier = '" + identifier + "'\n")
-    arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "'"+ "]\n")
+
+    unique_field_name = get_unique_field_name_or_none(model_class)
+    if unique_field_name:
+        arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "', '" + unique_field_name + "']\n")
+    else:
+        arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "'"+ "]\n")
+
     if len(field_names_fk) > 0:
         arr.append("\n")
         arr.append(generate_snippet_field_relationship_to_validate_dict(field_names_fk))

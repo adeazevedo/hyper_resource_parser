@@ -26,12 +26,12 @@ class CollectionResource(AbstractCollectionResource):
 
         if not self.is_simple_path(attributes_functions_str): # if isn't simple path, is offset_limit operation
             offset_limit_arr = self.remove_last_slash(attributes_functions_str).split("/")
-            range_arr = offset_limit_arr[1].split("&")
+            range_arr = offset_limit_arr[1], offset_limit_arr[2]
             new_start_idx = str( int(range_arr[0]) + self.objs_per_page)
-            new_offset_limit = offset_limit_arr[0] + "/" + new_start_idx + "&" + range_arr[1]
+            new_offset_limit = offset_limit_arr[0] + "/" + new_start_idx + "/" + range_arr[1]
             pagination_link = absolute_uri[:absolute_uri.index(offset_limit_oper_name)] + new_offset_limit
         else:
-            pagination_link = absolute_uri + "/" + offset_limit_oper_name + "/" + str(self.objs_per_page +1 ) + "&" + str(self.objs_per_page)
+            pagination_link = absolute_uri + "/" + offset_limit_oper_name + "/" + str(self.objs_per_page +1 ) + "/" + str(self.objs_per_page)
 
         return pagination_link
 
@@ -87,10 +87,6 @@ class CollectionResource(AbstractCollectionResource):
             objects = self.get_objects_from_filter_operation(attributes_functions_str)
 
         return objects
-
-    def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
-        context = {}
-        return context
 
     def get_objects_from_simple_path(self):
         if self.model_class().objects.count() > self.objs_per_page:

@@ -102,18 +102,18 @@ def vocabularyDict():
     dict['filter'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/1/'
     dict['map'] = 'http://opengis.org/operations/map'
     dict['annotate'] = 'http://opengis.org/operations/annotate'
-    dict['group_by'] = "http://172.30.10.86/api/operations-list/collection-operation-interface-list/6/"
-    dict['group_by_sum'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/10/'
-    dict['group_by_count'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/7/'
+    dict['group-by'] = "http://172.30.10.86/api/operations-list/collection-operation-interface-list/6/"
+    dict['group-by-sum'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/10/'
+    dict['group-by-count'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/7/'
     dict['distinct'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/5/'
-    dict['count_resource'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/3/'
+    dict['count-resource'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/3/'
     dict['collect'] = 'http://172.30.10.86/api/operations-list/collection-operation-interface-list/2/'
     dict['join'] = 'http://172.30.10.86/api/operations-list/object-operations-interface-list/1/'
     dict['projection'] = 'http://172.30.10.86/api/operations-list/object-operations-interface-list/2/'
     dict['make_line'] = 'http://172.30.10.86/api/operations-list/spatial-collection-operation-interface-list/30'
     dict['count_elements'] = 'http://opengis.org/operations/count_elements'
     #dict['offset_limit'] = 'http://opengis.org/operations/offset_limit'
-    dict['offset_limit'] = "http://172.30.10.86/api/operations-list/collection-operation-interface-list/4"
+    dict['offset-limit'] = "http://172.30.10.86/api/operations-list/collection-operation-interface-list/4"
     dict['distance_lte'] = 'http://opengis.org/operations/distance_lte'
     #dict['area'] = 'http://opengis.org/operations/area'
     dict['area'] = "http://172.30.10.86/api/operations-list/spatial-operation-interface-list/77"
@@ -198,17 +198,17 @@ def vocabularyDict():
     dict['z'] = 'http://opengis.org/operations/z'
 
     dict['distance_gt'] = 'http://opengis.org/operations/distance_gt'
-    dict['overlaps_right'] = 'http://opengis.org/operations/overlaps_right'
+    dict['overlaps-right'] = 'http://opengis.org/operations/overlaps-right'
     dict['contained'] = 'http://opengis.org/operations/contained'
     dict['distance_lt'] = 'http://opengis.org/operations/distance_lt'
     dict['dwithin'] = 'http://opengis.org/operations/dwithin'
     dict['bboverlaps'] = 'http://opengis.org/operations/bboverlaps'
     dict['bbcontains'] = 'http://opengis.org/operations/bbcontains'
     dict['distance_gte'] = 'http://opengis.org/operations/distance_gte'
-    dict['overlaps_below'] = 'http://opengis.org/operations/overlaps_below'
-    dict['overlaps_above'] = 'http://opengis.org/operations/overlaps_above'
-    dict['overlaps_left'] = 'http://opengis.org/operations/overlaps_left'
-    dict['contains_properly'] = 'http://opengis.org/operations/contains_properly'
+    dict['overlaps-below'] = 'http://opengis.org/operations/overlaps-below'
+    dict['overlaps-above'] = 'http://opengis.org/operations/overlaps-above'
+    dict['overlaps-left'] = 'http://opengis.org/operations/overlaps-left'
+    dict['contains-properly'] = 'http://opengis.org/operations/contains-properly'
     dict['isvalid'] = 'http://opengis.org/operations/isvalid'
     dict['right'] = 'http://opengis.org/operations/right'
     dict['exact'] = 'http://opengis.org/operations/exact'
@@ -444,7 +444,7 @@ class ContextResource:
         arr_dict = []
         for field in fields:
             arr_dict.append(
-                SupportedProperty(property_name=field.name, required=field.null, readable=True, writeable=True, is_unique=False, is_identifier=field.primary_key, is_external=False)
+                SupportedProperty(property_name=field.name, required=field.null, readable=True, writeable=True, is_unique=field.unique, is_identifier=field.primary_key, is_external=False)
             )
         return [supportedAttribute.context() for supportedAttribute in arr_dict]
 
@@ -734,9 +734,12 @@ class BaseContext(object):
         return contextdata
 
 class AbstractAPIRoot(APIView):
+    http_method_names = ['get', 'head', 'options']
+
     def __init__(self):
         super(AbstractAPIRoot, self).__init__()
         self.base_context = BaseContext('api-root')
+        self.iri_metadata = ''
 
     def add_url_in_header(self, url, response, rel):
         link = ' <'+url+'>; rel=\"'+rel+'\" '
@@ -757,8 +760,9 @@ class AbstractAPIRoot(APIView):
             access_control_expose_headers_str += ', ' + value
 
         access_control_allow_methods_str = ''
-        for value in ACCESS_CONTROL_ALLOW_METHODS:
-            access_control_allow_methods_str += ', ' + value
+        #for value in ACCESS_CONTROL_ALLOW_METHODS:
+        for value in self.http_method_names:
+            access_control_allow_methods_str += ', ' + value.upper()
         response['access-control-allow-headers'] = access_control_allow_headers_str
         response['access-control-expose-headers'] = access_control_expose_headers_str
         response['access-control-allow-methods'] = access_control_allow_methods_str
@@ -780,8 +784,10 @@ class AbstractAPIRoot(APIView):
         #self.base_context.addRootLinks(context, root_links)
         context.update( self.create_context_as_dict(root_links) )
         response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")
+        self.add_cors_headers_in_header(response)
         entry_pointURL = request.build_absolute_uri() #reverse('bcim_v1:api_root', request=request)
         response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
+        response = self.add_url_in_header(self.iri_metadata, response, 'metadata')
         response = self.base_context.addContext(request, response)
         return response
 
@@ -791,6 +797,7 @@ class AbstractAPIRoot(APIView):
         self.add_cors_headers_in_header(response)
         entry_pointURL = request.build_absolute_uri() #reverse('bcim_v1:api_root', request=request)
         response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
+        response = self.add_url_in_header(self.iri_metadata, response, 'metadata')
         return self.base_context.addContext(request, response)
 
 class FeatureAPIRoot(AbstractAPIRoot):
@@ -807,4 +814,7 @@ class NonSpatialAPIRoot(AbstractAPIRoot):
     pass
 
 class RasterAPIRoot(AbstractAPIRoot):
-    pass
+    http_method_names = ['get', 'head', 'options']
+
+    def post(self, request, *args, **kwargs):
+        pass

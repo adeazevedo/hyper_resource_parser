@@ -16,9 +16,11 @@ class FeatureResource(SpatialResource):
 
         return dict
 
+    '''
     def hashed_value(self, object_):
         dt = datetime.now()
         return self.__class__.__name__ + str(dt.microsecond)
+    '''
 
     # Must be overridden
     def initialize_context(self):
@@ -32,18 +34,6 @@ class FeatureResource(SpatialResource):
 
     def operations_with_parameters_type(self):
         return self.object_model.operations_with_parameters_type()
-
-    '''
-    def get_object_by_only_attributes(self, attribute_names_str):
-        a_dict ={}
-        attributes = self.remove_last_slash(attribute_names_str).split(',')
-
-        for attr_name in attributes:
-            attr_val = self._value_from_object(self.object_model, attr_name, [])
-            a_dict[attr_name] = attr_val
-
-        return a_dict
-    '''
 
     def response_request_attributes_functions_str_with_url(self, attributes_functions_str, request=None):
         # r':/+' matches string like: ':' followed by at least 1 occurence of '/'
@@ -85,39 +75,6 @@ class FeatureResource(SpatialResource):
             a_value = {self.name_of_last_operation_executed: a_value}
 
         return RequiredObject(a_value, CONTENT_TYPE_JSON, self.object_model, 200)
-
-
-    '''
-    def response_base_get(self, request, *args, **kwargs):
-        resource = self.resource_in_cache(request)
-
-        if resource:
-            return self.response_base_object_in_cache(request )
-
-        required_object = self.basic_get(request, *args, **kwargs)
-        status = required_object.status_code
-
-        if status in [400, 401, 404]:
-            return Response({'Error ': 'The request has problem. Status:' + str(status)}, status=status)
-
-        if status in [500]:
-            return Response({'Error ': 'The server can not process this request. Status:' + str(status)}, status=status)
-
-        if self.is_image_content_type(request, **kwargs):
-            return self.response_base_get_with_image(request, required_object)
-
-        if self.is_binary_content_type(required_object) or self.accept_is_binary(request):
-            return self.response_base_get_binary(request, required_object)
-
-        key = self.get_key_cache(request, a_content_type=required_object.content_type)
-
-        self.set_key_with_data_in_cache(key, self.e_tag, required_object.representation_object )
-
-        resp =  Response(data=required_object.representation_object,status=200, content_type=required_object.content_type)
-        self.set_etag_in_header(resp, self.e_tag)
-
-        return resp
-    '''
 
     def operation_name_method_dic(self):
         dict = super(FeatureResource, self).operation_name_method_dic()
@@ -379,7 +336,8 @@ class FeatureResource(SpatialResource):
         self.object_model = self.get_object(kwargs)
         self.current_object_state = self.object_model
         self.set_basic_context_resource(request)
-        self.e_tag = str(hash(self.object_model))
+        self.inject_e_tag()
+        #self.e_tag = str(hash(self.object_model))
 
         attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
 
@@ -393,11 +351,6 @@ class FeatureResource(SpatialResource):
         if res is None:
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
-
-    '''
-    def basic_required_object(self, request, *args, **kwargs):
-        return self.basic_get(request, *args, **kwargs)
-    '''
 
     def default_content_type(self):
         return CONTENT_TYPE_GEOJSON#self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
@@ -426,6 +379,17 @@ class FeatureResource(SpatialResource):
             return content_type_by_accept
 
         if self.geometry_field_name() in attrs_functs_arr:
+            return self.default_content_type()
+        return CONTENT_TYPE_JSON
+
+    def define_content_type_by_operation(self, request, operation_name):
+        content_type_by_accept = self.content_type_or_default_content_type(request)
+        oper_ret_type = self.operation_controller.dict_all_operation_dict()[operation_name].return_type
+
+        if content_type_by_accept != self.default_content_type():
+            return content_type_by_accept
+
+        if issubclass(oper_ret_type, GEOSGeometry):
             return self.default_content_type()
         return CONTENT_TYPE_JSON
 

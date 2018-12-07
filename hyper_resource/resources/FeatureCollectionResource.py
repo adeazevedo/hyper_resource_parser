@@ -571,13 +571,15 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return objects
 
+    '''
     def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
-        #context = self.get_context_for_operation()
-        attrs_str = self.extract_offset_limit_operation_attrs(attributes_functions_str, as_string=True)
+        return self.get_context_for_operation(request, attributes_functions_str)
+        #attrs_str = self.extract_offset_limit_operation_attrs(attributes_functions_str, as_string=True)
 
-        if self.is_simple_path(attrs_str):
-            return self.context_resource.context( self.resource_type_or_default_resource_type(request) )
-        return self.get_context_by_only_attributes(request, attrs_str)
+        #if self.is_simple_path(attrs_str):
+        #return self.context_resource.context( self.resource_type_or_default_resource_type(request) )
+        #return self.get_context_by_only_attributes(request, attrs_str)
+    '''
 
     def get_context_for_specialized_operation(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)

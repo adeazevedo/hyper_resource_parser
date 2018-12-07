@@ -16,8 +16,11 @@ from hyper_resource.contexts import *
 from hyper_resource.resources.AbstractResource import AbstractResource
 from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource
 from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource
+from hyper_resource.resources.CollectionResource import CollectionResource
 from django.contrib.gis.geos import GEOSGeometry
 from django.test import SimpleTestCase
+from controle.views import UsuarioList, UsuarioDetail
+from controle.models import Usuario
 
 import json
 import requests
@@ -337,6 +340,33 @@ class CollectionResourceTest(SimpleTestCase):
         self.assertEquals(res.headers['content-type'], 'application/json')
     """
 
+#python manage.py test hyper_resource.tests.GenericOperationsSintaxTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class GenericOperationsSintaxTest(SimpleTestCase):
+    def setUp(self):
+        self.generic_object = UsuarioDetail()
+        self.generic_object.object_model = Usuario()
+
+    def test_projection_operation_sintax(self):
+        self.assertTrue( self.generic_object.projection_operation_sintax_is_ok("projection/nome,email") )
+        self.assertTrue( self.generic_object.projection_operation_sintax_is_ok("projection/nome") )
+        self.assertFalse( self.generic_object.projection_operation_sintax_is_ok("projection/this_attribute_doesnt_exists") )
+        self.assertFalse( self.generic_object.projection_operation_sintax_is_ok("projection/") )
+        self.assertFalse( self.generic_object.projection_operation_sintax_is_ok("projection/this_operation_doesnt_exists") )
+
+#python manage.py test hyper_resource.tests.CollectionOperationsSintaxTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class CollectionOperationsSintaxTest(SimpleTestCase):
+    def setUp(self):
+        self.collection_object = UsuarioList()
+
+    def test_offset_limit_operation_sintax(self):
+        self.assertTrue( self.collection_object.offset_limit_operation_sintax_is_ok("offset-limit/0/2") )
+        self.assertFalse( self.collection_object.offset_limit_operation_sintax_is_ok("offset-limit/0/-2") )
+        self.assertFalse( self.collection_object.offset_limit_operation_sintax_is_ok("offset-limit/-1/5") )
+        self.assertFalse( self.collection_object.offset_limit_operation_sintax_is_ok("offset-limit/0/2/nome") )
+        self.assertFalse( self.collection_object.offset_limit_operation_sintax_is_ok("offset-limit/0/2/nome,email") )
+        self.assertTrue( self.collection_object.offset_limit_operation_sintax_is_ok("offset-limit/0/2/collect") )
+        self.assertFalse( self.collection_object.offset_limit_operation_sintax_is_ok("offset-limit/0") )
+
 class AbstractRequestTest(SimpleTestCase):
     def setUp(self):
         self.bcim_base_uri = "http://" + HOST + "api/bcim/"
@@ -443,7 +473,6 @@ class AbstractGetRequestTest(AbstractRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         return sorted( list(response_dict['properties'].keys()) )
 
-
 class AbstractOptionsRequestTest(AbstractRequestTest):
     pass
     '''
@@ -458,6 +487,15 @@ class AbstractHeadRequestTest(AbstractRequestTest):
     def aux_get_headers_list_from_response(self, response):
         return sorted( list(response.headers.keys()) )
 
+    def aux_get_allowed_methods(self, response, allow_header):
+        allowed_methods = []
+        for method in response.headers[allow_header].split(','):
+            if method != '':
+                allowed_methods.append(method.strip())
+        return sorted(allowed_methods)
+
+
+#                               SPECIFIC OPERATIONS TEST
 #python manage.py test hyper_resource.tests.CollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class CollectOperationTest(AbstractGetRequestTest):
 
@@ -2141,6 +2179,466 @@ class FilterOperationTest(AbstractRequestTest):
         names_list = self.aux_get_attributes_from_features(response, "nome")
         self.assertEquals(names_list, ["Maranhão", "Piauí"])
 
+#python manage.py test hyper_resource.tests.JoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class JoinOperationTest(AbstractGetRequestTest):
+    def setUp(self):
+        super(JoinOperationTest, self).setUp()
+        self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
+        self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
+        self.pib_municipio_base_uri = "http://172.30.10.86/api/pib-municipio/"
+        self.feature_keys = ["geometry", "id", "properties", "type"]
+
+    def aux_get_first_joined_dict_attributes_from_first_feature(self, response):
+        first_feature = self.aux_get_first_feature(response)
+        first_joined_alfa_dict = first_feature['properties']['__joined__'][0]
+        return sorted( list(first_joined_alfa_dict.keys()) )
+
+    def aux_get_first_feature_joined_length(self, response):
+        first_feature = self.aux_get_first_feature(response)
+        return len(first_feature['properties']['__joined__'])
+
+    def aux_get_first_joined_dict_attributes_from_single_element_response(self, response):
+        first_element = self.aux_get_single_element_from_response(response)
+        return sorted( first_element["__joined__"][0].keys() )
+
+    def aux_get_first_joined_dict_attributes_from_first_element_response(self, response):
+        first_element = self.aux_get_first_element_from_response_list(response)
+        return sorted( list(first_element["__joined__"][0].keys()) )
+
+    def aux_get_single_element_joined_length(self, response):
+        first_element = self.aux_get_single_element_from_response(response)
+        return len(first_element['__joined__'])
+
+    # --------------- TESTS FOR NON SPATIAL RESOURCE ---------------------------------
+    def test_join_operation_for_non_spatial_resource_one_to_one_rel(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/3243")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_sigle_element_keys_from_response(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_single_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 1)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_single_element_response(response)
+        self.assertEquals(joined_attrs_list, ['classe_tama_populacao_estimada_2015', 'codfigo_uf', 'geocodigo',
+                                              'id_variaveis_externas', 'nome_municipio', 'populacao_estimada_2015',
+                                              'regiao', 'sigla_unidade_federacao'])
+
+    def test_join_operation_for_non_spatial_resource_one_to_one_rel_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/3243",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    def test_join_operation_for_non_spatial_resource_one_to_many_rel(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557/")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_sigle_element_keys_from_response(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_single_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_single_element_response(response)
+        self.assertEquals(joined_attrs_list, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro', 'valor_bruto_ind',
+                                              'valor_bruto_serv'])
+
+    def test_join_operation_for_non_spatial_resource_one_to_many_rel_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557/",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+
+    # --------------- TESTS FOR COLLECTION RESOURCE ---------------------------------
+    def test_join_operations_for_collection_resource_one_to_one_rel(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_first_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 1)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_first_element_response(response)
+        self.assertEquals(joined_attrs_list, ['classe_tama_populacao_estimada_2015', 'codfigo_uf', 'geocodigo',
+                                              'id_variaveis_externas', 'nome_municipio', 'populacao_estimada_2015',
+                                              'regiao', 'sigla_unidade_federacao'])
+
+    def test_join_operations_for_collection_resource_one_to_one_rel_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    def test_join_operations_for_collection_resource_one_to_many_rel(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3550308&3304557")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/json')
+
+        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
+        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
+
+        joined_dicts_len = self.aux_get_first_element_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_first_element_response(response)
+        self.assertEquals(joined_attrs_list, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro', 'valor_bruto_ind',
+                                              'valor_bruto_serv'])
+
+    def test_join_operations_for_collection_resource_one_to_many_rel_accept_octet_stream(self):
+        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3550308&3304557",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+
+    # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
+    def test_join_operation_for_feature_resource_one_to_one_rel(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_dict_keys, self.feature_keys)
+
+        feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(feature_properties_keys, ["__joined__", "anodereferencia", "geocodigo", "geometriaaproximada", "nome", "nomeabrev"])
+
+        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
+        self.assertEquals(joined_dicts_len, 1)
+
+        joined_alfanumeric_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
+        self.assertEquals(joined_alfanumeric_attrs, ['ano_lei_codigo_obras', 'ano_lei_criacao',
+                                                     'ano_lei_legis_sob_area_zona_espe_inte_social',
+                                                     'ano_lei_legis_sob_zona_area_espe_inter',
+                                                     'ano_lei_legis_sobre_parc_solo',
+                                                     'ano_lei_legis_sobre_zone_uso_ocupa_solo',
+                                                     'ano_lei_legislacao_sobre_contri_melhoria',
+                                                     'ano_lei_legislacao_sobre_dire_superficie',
+                                                     'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                                     'ano_lei_legislacao_sobre_estu_pre_impa_ambiental',
+                                                     'ano_lei_legislacao_sobre_legitimacao_posse',
+                                                     'ano_lei_legislacao_sobre_ope_urba_consorciada',
+                                                     'ano_lei_legislacao_sobre_regula_fundiaria',
+                                                     'ano_lei_legislacao_sobre_servi_administrativa',
+                                                     'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                                     'ano_lei_legislacao_sobre_tombamento',
+                                                     'ano_lei_legislacao_sobre_uni_conservacao',
+                                                     'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano',
+                                                     'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                                     'ano_lei_lei_perimetro_urba',
+                                                     'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia',
+                                                     'ano_ultima_atualizacao', 'caract_orgao_gestor_plane_urba_munic',
+                                                     'codigo_municipio', 'codigo_obras_existencia', 'codigo_uf',
+                                                     'geocodigo', 'id_planejamento_urbano',
+                                                     'informacoes_sob_gestor_escolaridade',
+                                                     'legis_sobre_parc_solo_existencia',
+                                                     'legislacao_sobre_area_zona_espec_inter_social_existencia',
+                                                     'legislacao_sobre_conce_uso_espe_fins_moradia',
+                                                     'legislacao_sobre_contri_melhoria_existencia',
+                                                     'legislacao_sobre_dire_superficie',
+                                                     'legislacao_sobre_estu_impa_vizinhanca_existencia',
+                                                     'legislacao_sobre_estu_pre_impa_ambiental',
+                                                     'legislacao_sobre_legitimacao_posse',
+                                                     'legislacao_sobre_ope_urba_consorciada_existencia',
+                                                     'legislacao_sobre_regula_fundiaria',
+                                                     'legislacao_sobre_servi_administrativa',
+                                                     'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist',
+                                                     'legislacao_sobre_tombamento',
+                                                     'legislacao_sobre_uni_conservacao',
+                                                     'legislacao_sobre_usuca_espe_imovel_urbano',
+                                                     'legislacao_sobre_zona_area_espe_inter_existencia',
+                                                     'legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                                     'legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                                     'lei_perimetro_urba_existencia', 'nome',
+                                                     'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia'] )
+
+    def test_join_operation_for_feature_resource_one_to_one_rel_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
+                                headers={"accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    def test_join_operation_for_feature_resource_one_to_many_rel(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.feature_keys)
+
+        feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(feature_properties_keys, ['__joined__', 'anodereferencia', 'geocodigo', 'geometriaaproximada', 'nome', 'nomeabrev'])
+
+        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_dict_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
+        self.assertEquals(joined_dict_attrs, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro',
+                                              'valor_bruto_ind', 'valor_bruto_serv'])
+
+    def test_join_operation_for_feature_resource_one_to_many_rel_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+
+    # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
+    def test_join_operation_for_feature_collection_one_to_one_rel(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_dict_keys, self.feature_collection_keys)
+
+        first_feature_keys = self.aux_get_first_feature_keys(response)
+        self.assertEquals(first_feature_keys, self.feature_keys)
+
+        first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(first_feature_properties_keys, ["__joined__", "geocodigo", "geometriaaproximada", "nome", "nomeabrev", "sigla"])
+
+        joined_alfanumeric_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
+        self.assertEquals(joined_alfanumeric_attrs, ['ano', 'autodromo_func', 'autodromo_parado', 'cod_estado',
+                                                     'compl_aqua_func', 'compl_aqua_parado', 'compl_esp_func',
+                                                     'compl_esp_parado', 'est_func', 'est_parado', 'gin_func',
+                                                     'gin_parado', 'id', 'id_estado', 'kartodromo_func',
+                                                     'kartodromo_parado'] )
+
+    def test_join_operation_for_feature_collection_one_to_one_rel_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/",
+                                headers={"accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
+
+    def test_join_operation_for_feature_collection_one_to_many_rel(self):
+        response = requests.get(self.bcim_base_uri + "municipios/filter/nome/in/Rio de Janeiro&Belo Horizonte&São Paulo/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3304557&3106200&3550308&4106902")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/vnd.geo+json')
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.feature_collection_keys)
+
+        first_feature_keys = self.aux_get_first_feature_keys(response)
+        self.assertEquals(first_feature_keys, self.feature_keys)
+
+        first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
+        self.assertEquals(first_feature_properties_keys, ["__joined__", "anodereferencia", "geocodigo", "geometriaaproximada", "nome", "nomeabrev"])
+
+        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
+        self.assertEquals(joined_dicts_len, 6)
+
+        joined_dict_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
+        self.assertEquals(joined_dict_attrs, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
+                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro',
+                                              'valor_bruto_ind', 'valor_bruto_serv'])
+
+    def test_join_operation_for_feature_collection_one_to_many_rel_accept_octet_stream(self):
+        response = requests.get(self.bcim_base_uri + "municipios/filter/nome/in/Rio de Janeiro&Belo Horizonte&São Paulo/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3304557&3106200&3550308&4106902",
+                                headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.headers["content-type"], 'application/octet-stream')
+
+#python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class OptionsForJoinOperationTest(AbstractRequestTest):
+    def setUp(self):
+        super(OptionsForJoinOperationTest, self).setUp()
+        self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
+        self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
+        self.pib_municipio_base_uri = "http://172.30.10.86/api/pib-municipio/"
+        self.keys_from_external_attr_context = ['@id', '@type', 'hydra:Link', 'hydra:method']
+
+    # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
+    # todo: provisory test, full context must be implemented
+    def test_options_for_feature_resource_join_operation_one_to_one_rel(self):
+
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.simple_path_options_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev'])
+
+        geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
+        self.assertEquals(geocodigo_acontext_keys, self.keys_from_attrs_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Feature")
+
+
+        # todo: test for join full context
+        '''
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['ano_lei_codigo_obras', 'ano_lei_criacao', 'ano_lei_legis_sob_area_zona_espe_inte_social',
+                                          'ano_lei_legis_sob_zona_area_espe_inter', 'ano_lei_legis_sobre_parc_solo',
+                                          'ano_lei_legis_sobre_zone_uso_ocupa_solo', 'ano_lei_legislacao_sobre_contri_melhoria',
+                                          'ano_lei_legislacao_sobre_dire_superficie', 'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                          'ano_lei_legislacao_sobre_estu_pre_impa_ambiental', 'ano_lei_legislacao_sobre_legitimacao_posse',
+                                          'ano_lei_legislacao_sobre_ope_urba_consorciada', 'ano_lei_legislacao_sobre_regula_fundiaria',
+                                          'ano_lei_legislacao_sobre_servi_administrativa', 'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                          'ano_lei_legislacao_sobre_tombamento', 'ano_lei_legislacao_sobre_uni_conservacao',
+                                          'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', 'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                          'ano_lei_lei_perimetro_urba', 'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia',
+                                          'ano_ultima_atualizacao', 'anodereferencia', 'caract_orgao_gestor_plane_urba_munic',
+                                          'codigo_municipio', 'codigo_obras_existencia', 'codigo_uf', 'geocodigo', 'geom',
+                                          'geometriaaproximada', 'http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:geocodigo',
+                                          'http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:nome', 'id_objeto',
+                                          'id_planejamento_urbano', 'informacoes_sob_gestor_escolaridade', 'iri_metadata',
+                                          'iri_style', 'legis_sobre_parc_solo_existencia', 'legislacao_sobre_area_zona_espec_inter_social_existencia',
+                                          'legislacao_sobre_conce_uso_espe_fins_moradia', 'legislacao_sobre_contri_melhoria_existencia',
+                                          'legislacao_sobre_dire_superficie', 'legislacao_sobre_estu_impa_vizinhanca_existencia',
+                                          'legislacao_sobre_estu_pre_impa_ambiental', 'legislacao_sobre_legitimacao_posse',
+                                          'legislacao_sobre_ope_urba_consorciada_existencia', 'legislacao_sobre_regula_fundiaria',
+                                          'legislacao_sobre_servi_administrativa', 'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist',
+                                          'legislacao_sobre_tombamento', 'legislacao_sobre_uni_conservacao', 'legislacao_sobre_usuca_espe_imovel_urbano',
+                                          'legislacao_sobre_zona_area_espe_inter_existencia', 'legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                          'legislacao_sobre_zonea_ambi_zonea_ecologico_economico', 'lei_perimetro_urba_existencia', 'nome',
+                                          'nomeabrev', 'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia'])
+
+        # 'geocodigo' is present in the feature and in the external resourse, hence 'geocodigo' in the external resource must be preffixed
+        external_geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:geocodigo")
+        self.assertEquals(external_geocodigo_acontext_keys, self.keys_from_external_attr_context)
+        external_codigo_municipio_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "codigo_municipio")
+        self.assertEquals(external_codigo_municipio_acontext_keys, self.keys_from_external_attr_context)
+        # 'geocodigo' (without preffix) comes from the feature
+        geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
+        self.assertEquals(geocodigo_acontext_keys, self.keys_from_attrs_context)
+        join_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "join")
+        self.assertEquals(join_acontext_keys, self.keys_from_oper_context)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Feature")
+        '''
+
+    """
+    def test_options_for_feature_resource_join_operation_one_to_many_rel(self):
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" +
+                                    self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557")
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['ano_lei_codigo_obras', 'ano_lei_criacao', 'ano_lei_legis_sob_area_zona_espe_inte_social',
+                                          'ano_lei_legis_sob_zona_area_espe_inter', 'ano_lei_legis_sobre_parc_solo',
+                                          'ano_lei_legis_sobre_zone_uso_ocupa_solo', 'ano_lei_legislacao_sobre_contri_melhoria',
+                                          'ano_lei_legislacao_sobre_dire_superficie', 'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                          'ano_lei_legislacao_sobre_estu_pre_impa_ambiental', 'ano_lei_legislacao_sobre_legitimacao_posse',
+                                          'ano_lei_legislacao_sobre_ope_urba_consorciada', 'ano_lei_legislacao_sobre_regula_fundiaria',
+                                          'ano_lei_legislacao_sobre_servi_administrativa', 'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                          'ano_lei_legislacao_sobre_tombamento', 'ano_lei_legislacao_sobre_uni_conservacao',
+                                          'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', 'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                          'ano_lei_lei_perimetro_urba', 'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia', 'ano_ultima_atualizacao',
+                                          'caract_orgao_gestor_plane_urba_munic', 'codigo_municipio', 'codigo_obras_existencia',
+                                          'codigo_uf', 'http://172.30.10.86/api/pib-municipio/faturamento-list:geocodigo', 'id_planejamento_urbano',
+                                          'informacoes_sob_gestor_escolaridade', 'legis_sobre_parc_solo_existencia',
+                                          'legislacao_sobre_area_zona_espec_inter_social_existencia', 'legislacao_sobre_conce_uso_espe_fins_moradia',
+                                          'legislacao_sobre_contri_melhoria_existencia', 'legislacao_sobre_dire_superficie',
+                                          'legislacao_sobre_estu_impa_vizinhanca_existencia', 'legislacao_sobre_estu_pre_impa_ambiental',
+                                          'legislacao_sobre_legitimacao_posse', 'legislacao_sobre_ope_urba_consorciada_existencia',
+                                          'legislacao_sobre_regula_fundiaria', 'legislacao_sobre_servi_administrativa',
+                                          'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist', 'legislacao_sobre_tombamento',
+                                          'legislacao_sobre_uni_conservacao', 'legislacao_sobre_usuca_espe_imovel_urbano',
+                                          'legislacao_sobre_zona_area_espe_inter_existencia', 'legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                          'legislacao_sobre_zonea_ambi_zonea_ecologico_economico', 'lei_perimetro_urba_existencia', '(joined) nome', # same attribute name on different resources
+                                          'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia',
+                                          'anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'spatialize'])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Feature")
+
+    def test_options_for_feature_resource_join_operation__one_to_one_rel_accept_octet_stream(self):
+        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
+                                    headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response.status_code, 200)
+
+        response_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertEquals(supported_operations_names, self.spatial_operation_names)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ['(joined) ano_lei_codigo_obras', '(joined) ano_lei_criacao', '(joined) ano_lei_legis_sob_area_zona_espe_inte_social',
+                                          '(joined) ano_lei_legis_sob_zona_area_espe_inter', '(joined) ano_lei_legis_sobre_parc_solo',
+                                          '(joined) ano_lei_legis_sobre_zone_uso_ocupa_solo', '(joined) ano_lei_legislacao_sobre_contri_melhoria',
+                                          '(joined) ano_lei_legislacao_sobre_dire_superficie', '(joined) ano_lei_legislacao_sobre_estu_impa_vizinhanca',
+                                          '(joined) ano_lei_legislacao_sobre_estu_pre_impa_ambiental', '(joined) ano_lei_legislacao_sobre_legitimacao_posse',
+                                          '(joined) ano_lei_legislacao_sobre_ope_urba_consorciada', '(joined) ano_lei_legislacao_sobre_regula_fundiaria',
+                                          '(joined) ano_lei_legislacao_sobre_servi_administrativa', '(joined) ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
+                                          '(joined) ano_lei_legislacao_sobre_tombamento', '(joined) ano_lei_legislacao_sobre_uni_conservacao',
+                                          '(joined) ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', '(joined) ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
+                                          '(joined) ano_lei_lei_perimetro_urba', '(joined) ano_leilegislacao_sobre_conce_uso_espe_fins_moradia', '(joined) ano_ultima_atualizacao',
+                                          '(joined) caract_orgao_gestor_plane_urba_munic', '(joined) codigo_municipio', '(joined) codigo_obras_existencia',
+                                          '(joined) codigo_uf', '(joined) geocodigo', '(joined) id_planejamento_urbano',
+                                          '(joined) informacoes_sob_gestor_escolaridade', '(joined) legis_sobre_parc_solo_existencia',
+                                          '(joined) legislacao_sobre_area_zona_espec_inter_social_existencia', '(joined) legislacao_sobre_conce_uso_espe_fins_moradia',
+                                          '(joined) legislacao_sobre_contri_melhoria_existencia', '(joined) legislacao_sobre_dire_superficie',
+                                          '(joined) legislacao_sobre_estu_impa_vizinhanca_existencia', '(joined) legislacao_sobre_estu_pre_impa_ambiental',
+                                          '(joined) legislacao_sobre_legitimacao_posse', '(joined) legislacao_sobre_ope_urba_consorciada_existencia',
+                                          '(joined) legislacao_sobre_regula_fundiaria', '(joined) legislacao_sobre_servi_administrativa',
+                                          '(joined) legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist', '(joined) legislacao_sobre_tombamento',
+                                          '(joined) legislacao_sobre_uni_conservacao', '(joined) legislacao_sobre_usuca_espe_imovel_urbano',
+                                          '(joined) legislacao_sobre_zona_area_espe_inter_existencia', '(joined) legislacao_sobre_zone_uso_ocupa_solo_existencia',
+                                          '(joined) legislacao_sobre_zonea_ambi_zonea_ecologico_economico', '(joined) lei_perimetro_urba_existencia', '(joined) nome', # same attribute name on different resources
+                                          '(joined) o_municipio_elabo_plano_diretor', '(joined) plano_diretor_existencia',
+                                          'anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'spatialize'])
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], "Geobuf")
+
+    # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
+    def test_join_operation_with_filter(self):
+        response = requests.options(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" +
+                                    self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
+        self.assertEquals(response.status_code, 200)
+
+        response_dict_keys = self.aux_get_keys_from_response(response)
+        self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
+
+        acontext_keys = self.aux_get_keys_from_response_context(response)
+        self.assertEquals(acontext_keys, ["join"])
+
+        join_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, 'join')
+        self.assertListEqual(join_context_keys_list, ["@id", "@type"])
+
+        supported_operations_names = self.aux_get_supported_operations_names(response)
+        self.assertListEqual(supported_operations_names, self.spatial_collection_operation_names)
+
+        response_dict = self.aux_get_dict_from_response(response)
+        self.assertEquals(response_dict["@type"], 'FeatureCollection')
+    """
+
+
 #python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class RequestOptionsTest(AbstractRequestTest):
 
@@ -3556,465 +4054,6 @@ class GetRequestContextTest(AbstractRequestTest):
 
     # ------------------- TESTS FOR ENTRY POINTS -------------------------------------
 
-#python manage.py test hyper_resource.tests.JoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
-class JoinOperationTest(AbstractGetRequestTest):
-    def setUp(self):
-        super(JoinOperationTest, self).setUp()
-        self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
-        self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
-        self.pib_municipio_base_uri = "http://172.30.10.86/api/pib-municipio/"
-        self.feature_keys = ["geometry", "id", "properties", "type"]
-
-    def aux_get_first_joined_dict_attributes_from_first_feature(self, response):
-        first_feature = self.aux_get_first_feature(response)
-        first_joined_alfa_dict = first_feature['properties']['__joined__'][0]
-        return sorted( list(first_joined_alfa_dict.keys()) )
-
-    def aux_get_first_feature_joined_length(self, response):
-        first_feature = self.aux_get_first_feature(response)
-        return len(first_feature['properties']['__joined__'])
-
-    def aux_get_first_joined_dict_attributes_from_single_element_response(self, response):
-        first_element = self.aux_get_single_element_from_response(response)
-        return sorted( first_element["__joined__"][0].keys() )
-
-    def aux_get_first_joined_dict_attributes_from_first_element_response(self, response):
-        first_element = self.aux_get_first_element_from_response_list(response)
-        return sorted( list(first_element["__joined__"][0].keys()) )
-
-    def aux_get_single_element_joined_length(self, response):
-        first_element = self.aux_get_single_element_from_response(response)
-        return len(first_element['__joined__'])
-
-    # --------------- TESTS FOR NON SPATIAL RESOURCE ---------------------------------
-    def test_join_operation_for_non_spatial_resource_one_to_one_rel(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/3243")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/json')
-
-        first_element_keys = self.aux_get_sigle_element_keys_from_response(response)
-        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
-
-        joined_dicts_len = self.aux_get_single_element_joined_length(response)
-        self.assertEquals(joined_dicts_len, 1)
-
-        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_single_element_response(response)
-        self.assertEquals(joined_attrs_list, ['classe_tama_populacao_estimada_2015', 'codfigo_uf', 'geocodigo',
-                                              'id_variaveis_externas', 'nome_municipio', 'populacao_estimada_2015',
-                                              'regiao', 'sigla_unidade_federacao'])
-
-    def test_join_operation_for_non_spatial_resource_one_to_one_rel_accept_octet_stream(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/3243",
-                                headers={"Accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
-
-    def test_join_operation_for_non_spatial_resource_one_to_many_rel(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557/")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/json')
-
-        first_element_keys = self.aux_get_sigle_element_keys_from_response(response)
-        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
-
-        joined_dicts_len = self.aux_get_single_element_joined_length(response)
-        self.assertEquals(joined_dicts_len, 6)
-
-        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_single_element_response(response)
-        self.assertEquals(joined_attrs_list, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
-                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro', 'valor_bruto_ind',
-                                              'valor_bruto_serv'])
-
-    def test_join_operation_for_non_spatial_resource_one_to_many_rel_accept_octet_stream(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/7/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557/",
-                                headers={"Accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
-
-
-    # --------------- TESTS FOR COLLECTION RESOURCE ---------------------------------
-    def test_join_operations_for_collection_resource_one_to_one_rel(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/json')
-
-        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
-        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
-
-        joined_dicts_len = self.aux_get_first_element_joined_length(response)
-        self.assertEquals(joined_dicts_len, 1)
-
-        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_first_element_response(response)
-        self.assertEquals(joined_attrs_list, ['classe_tama_populacao_estimada_2015', 'codfigo_uf', 'geocodigo',
-                                              'id_variaveis_externas', 'nome_municipio', 'populacao_estimada_2015',
-                                              'regiao', 'sigla_unidade_federacao'])
-
-    def test_join_operations_for_collection_resource_one_to_one_rel_accept_octet_stream(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&geocodigo/" + self.munic_2015_base_uri + "variaveis-externas-list/",
-                                headers={"Accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
-
-    def test_join_operations_for_collection_resource_one_to_many_rel(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3550308&3304557")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/json')
-
-        first_element_keys = self.aux_get_first_element_keys_from_response_list(response)
-        self.assertEquals(first_element_keys, ['__joined__', 'cod_municipio', 'data', 'id', 'tipo_gasto', 'usuario', 'valor'])
-
-        joined_dicts_len = self.aux_get_first_element_joined_length(response)
-        self.assertEquals(joined_dicts_len, 6)
-
-        joined_attrs_list = self.aux_get_first_joined_dict_attributes_from_first_element_response(response)
-        self.assertEquals(joined_attrs_list, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
-                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro', 'valor_bruto_ind',
-                                              'valor_bruto_serv'])
-
-    def test_join_operations_for_collection_resource_one_to_many_rel_accept_octet_stream(self):
-        response = requests.get(self.controle_base_uri + "gasto-list/join/cod_municipio&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3550308&3304557",
-                                headers={"Accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
-
-
-    # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
-    def test_join_operation_for_feature_resource_one_to_one_rel(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
-
-        response_dict_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_dict_keys, self.feature_keys)
-
-        feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
-        self.assertEquals(feature_properties_keys, ["__joined__", "anodereferencia", "geocodigo", "geometriaaproximada", "nome", "nomeabrev"])
-
-        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
-        self.assertEquals(joined_dicts_len, 1)
-
-        joined_alfanumeric_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
-        self.assertEquals(joined_alfanumeric_attrs, ['ano_lei_codigo_obras', 'ano_lei_criacao',
-                                                     'ano_lei_legis_sob_area_zona_espe_inte_social',
-                                                     'ano_lei_legis_sob_zona_area_espe_inter',
-                                                     'ano_lei_legis_sobre_parc_solo',
-                                                     'ano_lei_legis_sobre_zone_uso_ocupa_solo',
-                                                     'ano_lei_legislacao_sobre_contri_melhoria',
-                                                     'ano_lei_legislacao_sobre_dire_superficie',
-                                                     'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
-                                                     'ano_lei_legislacao_sobre_estu_pre_impa_ambiental',
-                                                     'ano_lei_legislacao_sobre_legitimacao_posse',
-                                                     'ano_lei_legislacao_sobre_ope_urba_consorciada',
-                                                     'ano_lei_legislacao_sobre_regula_fundiaria',
-                                                     'ano_lei_legislacao_sobre_servi_administrativa',
-                                                     'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
-                                                     'ano_lei_legislacao_sobre_tombamento',
-                                                     'ano_lei_legislacao_sobre_uni_conservacao',
-                                                     'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano',
-                                                     'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
-                                                     'ano_lei_lei_perimetro_urba',
-                                                     'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia',
-                                                     'ano_ultima_atualizacao', 'caract_orgao_gestor_plane_urba_munic',
-                                                     'codigo_municipio', 'codigo_obras_existencia', 'codigo_uf',
-                                                     'geocodigo', 'id_planejamento_urbano',
-                                                     'informacoes_sob_gestor_escolaridade',
-                                                     'legis_sobre_parc_solo_existencia',
-                                                     'legislacao_sobre_area_zona_espec_inter_social_existencia',
-                                                     'legislacao_sobre_conce_uso_espe_fins_moradia',
-                                                     'legislacao_sobre_contri_melhoria_existencia',
-                                                     'legislacao_sobre_dire_superficie',
-                                                     'legislacao_sobre_estu_impa_vizinhanca_existencia',
-                                                     'legislacao_sobre_estu_pre_impa_ambiental',
-                                                     'legislacao_sobre_legitimacao_posse',
-                                                     'legislacao_sobre_ope_urba_consorciada_existencia',
-                                                     'legislacao_sobre_regula_fundiaria',
-                                                     'legislacao_sobre_servi_administrativa',
-                                                     'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist',
-                                                     'legislacao_sobre_tombamento',
-                                                     'legislacao_sobre_uni_conservacao',
-                                                     'legislacao_sobre_usuca_espe_imovel_urbano',
-                                                     'legislacao_sobre_zona_area_espe_inter_existencia',
-                                                     'legislacao_sobre_zone_uso_ocupa_solo_existencia',
-                                                     'legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
-                                                     'lei_perimetro_urba_existencia', 'nome',
-                                                     'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia'] )
-
-    def test_join_operation_for_feature_resource_one_to_one_rel_accept_octet_stream(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
-                                headers={"accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
-
-    def test_join_operation_for_feature_resource_one_to_many_rel(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
-
-        response_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_keys, self.feature_keys)
-
-        feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
-        self.assertEquals(feature_properties_keys, ['__joined__', 'anodereferencia', 'geocodigo', 'geometriaaproximada', 'nome', 'nomeabrev'])
-
-        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
-        self.assertEquals(joined_dicts_len, 6)
-
-        joined_dict_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
-        self.assertEquals(joined_dict_attrs, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
-                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro',
-                                              'valor_bruto_ind', 'valor_bruto_serv'])
-
-    def test_join_operation_for_feature_resource_one_to_many_rel_accept_octet_stream(self):
-        response = requests.get(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557",
-                                headers={"Accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
-
-
-    # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
-    def test_join_operation_for_feature_collection_one_to_one_rel(self):
-        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/vnd.geo+json')
-
-        response_dict_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_dict_keys, self.feature_collection_keys)
-
-        first_feature_keys = self.aux_get_first_feature_keys(response)
-        self.assertEquals(first_feature_keys, self.feature_keys)
-
-        first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
-        self.assertEquals(first_feature_properties_keys, ["__joined__", "geocodigo", "geometriaaproximada", "nome", "nomeabrev", "sigla"])
-
-        joined_alfanumeric_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
-        self.assertEquals(joined_alfanumeric_attrs, ['ano', 'autodromo_func', 'autodromo_parado', 'cod_estado',
-                                                     'compl_aqua_func', 'compl_aqua_parado', 'compl_esp_func',
-                                                     'compl_esp_parado', 'est_func', 'est_parado', 'gin_func',
-                                                     'gin_parado', 'id', 'id_estado', 'kartodromo_func',
-                                                     'kartodromo_parado'] )
-
-    def test_join_operation_for_feature_collection_one_to_one_rel_accept_octet_stream(self):
-        response = requests.get(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" + self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/",
-                                headers={"accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers['content-type'], 'application/octet-stream')
-
-    def test_join_operation_for_feature_collection_one_to_many_rel(self):
-        response = requests.get(self.bcim_base_uri + "municipios/filter/nome/in/Rio de Janeiro&Belo Horizonte&São Paulo/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3304557&3106200&3550308&4106902")
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers["content-type"], 'application/vnd.geo+json')
-
-        response_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_keys, self.feature_collection_keys)
-
-        first_feature_keys = self.aux_get_first_feature_keys(response)
-        self.assertEquals(first_feature_keys, self.feature_keys)
-
-        first_feature_properties_keys = self.aux_get_first_feature_properties_keys(response)
-        self.assertEquals(first_feature_properties_keys, ["__joined__", "anodereferencia", "geocodigo", "geometriaaproximada", "nome", "nomeabrev"])
-
-        joined_dicts_len = self.aux_get_first_feature_joined_length(response)
-        self.assertEquals(joined_dicts_len, 6)
-
-        joined_dict_attrs = self.aux_get_first_joined_dict_attributes_from_first_feature(response)
-        self.assertEquals(joined_dict_attrs, ['ano', 'cod_municipio', 'id', 'id_municipio', 'impostos_produtos',
-                                              'num_habitantes', 'valor_bruto_adm', 'valor_bruto_agro',
-                                              'valor_bruto_ind', 'valor_bruto_serv'])
-
-    def test_join_operation_for_feature_collection_one_to_many_rel_accept_octet_stream(self):
-        response = requests.get(self.bcim_base_uri + "municipios/filter/nome/in/Rio de Janeiro&Belo Horizonte&São Paulo/join/geocodigo&cod_municipio/" + self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/in/3304557&3106200&3550308&4106902",
-                                headers={"Accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.headers["content-type"], 'application/octet-stream')
-
-#python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
-class OptionsForJoinOperationTest(AbstractRequestTest):
-    def setUp(self):
-        super(OptionsForJoinOperationTest, self).setUp()
-        self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
-        self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
-        self.pib_municipio_base_uri = "http://172.30.10.86/api/pib-municipio/"
-        self.keys_from_external_attr_context = ['@id', '@type', 'hydra:Link', 'hydra:method']
-
-    # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
-    # todo: provisory test, full context must be implemented
-    def test_options_for_feature_resource_join_operation_one_to_one_rel(self):
-
-        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
-        self.assertEquals(response.status_code, 200)
-
-        response_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_keys, self.simple_path_options_dict_keys)
-
-        supported_operations_names = self.aux_get_supported_operations_names(response)
-        self.assertEquals(supported_operations_names, self.spatial_operation_names)
-
-        acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'hydra', 'id_objeto', 'nome', 'nomeabrev'])
-
-        geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
-        self.assertEquals(geocodigo_acontext_keys, self.keys_from_attrs_context)
-
-        response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@type"], "Feature")
-
-
-        # todo: test for join full context
-        '''
-        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/")
-        self.assertEquals(response.status_code, 200)
-
-        response_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
-
-        supported_operations_names = self.aux_get_supported_operations_names(response)
-        self.assertEquals(supported_operations_names, self.spatial_operation_names)
-
-        acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['ano_lei_codigo_obras', 'ano_lei_criacao', 'ano_lei_legis_sob_area_zona_espe_inte_social',
-                                          'ano_lei_legis_sob_zona_area_espe_inter', 'ano_lei_legis_sobre_parc_solo',
-                                          'ano_lei_legis_sobre_zone_uso_ocupa_solo', 'ano_lei_legislacao_sobre_contri_melhoria',
-                                          'ano_lei_legislacao_sobre_dire_superficie', 'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
-                                          'ano_lei_legislacao_sobre_estu_pre_impa_ambiental', 'ano_lei_legislacao_sobre_legitimacao_posse',
-                                          'ano_lei_legislacao_sobre_ope_urba_consorciada', 'ano_lei_legislacao_sobre_regula_fundiaria',
-                                          'ano_lei_legislacao_sobre_servi_administrativa', 'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
-                                          'ano_lei_legislacao_sobre_tombamento', 'ano_lei_legislacao_sobre_uni_conservacao',
-                                          'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', 'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
-                                          'ano_lei_lei_perimetro_urba', 'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia',
-                                          'ano_ultima_atualizacao', 'anodereferencia', 'caract_orgao_gestor_plane_urba_munic',
-                                          'codigo_municipio', 'codigo_obras_existencia', 'codigo_uf', 'geocodigo', 'geom',
-                                          'geometriaaproximada', 'http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:geocodigo',
-                                          'http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:nome', 'id_objeto',
-                                          'id_planejamento_urbano', 'informacoes_sob_gestor_escolaridade', 'iri_metadata',
-                                          'iri_style', 'legis_sobre_parc_solo_existencia', 'legislacao_sobre_area_zona_espec_inter_social_existencia',
-                                          'legislacao_sobre_conce_uso_espe_fins_moradia', 'legislacao_sobre_contri_melhoria_existencia',
-                                          'legislacao_sobre_dire_superficie', 'legislacao_sobre_estu_impa_vizinhanca_existencia',
-                                          'legislacao_sobre_estu_pre_impa_ambiental', 'legislacao_sobre_legitimacao_posse',
-                                          'legislacao_sobre_ope_urba_consorciada_existencia', 'legislacao_sobre_regula_fundiaria',
-                                          'legislacao_sobre_servi_administrativa', 'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist',
-                                          'legislacao_sobre_tombamento', 'legislacao_sobre_uni_conservacao', 'legislacao_sobre_usuca_espe_imovel_urbano',
-                                          'legislacao_sobre_zona_area_espe_inter_existencia', 'legislacao_sobre_zone_uso_ocupa_solo_existencia',
-                                          'legislacao_sobre_zonea_ambi_zonea_ecologico_economico', 'lei_perimetro_urba_existencia', 'nome',
-                                          'nomeabrev', 'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia'])
-
-        # 'geocodigo' is present in the feature and in the external resourse, hence 'geocodigo' in the external resource must be preffixed
-        external_geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "http://172.30.10.86/api/munic-2015/planejamento-urbano-list/3243/:geocodigo")
-        self.assertEquals(external_geocodigo_acontext_keys, self.keys_from_external_attr_context)
-        external_codigo_municipio_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "codigo_municipio")
-        self.assertEquals(external_codigo_municipio_acontext_keys, self.keys_from_external_attr_context)
-        # 'geocodigo' (without preffix) comes from the feature
-        geocodigo_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "geocodigo")
-        self.assertEquals(geocodigo_acontext_keys, self.keys_from_attrs_context)
-        join_acontext_keys = self.aux_get_keys_from_acontext_attrs(response, "join")
-        self.assertEquals(join_acontext_keys, self.keys_from_oper_context)
-
-        response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@type"], "Feature")
-        '''
-
-    """
-    def test_options_for_feature_resource_join_operation_one_to_many_rel(self):
-        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&cod_municipio/" +
-                                    self.pib_municipio_base_uri + "faturamento-list/filter/cod_municipio/eq/3304557")
-        self.assertEquals(response.status_code, 200)
-
-        response_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
-
-        supported_operations_names = self.aux_get_supported_operations_names(response)
-        self.assertEquals(supported_operations_names, self.spatial_operation_names)
-
-        acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['ano_lei_codigo_obras', 'ano_lei_criacao', 'ano_lei_legis_sob_area_zona_espe_inte_social',
-                                          'ano_lei_legis_sob_zona_area_espe_inter', 'ano_lei_legis_sobre_parc_solo',
-                                          'ano_lei_legis_sobre_zone_uso_ocupa_solo', 'ano_lei_legislacao_sobre_contri_melhoria',
-                                          'ano_lei_legislacao_sobre_dire_superficie', 'ano_lei_legislacao_sobre_estu_impa_vizinhanca',
-                                          'ano_lei_legislacao_sobre_estu_pre_impa_ambiental', 'ano_lei_legislacao_sobre_legitimacao_posse',
-                                          'ano_lei_legislacao_sobre_ope_urba_consorciada', 'ano_lei_legislacao_sobre_regula_fundiaria',
-                                          'ano_lei_legislacao_sobre_servi_administrativa', 'ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
-                                          'ano_lei_legislacao_sobre_tombamento', 'ano_lei_legislacao_sobre_uni_conservacao',
-                                          'ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', 'ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
-                                          'ano_lei_lei_perimetro_urba', 'ano_leilegislacao_sobre_conce_uso_espe_fins_moradia', 'ano_ultima_atualizacao',
-                                          'caract_orgao_gestor_plane_urba_munic', 'codigo_municipio', 'codigo_obras_existencia',
-                                          'codigo_uf', 'http://172.30.10.86/api/pib-municipio/faturamento-list:geocodigo', 'id_planejamento_urbano',
-                                          'informacoes_sob_gestor_escolaridade', 'legis_sobre_parc_solo_existencia',
-                                          'legislacao_sobre_area_zona_espec_inter_social_existencia', 'legislacao_sobre_conce_uso_espe_fins_moradia',
-                                          'legislacao_sobre_contri_melhoria_existencia', 'legislacao_sobre_dire_superficie',
-                                          'legislacao_sobre_estu_impa_vizinhanca_existencia', 'legislacao_sobre_estu_pre_impa_ambiental',
-                                          'legislacao_sobre_legitimacao_posse', 'legislacao_sobre_ope_urba_consorciada_existencia',
-                                          'legislacao_sobre_regula_fundiaria', 'legislacao_sobre_servi_administrativa',
-                                          'legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist', 'legislacao_sobre_tombamento',
-                                          'legislacao_sobre_uni_conservacao', 'legislacao_sobre_usuca_espe_imovel_urbano',
-                                          'legislacao_sobre_zona_area_espe_inter_existencia', 'legislacao_sobre_zone_uso_ocupa_solo_existencia',
-                                          'legislacao_sobre_zonea_ambi_zonea_ecologico_economico', 'lei_perimetro_urba_existencia', '(joined) nome', # same attribute name on different resources
-                                          'o_municipio_elabo_plano_diretor', 'plano_diretor_existencia',
-                                          'anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'spatialize'])
-
-        response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@type"], "Feature")
-
-    def test_options_for_feature_resource_join_operation__one_to_one_rel_accept_octet_stream(self):
-        response = requests.options(self.bcim_base_uri + "municipios/3304557/join/geocodigo&geocodigo/" + self.munic_2015_base_uri + "planejamento-urbano-list/3243/",
-                                    headers={"Accept": "application/octet-stream"})
-        self.assertEquals(response.status_code, 200)
-
-        response_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_keys, self.non_simple_path_dict_keys)
-
-        supported_operations_names = self.aux_get_supported_operations_names(response)
-        self.assertEquals(supported_operations_names, self.spatial_operation_names)
-
-        acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ['(joined) ano_lei_codigo_obras', '(joined) ano_lei_criacao', '(joined) ano_lei_legis_sob_area_zona_espe_inte_social',
-                                          '(joined) ano_lei_legis_sob_zona_area_espe_inter', '(joined) ano_lei_legis_sobre_parc_solo',
-                                          '(joined) ano_lei_legis_sobre_zone_uso_ocupa_solo', '(joined) ano_lei_legislacao_sobre_contri_melhoria',
-                                          '(joined) ano_lei_legislacao_sobre_dire_superficie', '(joined) ano_lei_legislacao_sobre_estu_impa_vizinhanca',
-                                          '(joined) ano_lei_legislacao_sobre_estu_pre_impa_ambiental', '(joined) ano_lei_legislacao_sobre_legitimacao_posse',
-                                          '(joined) ano_lei_legislacao_sobre_ope_urba_consorciada', '(joined) ano_lei_legislacao_sobre_regula_fundiaria',
-                                          '(joined) ano_lei_legislacao_sobre_servi_administrativa', '(joined) ano_lei_legislacao_sobre_solo_cria_outorga_onerosa_dir_construi',
-                                          '(joined) ano_lei_legislacao_sobre_tombamento', '(joined) ano_lei_legislacao_sobre_uni_conservacao',
-                                          '(joined) ano_lei_legislacao_sobre_usuca_espe_imovel_urbano', '(joined) ano_lei_legislacao_sobre_zonea_ambi_zonea_ecologico_economico',
-                                          '(joined) ano_lei_lei_perimetro_urba', '(joined) ano_leilegislacao_sobre_conce_uso_espe_fins_moradia', '(joined) ano_ultima_atualizacao',
-                                          '(joined) caract_orgao_gestor_plane_urba_munic', '(joined) codigo_municipio', '(joined) codigo_obras_existencia',
-                                          '(joined) codigo_uf', '(joined) geocodigo', '(joined) id_planejamento_urbano',
-                                          '(joined) informacoes_sob_gestor_escolaridade', '(joined) legis_sobre_parc_solo_existencia',
-                                          '(joined) legislacao_sobre_area_zona_espec_inter_social_existencia', '(joined) legislacao_sobre_conce_uso_espe_fins_moradia',
-                                          '(joined) legislacao_sobre_contri_melhoria_existencia', '(joined) legislacao_sobre_dire_superficie',
-                                          '(joined) legislacao_sobre_estu_impa_vizinhanca_existencia', '(joined) legislacao_sobre_estu_pre_impa_ambiental',
-                                          '(joined) legislacao_sobre_legitimacao_posse', '(joined) legislacao_sobre_ope_urba_consorciada_existencia',
-                                          '(joined) legislacao_sobre_regula_fundiaria', '(joined) legislacao_sobre_servi_administrativa',
-                                          '(joined) legislacao_sobre_solo_cria_outorga_onerosa_dir_construir_exist', '(joined) legislacao_sobre_tombamento',
-                                          '(joined) legislacao_sobre_uni_conservacao', '(joined) legislacao_sobre_usuca_espe_imovel_urbano',
-                                          '(joined) legislacao_sobre_zona_area_espe_inter_existencia', '(joined) legislacao_sobre_zone_uso_ocupa_solo_existencia',
-                                          '(joined) legislacao_sobre_zonea_ambi_zonea_ecologico_economico', '(joined) lei_perimetro_urba_existencia', '(joined) nome', # same attribute name on different resources
-                                          '(joined) o_municipio_elabo_plano_diretor', '(joined) plano_diretor_existencia',
-                                          'anodereferencia', 'geocodigo', 'geom', 'geometriaaproximada', 'id_objeto', 'iri_metadata', 'iri_style', 'nome', 'nomeabrev', 'spatialize'])
-
-        response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@type"], "Geobuf")
-
-    # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
-    def test_join_operation_with_filter(self):
-        response = requests.options(self.bcim_base_uri + "unidades-federativas/filter/sigla/in/RJ&ES&MG/join/geocodigo&cod_estado/" +
-                                    self.pesquisa_esporte_base_url + "cond-funcionamento-list/filter/cod_estado/in/31&32&33&35/")
-        self.assertEquals(response.status_code, 200)
-
-        response_dict_keys = self.aux_get_keys_from_response(response)
-        self.assertEquals(response_dict_keys, self.non_simple_path_dict_keys)
-
-        acontext_keys = self.aux_get_keys_from_response_context(response)
-        self.assertEquals(acontext_keys, ["join"])
-
-        join_context_keys_list = self.aux_get_keys_from_acontext_attrs(response, 'join')
-        self.assertListEqual(join_context_keys_list, ["@id", "@type"])
-
-        supported_operations_names = self.aux_get_supported_operations_names(response)
-        self.assertListEqual(supported_operations_names, self.spatial_collection_operation_names)
-
-        response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@type"], 'FeatureCollection')
-    """
-
 #python manage.py test hyper_resource.tests.PaginationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class PaginationTest(AbstractRequestTest):
     '''
@@ -4069,8 +4108,13 @@ class PaginationTest(AbstractRequestTest):
         expected_link = '<http://luc00557196:8000/api/bcim/aldeias-indigenas/offset-limit/1001&100>; rel="next" '
         self.assertNotIn(expected_link, response.headers["link"])
 
+
+#                               RESOURCE TYPES TEST
 #python manage.py test hyper_resource.tests.RasterTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class RasterTest(AbstractRequestTest):
+    '''
+    Class for tests every possible GET request for RasterResources
+    '''
 
     # simple path
     def test_tiff_resource_simple_path(self):
@@ -4131,6 +4175,9 @@ class RasterTest(AbstractRequestTest):
 
 #python manage.py test hyper_resource.tests.OptionsForRasterTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class OptionsForRasterTest(AbstractRequestTest):
+    '''
+    Class for tests every possible OPTIONS request for RasterResources
+    '''
 
     def test_options_raster_resource_simple_path(self):
         response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/61/')
@@ -4338,10 +4385,18 @@ class OptionsForRasterTest(AbstractRequestTest):
 
 #python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class FeatureCollectionTest(AbstractGetRequestTest):
+    '''
+    Class for tests every possible GET request for FeatureCollectionResource
+    '''
+
     pass
 
 #python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
+    '''
+    Class for tests every possible OPTIONS request for FeatureCollectionResource
+    '''
+
     # simple path
     def test_options_feature_collection_simple_path(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/")
@@ -4564,6 +4619,84 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
 
 #python manage.py test hyper_resource.tests.HeadFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class HeadFeatureCollectionTest(AbstractHeadRequestTest):
+    '''
+    Tests if GET response headers is the same as HEAD response headers. Requests for FeatureCollectionResource
+    '''
+
+    # feature entry point
+    def test_head_entry_point(self):
+        response_head = requests.head(self.bcim_base_uri)
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.bcim_base_uri)
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+        #self.assertIn("Etag", head_headers)
+        #self.assertIn("Etag", get_headers)
+
+    # features entry point (binary)
+    def test_head_feature_entry_point_accept_octet_stream(self):
+        '''
+        server cannot produce a response matching the list of acceptable values defined in the request's proactive
+        content negotiation headers, and that the server is unwilling to supply a default representation.
+        '''
+        response_head = requests.head(self.bcim_base_uri,
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 406)
+
+    # features entry point (image)
+    def test_head_feature_entry_point_accept_image_png(self):
+        pass
+
+    '''
+    # raster entry point
+    def test_head_raster_entry_point(self):
+        response_head = requests.head(self.raster_base_uri)
+        self.assertEquals(response_head.status_code, 200)
+        response_get = requests.get(self.raster_base_uri)
+        self.assertEquals(response_get.status_code, 200)
+
+        head_headers = self.aux_get_headers_list_from_response(response_head)
+        get_headers = self.aux_get_headers_list_from_response(response_get)
+        self.assertEquals(head_headers, get_headers)
+
+        self.assertEquals(response_head.headers["access-control-allow-headers"],    response_get.headers["access-control-allow-headers"])
+        self.assertEquals(response_head.headers["access-control-allow-methods"],    response_get.headers["access-control-allow-methods"])
+        self.assertEquals(response_head.headers["access-control-allow-origin"],     response_get.headers["access-control-allow-origin"])
+        self.assertEquals(response_head.headers["access-control-expose-headers"],   response_get.headers["access-control-expose-headers"])
+        self.assertEquals(response_head.headers["allow"],                           response_get.headers["allow"])
+        #self.assertEquals(response_head.headers["connection"],                      response_get.headers["connection"])
+        self.assertEquals(response_head.headers["content-type"],                    response_get.headers["content-type"])
+        self.assertEquals(response_head.headers["link"],                            response_get.headers["link"])
+        self.assertEquals(response_head.headers["server"],                          response_get.headers["server"])
+        self.assertEquals(response_head.headers["vary"],                            response_get.headers["vary"])
+        self.assertIn("Date", head_headers)
+        self.assertIn("Date", get_headers)
+
+    def test_head_raster_entry_point_accept_octet_stream(self):
+        response_head = requests.head(self.raster_base_uri,
+                                      headers={"Accept": "application/octet-stream"})
+        self.assertEquals(response_head.status_code, 406)
+
+    def test_head_raster_entry_point_accept_image_png(self):
+        pass
+
+    '''
 
     # simple path
     def test_head_feature_collection_simple_path(self):
@@ -4901,3 +5034,420 @@ class HeadFeatureCollectionTest(AbstractHeadRequestTest):
 
     def test_head_feature_collection_count_resource_operations_accept_image_png(self):
         pass
+
+
+#                               ALLOWED METHODS TEST
+#python manage.py test hyper_resource.tests.AllowedMethodsForEntryPoint --testrunner=hyper_resource.tests.NoDbTestRunner
+class AllowedMethodsForEntryPoint(AbstractHeadRequestTest):
+    def test_head_generic_entry_point(self):
+        response = requests.head(self.controle_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+    def test_head_feature_entry_point(self):
+        response = requests.head(self.bcim_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+    def test_head_raster_entry_point(self):
+        response = requests.head(self.raster_base_uri)
+        self.assertEquals(response.status_code, 200)
+        #self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS', 'POST'] )
+        #self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS', 'POST'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+#python manage.py test hyper_resource.tests.AllowedMethodsForNonSpatialResource --testrunner=hyper_resource.tests.NoDbTestRunner
+class AllowedMethodsForNonSpatialResource(AbstractHeadRequestTest):
+    def test_head_non_spatial_resource_simple_path(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list/1')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT'] )
+
+    def test_head_non_spatial_resource_only_attributes(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list/1/nome,email')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+    def test_head_non_spatial_resource_operation(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list/1/projection/nome')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+#python manage.py test hyper_resource.tests.AllowedMethodsForCollectionResource --testrunner=hyper_resource.tests.NoDbTestRunner
+class AllowedMethodsForCollectionResource(AbstractHeadRequestTest):
+    def test_head_collection_resource_simple_path(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST'] )
+
+    def test_head_collection_resource_only_attributes(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list/nome,email')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+    def test_head_collection_resource_operation(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list/count-resource')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+#python manage.py test hyper_resource.tests.AllowedMethodsForTiffCollectionResource --testrunner=hyper_resource.tests.NoDbTestRunner
+class AllowedMethodsForTiffCollectionResource(AbstractHeadRequestTest):
+    def test_head_tiff_collection_resource_simple_path(self):
+        response = requests.head(self.raster_base_uri + 'imagem-exemplo-tile1-list')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST'] )
+
+    '''
+    def test_head_tiff_collection_resource_only_attributes(self):
+        response = requests.head(self.raster_base_uri + 'imagem-exemplo-tile1-list/')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+    '''
+
+    def test_head_tiff_collection_resource_operation(self):
+        response = requests.head(self.raster_base_uri + 'imagem-exemplo-tile1-list/count-resource')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+#python manage.py test hyper_resource.tests.AllowedMethodsForTiffResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class AllowedMethodsForTiffResourceTest(AbstractHeadRequestTest):
+    def test_head_tiff_resource_simple_path(self):
+        response = requests.head(self.raster_base_uri + 'imagem-exemplo-tile1-list/181')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT'] )
+
+    def test_head_tiff_resource_only_attributes(self):
+        response = requests.head(self.raster_base_uri + 'imagem-exemplo-tile1-list/181/rid')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+    def test_head_tiff_resource_operation(self):
+        response = requests.head(self.raster_base_uri + 'imagem-exemplo-tile1-list/181/transform/3086')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'] )
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'] )
+
+#python manage.py test hyper_resource.tests.AllowedMethodsForFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class AllowedMethodsForFeatureResourceTest(AbstractHeadRequestTest):
+    '''
+    Class to test every possible allowed methods for differents requests for FeatureResource
+    '''
+
+    def test_head_for_feature_resource_simple_path(self):
+        response = requests.head(self.bcim_base_uri + 'unidades-federativas/ES')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT'])
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT'])
+
+    def test_head_for_feature_resource_only_attributes(self):
+        response = requests.head(self.bcim_base_uri + 'unidades-federativas/ES/nome,geom')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'])
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'])
+
+    def test_head_for_feature_resource_operation(self):
+        response = requests.head(self.bcim_base_uri + 'unidades-federativas/ES/buffer/0.8')
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'])
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'])
+
+#python manage.py test hyper_resource.tests.AllowedMethodsForFeatureCollectionResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class AllowedMethodsForFeatureCollectionResourceTest(AbstractHeadRequestTest):
+    '''
+    Class to test every possible allowed methods for differents requests for FeatureCollectionResource
+    '''
+
+    # simple path
+    def test_head_for_feature_collection_simple_path(self):
+        response = requests.head(self.bcim_base_uri + "unidades-federativas")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST'])
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST'])
+
+    # attributes
+    def test_head_for_feature_collection_only_attributes(self):
+        response = requests.head(self.bcim_base_uri + "unidades-federativas/nome,geom")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'])
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'])
+
+    # operations
+    def test_head_for_feature_collection_operation(self):
+        response = requests.head(self.bcim_base_uri + "unidades-federativas/union")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals( self.aux_get_allowed_methods(response, 'allow'), ['GET', 'HEAD', 'OPTIONS'])
+        self.assertEquals( self.aux_get_allowed_methods(response, 'access-control-allow-methods'), ['GET', 'HEAD', 'OPTIONS'])
+
+
+#python manage.py test hyper_resource.tests.LinkHeaderTest --testrunner=hyper_resource.tests.NoDbTestRunner
+class LinkHeaderTest(AbstractHeadRequestTest):
+
+    # --- EntryPoints ---
+    # --- GET ---
+    def test_get_for_generic_entry_point(self):
+        response = requests.get(self.controle_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    def test_get_for_feature_entry_point(self):
+        response = requests.get(self.bcim_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    def test_get_for_raster_entry_point(self):
+        response = requests.get(self.raster_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    # --- HEAD ---
+    def test_head_for_generic_entry_point(self):
+        response = requests.head(self.controle_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    def test_head_for_feature_entry_point(self):
+        response = requests.head(self.bcim_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    def test_head_for_raster_entry_point(self):
+        response = requests.head(self.raster_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    # --- OPTIONS ---
+    def test_options_for_generic_entry_point(self):
+        response = requests.options(self.controle_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    def test_options_for_feature_entry_point(self):
+        response = requests.options(self.bcim_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    def test_options_for_raster_entry_point(self):
+        response = requests.options(self.raster_base_uri)
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # has <EntryPoint>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertNotIn('rel="up"', response.headers['link'])
+        self.assertNotIn('rel="stylesheet', response.headers['link'])
+
+    # --- POST ---
+    def test_post_for_raster_entry_point(self):
+        pass
+
+    # --- FeatureResource ---
+    def test_get_for_feature_resource(self):
+        response = requests.get(self.bcim_base_uri + 'unidades-federativas/ES')
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertIn('rel="up"', response.headers['link']) # has <Up>
+        self.assertIn('rel="stylesheet', response.headers['link']) # has <Style>
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # <EntryPoint> cannot be on the 'Link' header
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+
+    def test_head_for_feature_resource(self):
+        response = requests.head(self.bcim_base_uri + 'unidades-federativas/ES')
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertIn('rel="up"', response.headers['link']) # has <Up>
+        self.assertIn('rel="stylesheet', response.headers['link']) # has <Style>
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # <EntryPoint> cannot be on the 'Link' header
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+
+    def test_options_for_feature_resource(self):
+        response = requests.options(self.bcim_base_uri + 'unidades-federativas/ES')
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link']) # has <Context>
+        self.assertIn('rel="metadata"', response.headers['link']) # has <Metadata>
+        self.assertIn('rel="up"', response.headers['link']) # has <Up>
+        self.assertIn('rel="stylesheet', response.headers['link']) # has <Style>
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link']) # <EntryPoint> cannot be on the 'Link' header
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+
+    # --- TiffResource ---
+    def test_get_for_raster_resource(self):
+        response = requests.get(self.raster_base_uri + 'imagem-exemplo-tile1-list/181')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertIn('rel="describedBy"', response.headers['link']) # has <describedBy>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    def test_head_for_raster_resource(self):
+        response = requests.head(self.raster_base_uri + 'imagem-exemplo-tile1-list/181')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertIn('rel="describedBy"', response.headers['link']) # has <describedBy>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    def test_options_for_raster_resource(self):
+        response = requests.options(self.raster_base_uri + 'imagem-exemplo-tile1-list/181')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertIn('rel="describedBy"', response.headers['link']) # has <describedBy>
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    # --- FeatureCollection
+    def test_get_for_feature_collection_resource(self):
+        response = requests.get(self.bcim_base_uri + 'unidades-federativas')
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+
+    def test_head_for_feature_collection_resource(self):
+        response = requests.head(self.bcim_base_uri + 'unidades-federativas')
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+
+    def test_options_for_feature_collection_resource(self):
+        response = requests.options(self.bcim_base_uri + 'unidades-federativas')
+        self.assertEquals(response.status_code, 200)
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+
+    def test_post_for_feature_collection_resource(self):
+        pass
+
+    # --- NonSpatialCollection
+    def test_get_for_non_spatial_resource(self):
+        response = requests.get(self.controle_base_uri + 'usuario-list/1')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    def test_head_for_non_spatial_resource(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list/1')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    def test_options_for_non_spatial_resource(self):
+        response = requests.options(self.controle_base_uri + 'usuario-list/1')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    # --- CollectionResource
+    def test_get_for_collection_resource(self):
+        response = requests.get(self.controle_base_uri + 'usuario-list')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    def test_head_for_collection_resource(self):
+        response = requests.head(self.controle_base_uri + 'usuario-list')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])
+
+    def test_options_for_collection_resource(self):
+        response = requests.options(self.controle_base_uri + 'usuario-list/1')
+        self.assertEquals(response.status_code, 200)
+        self.assertNotIn('rel="http://schema.org/EntryPoint"', response.headers['link'])
+        self.assertNotIn('rel="describedBy"', response.headers['link'])
+        self.assertIn('rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json" ', response.headers['link'])
+        self.assertIn('rel="metadata"', response.headers['link'])
+        self.assertIn('rel="up"', response.headers['link'])
+        self.assertIn('rel="stylesheet', response.headers['link'])

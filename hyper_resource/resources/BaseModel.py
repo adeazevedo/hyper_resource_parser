@@ -73,7 +73,7 @@ class BaseModel(object):
         pk_name = view_resource.pk_name()
         sql_string = "SELECT " + pk_name + " FROM " + view_resource.table_name()
         iri= view_resource.request.build_absolute_uri()
-        iri = iri if iri[:-1] == "/" else iri + "/"
+        iri = iri if iri[-1] == "/" else iri + "/"
         with connection.cursor() as cursor:
             cursor.execute(sql_string)
             rows = cursor.fetchall()
@@ -82,4 +82,5 @@ class BaseModel(object):
             for row in rows:
                 str_pk = str(row[0])
                 iri_raster_dic[name+ '-' + str_pk ] = (iri + str_pk + '/')
+                #iri_raster_dic[str_pk ] = (iri + str_pk + '/')
             return iri_raster_dic

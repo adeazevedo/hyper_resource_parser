@@ -27,36 +27,6 @@ class APIRoot(NonSpatialAPIRoot):
         ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
         return ordered_dict_of_link
 
-    '''
-    def __init__(self):
-        super(APIRoot, self).__init__()
-        self.base_context = BaseContext('api-root')
-
-    def options(self, request, *args, **kwargs):
-        context = self.base_context.getContextData(request)
-        root_links = get_root_response(request)
-        context.update(root_links)
-        response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")
-        response = self.base_context.addContext(request, response)
-        return response
-
-    def add_url_in_header(self, url, response, rel):
-        link = ' <'+url+'>; rel=\"'+rel+'\" '
-        if "Link" not in response:
-            response['Link'] = link
-        else:
-            response['Link'] += "," + link
-        return response
-
-    def get(self, request, format=None, *args, **kwargs):
-        root_links = get_root_response(request)
-        response = Response(root_links)
-        entry_pointURL = reverse('controle_v1:api_root', request=request)
-        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
-        return self.base_context.addContext(request, response)
-    '''
-
-
 class GastoList(CollectionResource):
     queryset = Gasto.objects.all()
     serializer_class = GastoSerializer

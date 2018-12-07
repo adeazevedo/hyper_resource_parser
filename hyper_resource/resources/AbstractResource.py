@@ -49,7 +49,7 @@ CONTENT_TYPE_OCTET_STREAM = "application/octet-stream"
 CONTENT_TYPE_IMAGE_PNG = "image/png"
 CONTENT_TYPE_IMAGE_TIFF = "image/tiff"
 SUPPORTED_CONTENT_TYPES = (CONTENT_TYPE_GEOJSON, CONTENT_TYPE_JSON,CONTENT_TYPE_LD_JSON, CONTENT_TYPE_OCTET_STREAM, CONTENT_TYPE_IMAGE_PNG, CONTENT_TYPE_IMAGE_TIFF)
-ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD', 'PUT', 'DELETE', 'POST']
+#ACCESS_CONTROL_ALLOW_METHODS = ['GET', 'OPTIONS', 'HEAD', 'PUT', 'DELETE', 'POST']
 
 CORS_ALLOW_HEADERS = (
     'accept',
@@ -132,19 +132,21 @@ class AbstractResource(APIView):
         self.name_of_last_operation_executed = None
         self.context_resource = None
         self.initialize_context()
-        self.iri_metadata = None
+        self.iri_metadata = ''
+        self.iri_style = ''
         self.operation_controller = BaseOperationController()
         self.token_need = self.token_is_need()
         self.e_tag = None
         self.temporary_content_type = None
         self.resource_type = None
         self.is_entry_point = False
+        self.http_allowed_methods = ['get', 'head', 'options']
 
     # Indicates which is the content negotiation class
     content_negotiation_class = IgnoreClientContentNegotiation
 
     def cache_enabled(self):
-        return True
+        return False
 
     def generate_e_tag(self, data):
         return str(hash(data))
@@ -155,9 +157,14 @@ class AbstractResource(APIView):
 
         return response
 
+    '''
     # Should be overridden
     def hashed_value(self, object):
-        return hash(self.object)
+        return hash(object)
+    '''
+    def hashed_value(self, object_):
+        dt = datetime.now()
+        return self.__class__.__name__ + str(dt.microsecond)
 
     # Should be overridden
     def inject_e_tag(self, etag=None):
@@ -223,7 +230,8 @@ class AbstractResource(APIView):
         return '*'
 
     def access_control_allow_methods_str(self):
-        return ', '.join(ACCESS_CONTROL_ALLOW_METHODS)
+        #return ', '.join( [name.upper() for name in self.http_method_names] )
+        return ', '.join([name.upper() for name in self.http_allowed_methods])
 
     def access_control_allow_headers_str(self):
         return ', '.join(CORS_ALLOW_HEADERS)
@@ -249,16 +257,23 @@ class AbstractResource(APIView):
 
         self.add_url_in_header(iri_father, response, 'up')
         self.add_url_in_header(iri_base + '.jsonld', response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
-        if self.iri_metadata:
-            self.add_url_in_header(self.iri_metadata, response, rel="metadata")
+        self.add_url_in_header(self.iri_metadata, response, rel="metadata")
+        self.add_url_in_header(self.iri_style, response, rel="stylesheet")
         self.add_cors_header_in_header(response)
 
         if self.is_entry_point:
             self.add_url_in_header(iri_base, response, rel='http://schema.org/EntryPoint')
 
+    def add_allowed_methods(self, methods):
+        for method in methods:
+            if method not in self.http_allowed_methods:
+                self.http_allowed_methods.append(method)
+
     def dispatch(self, request, *args, **kwargs):
         if not self.token_is_need():
-            return super(AbstractResource, self).dispatch(request, *args, **kwargs)
+            response = super(AbstractResource, self).dispatch(request, *args, **kwargs)
+            response['allow'] = self.access_control_allow_methods_str()
+            return response
 
         http_auth = request.META.get(['HTTP_AUTHORIZATION']) or ''
 
@@ -470,7 +485,8 @@ class AbstractResource(APIView):
         #raise NotImplementedError("'define_content_type_by_only_attributes' must be implemented in subclasses")
 
     def define_content_type_by_operation(self, request, operation_name):
-        raise NotImplementedError("'define_content_type_by_operation' must be implemented in subclasses")
+        return self.content_type_or_default_content_type(request)
+        #raise NotImplementedError("'define_content_type_by_operation' must be implemented in subclasses")
 
     def content_type_or_default_content_type(self, request):
         if request is None:
@@ -635,8 +651,8 @@ class AbstractResource(APIView):
         if self.is_binary_content_type(required_object):
             return self.response_base_get_binary(request, required_object)
 
+        #if self.cache_enabled():
         key = self.get_key_cache(request, a_content_type=required_object.content_type)
-
         self.set_key_with_data_in_cache(key, self.e_tag, required_object.representation_object)
 
         resp = Response(data=required_object.representation_object, status=200, content_type=required_object.content_type)
@@ -806,12 +822,12 @@ class AbstractResource(APIView):
             return False
 
         attrs_funcs_arr = self.remove_last_slash(attributes_functions_name).split('/')
-        return attrs_funcs_arr[0] == 'projection'
+        return attrs_funcs_arr[0] == self.operation_controller.projection_operation_name
 
     def remove_projection_from_path(self, attributes_functions_str, remove_only_name=False):
         attrs_functs_arr = self.remove_last_slash(attributes_functions_str).split('/')
 
-        if attrs_functs_arr[0] == 'projection':
+        if attrs_functs_arr[0] == self.operation_controller.projection_operation_name:
             attrs_functs_arr.pop(0)
 
             if not remove_only_name:
@@ -1261,6 +1277,9 @@ class AbstractResource(APIView):
         return self.required_object_for_invalid_sintax(attributes_functions_str, message=message)
 
     def required_object_for_projection_operation(self, request, attributes_functions_str):
+        if not self.projection_operation_sintax_is_ok(attributes_functions_str):
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
+
         projection_attrs_str = self.extract_projection_attributes(attributes_functions_str, as_string=True)
         object = self.get_object_by_only_attributes(projection_attrs_str)
         serialized_data = self.get_object_serialized_by_only_attributes(projection_attrs_str, object)
@@ -1335,4 +1354,19 @@ class AbstractResource(APIView):
             self.operation_controller.projection_operation_name: self.required_context_for_projection_operation
         }
 
+    def projection_operation_sintax_is_ok(self, attributes_functions_str):
+        projection_snippet_arr = self.remove_last_slash(attributes_functions_str).split('/')
 
+        try:
+            if projection_snippet_arr[0] != self.operation_controller.projection_operation_name:
+                return False
+
+            projection_attrs = projection_snippet_arr[1].split(',')
+            if False in [self.object_model.is_attribute(attr) for attr in projection_attrs]:
+                return False
+
+            if len(projection_snippet_arr) > 2 and not self.is_operation(projection_snippet_arr[2]):
+                return False
+        except IndexError:
+            return False
+        return True

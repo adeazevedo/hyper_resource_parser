@@ -11,17 +11,30 @@ def convert_camel_case_to_hifen(camel_case_string):
 def detect_primary_key_field(fields_of_model_class):
     return next((field for field in fields_of_model_class if field.primary_key), [None])
 
+def get_unique_field_name_or_none(model_class):
+    obj = model_class()
+    unique_field_name_arr = [field.name for field in obj._meta.fields if field.unique and not field.primary_key]
+    return unique_field_name_arr[0] if len(unique_field_name_arr) == 1 else None
+
 def generate_snippets_to_url(model_class_name, model_class):
 
     context_name = convert_camel_case_to_hifen(model_class_name) + '-list'
     #primary_key_name = detect_primary_key_field(model_class._meta.get_fields()).name
     primary_key_name = 'pk'
+    unique_field_name = get_unique_field_name_or_none(model_class)
     arr = []
     arr.append((' ' * 4) + 'url(r' +"'^"+  context_name +'/(?P<'+ primary_key_name +'>[0-9]+)/?$' +"'"+ ', views.' +
                model_class_name + 'Detail.as_view(), name=' + "'" + model_class_name +'_detail' +"'" + '),\n')
     arr.append((' ' * 4) + 'url(r' + "'^" + context_name + '/(?P<' + primary_key_name +
                '>[0-9]+)/(?P<attributes_functions>.*)/?$' + "'" + ', views.' +
                model_class_name + 'Detail.as_view(), name=' + "'" + model_class_name + '_detail_af' + "'" + '),\n')
+
+    if unique_field_name:
+        arr.append( (' ' * 4) + 'url(r' + "'^" + context_name + '/(?P<' + unique_field_name + '>[A-Za-z0-9]+)/?$' + "'" + ', views.' +
+                    model_class_name + 'Detail.as_view(), name=' + "'" + model_class_name + '_detail_unique' + "'" + '),\n' )
+        arr.append( (' ' * 4) + 'url(r' + "'^" + context_name + '/(?P<' + unique_field_name + '>[A-Za-z0-9]+)/(?P<attributes_functions>.*)/?$' + "'" + ', views.' +
+                    model_class_name + 'Detail.as_view(), name=' + "'" + model_class_name + '_detail_unique_af' + "'" + '),\n' )
+
     arr.append((' ' * 4) + 'url(r' + "'^" + context_name + '/?$' + "'" + ', views.' +
                model_class_name + 'List.as_view(), name=' + "'" + model_class_name + '_list' + "'" + '),\n')
     arr.append((' ' * 4) + 'url(r' + "'^" + context_name + '/(?P<attributes_functions>.*)/?$' +

@@ -16,8 +16,10 @@ class AbstractCollectionResource(AbstractResource):
     def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
         raise NotImplementedError("'define_resource_type_by_collect_operation' must be implemented in subclasses")
 
+    '''
     def define_content_type_by_operation(self, request, operation_name):
         return self.content_type_or_default_content_type(request)
+    '''
 
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
         arr_str = attributes_functions_str.split('/')[1:]
@@ -59,15 +61,22 @@ class AbstractCollectionResource(AbstractResource):
         return (first_oper_snippet, second_oper_snippet)
 
     def extract_collect_operation_snippet(self, attributes_functions_str):
-        collect_oper_snippet = self.remove_last_slash(attributes_functions_str)
+        if self.path_has_projection(attributes_functions_str):
+            collect_oper_snippet_arr = self.remove_projection_from_path(attributes_functions_str).split('/')
+        else:
+            collect_oper_snippet_arr = self.remove_last_slash(attributes_functions_str).split('/')
 
-        if self.path_has_projection(collect_oper_snippet):
-            collect_oper_snippet = self.remove_projection_from_path(collect_oper_snippet)
+        if self.operation_controller.collect_collection_operation_name not in collect_oper_snippet_arr\
+                and '*' + self.operation_controller.collect_collection_operation_name not in collect_oper_snippet_arr:
+            raise SyntaxError('"' + attributes_functions_str + '" does not contains a correct "' + self.operation_controller.collect_collection_operation_name + '" operation syntax')
 
-        if '/*' + self.operation_controller.collect_collection_operation_name in collect_oper_snippet:
-            collect_oper_snippet = collect_oper_snippet[collect_oper_snippet.index('*') + 1:]
+        if '*' + self.operation_controller.collect_collection_operation_name in collect_oper_snippet_arr:
+            collect_idx = collect_oper_snippet_arr.index('*' + self.operation_controller.collect_collection_operation_name)
+            collect_oper_snippet_arr[collect_idx] = collect_oper_snippet_arr[collect_idx][1:]
+        else:
+            collect_idx = collect_oper_snippet_arr.index(self.operation_controller.collect_collection_operation_name)
 
-        return collect_oper_snippet
+        return '/'.join( collect_oper_snippet_arr[collect_idx:] )
 
     def extract_collect_operation_attributes(self, attributes_functions_str, as_string=False):
         collect_oper_snippet_arr = self.extract_collect_operation_snippet(attributes_functions_str).split("/")
@@ -78,6 +87,7 @@ class AbstractCollectionResource(AbstractResource):
         operation_in_collect_name = self.extract_collect_operation_snippet(attributes_functions_str).split("/")[2]
         return BaseOperationController().dict_all_operation_dict()[operation_in_collect_name]
 
+    '''
     def extract_offset_limit_operation_snippet(self, attributes_functions_str):
         offset_limit_oper_snippet = self.remove_last_slash(attributes_functions_str)
 
@@ -88,7 +98,9 @@ class AbstractCollectionResource(AbstractResource):
             offset_limit_oper_snippet = offset_limit_oper_snippet[:offset_limit_oper_snippet.index('*') - 1]
 
         return offset_limit_oper_snippet
+    '''
 
+    '''
     def extract_offset_limit_operation_attrs(self, attributes_functions_str, as_string=False):
         offset_limit_oper_snippet = self.extract_offset_limit_operation_snippet(attributes_functions_str)
         offset_limit_oper_snippet_arr = offset_limit_oper_snippet.split('/')
@@ -103,7 +115,9 @@ class AbstractCollectionResource(AbstractResource):
             return sorted( offset_limit_oper_snippet_arr[-1].split(',') )
 
         return None
+    '''
 
+    '''
     def projection_attrs_equals_offset_limit_attributes(self, attributes_functions_str):
         offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_functions_str)
 
@@ -115,6 +129,7 @@ class AbstractCollectionResource(AbstractResource):
         offset_limit_attrs.sort()
 
         return projection_attrs == offset_limit_attrs
+    '''
 
     def projection_attrs_equals_collect_attrs(self, attributes_functions_str):
         projection_attrs = self.extract_projection_attributes(attributes_functions_str)
@@ -124,6 +139,7 @@ class AbstractCollectionResource(AbstractResource):
 
         return projection_attrs == collected_attributes
 
+    '''
     def offset_limit_attrs_equals_collect_attrs(self, attributes_function_str):
         offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_function_str)
 
@@ -135,6 +151,17 @@ class AbstractCollectionResource(AbstractResource):
         collect_attrs.sort()
 
         return offset_limit_attrs == collect_attrs
+    '''
+
+    def split_offset_limit_and_collect_operation(self, attributes_functions_str, add_collect_attrs_in_offset_limit=True):
+        offset_limit_snippet = '/'.join( self.remove_last_slash(attributes_functions_str).split('/')[:3] )
+        collect_operation_snippet = '/'.join( self.remove_last_slash(attributes_functions_str).split('/')[3:] )
+
+        if add_collect_attrs_in_offset_limit:
+            collect_attrs = self.extract_collect_operation_attributes(attributes_functions_str, as_string=True)
+            offset_limit_snippet = self.operation_controller.projection_operation_name + '/' + collect_attrs + '/' + offset_limit_snippet
+
+        return offset_limit_snippet, collect_operation_snippet
 
     def path_has_filter_operation(self, attributes_functions_str):
         att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
@@ -175,10 +202,13 @@ class AbstractCollectionResource(AbstractResource):
         if first_part_name not in self.array_of_operation_name():
             return None
 
-        if (first_part_name == self.operation_controller.offset_limit_collection_operation_name
-            or first_part_name == self.operation_controller.filter_collection_operation_name) \
-                and '/*collect' in attributes_functions_str:
+        #if (first_part_name == self.operation_controller.offset_limit_collection_operation_name
+        if  first_part_name == self.operation_controller.filter_collection_operation_name\
+            and '/*' + self.operation_controller.collect_collection_operation_name in attributes_functions_str:
+            return first_part_name + '-and-collect'
 
+        if  first_part_name == self.operation_controller.offset_limit_collection_operation_name\
+            and len(arr_att_funcs) > 3 and arr_att_funcs[3] == self.operation_controller.collect_collection_operation_name:
             return first_part_name + '-and-collect'
 
         if first_part_name == self.operation_controller.collect_collection_operation_name and '/*filter' in attributes_functions_str:
@@ -195,20 +225,10 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject({'count_resource': self.model_class().objects.count()}, c_type_by_operation, self.object_model, 200)
 
     def required_object_for_offset_limit_operation(self, request, attributes_functions_str):
-        offset_limit_snippet = self.remove_last_slash(attributes_functions_str)
-        offset_limit_snippet_arr = offset_limit_snippet.split('/')
+        if not self.offset_limit_operation_sintax_is_ok(attributes_functions_str):
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
 
-        if self.path_has_projection(attributes_functions_str):
-            if self.projection_attrs_equals_offset_limit_attributes(attributes_functions_str):
-                offset_limit_snippet = self.remove_projection_from_path(attributes_functions_str) +\
-                    '/' + self.extract_projection_attributes(attributes_functions_str, as_string=True)
-
-            else:
-                message = 'Projection list must be same as offset_limit attributes list'
-
-                return self.required_object_for_invalid_sintax(attributes_functions_str, message)
-
-        queryset_or_objects = self.get_objects_from_offset_limit_operation(offset_limit_snippet)
+        queryset_or_objects = self.get_objects_from_offset_limit_operation(attributes_functions_str)
 
         if self.path_has_projection(attributes_functions_str):
             projection_atts_str = self.extract_projection_attributes(attributes_functions_str, as_string=True)
@@ -216,13 +236,7 @@ class AbstractCollectionResource(AbstractResource):
 
             return RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
 
-        elif len(offset_limit_snippet_arr) == 3:
-            offset_limit_attrs = offset_limit_snippet_arr[2]
-            objects = self.get_object_serialized_by_only_attributes(offset_limit_attrs, queryset_or_objects)
-            return RequiredObject(objects, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
-
-        else:
-            return self.required_object(request, queryset_or_objects)
+        return self.required_object(request, queryset_or_objects)
 
     def required_object_for_distinct_operation(self,request, attributes_functions_str):
         queryset_or_objects =  self.get_objects_from_distinct_operation(attributes_functions_str)
@@ -234,13 +248,6 @@ class AbstractCollectionResource(AbstractResource):
             return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), queryset_or_objects, 200)
 
         return self.required_object(request, queryset_or_objects)
-
-    '''
-    def required_object_for_group_by_operation(self, request, attributes_functions_str):
-        objects =  self.get_objects_from_group_by_operation(attributes_functions_str)
-        serialized_data = self.get_objects_serialized_by_aggregation_operation(attributes_functions_str, objects)
-        return self.required_object_for_aggregation_operation(request, serialized_data)
-    '''
 
     def required_object_for_group_by_count_operation(self, request, attributes_functions_str):
         objects =  self.get_objects_from_group_by_count_operation(attributes_functions_str)
@@ -295,22 +302,9 @@ class AbstractCollectionResource(AbstractResource):
     def required_object_for_offset_limit_and_collect_collection_operation(self, request, attributes_functions_str):
         offset_limit_and_collect_snippet = self.remove_last_slash(attributes_functions_str)
 
-        if self.path_has_projection(attributes_functions_str):
-            if  not self.projection_attrs_equals_offset_limit_attributes(attributes_functions_str) or \
-                not self.offset_limit_attrs_equals_collect_attrs(attributes_functions_str) or \
-                not self.projection_attrs_equals_collect_attrs(attributes_functions_str):
-                    message = 'Projection attributes list and offset_limit attributes list must be the same as collect operation attributes list'
-
-                    return self.required_object_for_invalid_sintax(attributes_functions_str, message)
-
-            else:
-                offset_limit_and_collect_snippet = self.remove_projection_from_path(offset_limit_and_collect_snippet)
-
-        else:
-            if not self.offset_limit_attrs_equals_collect_attrs(attributes_functions_str):
-                message = 'offset_limit attributes list must be the same as collect operation attributes list'
-
-                return self.required_object_for_invalid_sintax(attributes_functions_str, message)
+        if self.path_has_projection(attributes_functions_str) and not self.projection_attrs_equals_collect_attrs(attributes_functions_str):
+            message = 'Projection attributes list and offset_limit attributes list must be the same as collect operation attributes list'
+            return self.required_object_for_invalid_sintax(attributes_functions_str, message)
 
         business_objects = self.get_objects_from_offset_limit_and_collect_operation(offset_limit_and_collect_snippet)
         collect_operation_snippet = self.extract_collect_operation_snippet(offset_limit_and_collect_snippet)
@@ -375,6 +369,9 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_offset_limit_operation(self, request, attributes_functions_str):
+        if not self.offset_limit_operation_sintax_is_ok(attributes_functions_str):
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
+
         context = self.get_context_for_offset_limit_operation(request, attributes_functions_str)
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
@@ -395,23 +392,11 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_offset_limit_and_collect_operation(self, request, attributes_functions_str):
-        offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_functions_str)
-        collect_attrs = sorted( self.extract_collect_operation_attributes(attributes_functions_str) )
-
-        if offset_limit_attrs is not None and offset_limit_attrs != collect_attrs:
-            message = 'offset_limit attributes list must be the same as collect operation attributes list'
-            return self.required_object_for_invalid_sintax(attributes_functions_str, message)
         return self.required_context_for_collect_operation(request, attributes_functions_str)
 
     def required_context_for_simple_path(self, request):
         resource_type = self.resource_type_or_default_resource_type(request)
         return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
-
-    '''
-    def required_context_for_only_attributes(self, request, attributes_functions_str):
-        context = self.get_context_by_only_attributes(request, attributes_functions_str)
-        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
-    '''
 
     def generics_collection_operation_name(self):
        return self.operation_controller.feature_collection_operations_dict().keys()
@@ -459,13 +444,13 @@ class AbstractCollectionResource(AbstractResource):
         operation_name = attrs_funcs_arr[2]
         operation_params = attrs_funcs_arr[3:]
 
-        for obj in objects:
+        for obj_or_dict in objects:
             obj_attrs_dict = {}
 
             for attr in attrs_out_of_operation:
-                obj_attrs_dict[attr] = getattr(obj, attr)
+                obj_attrs_dict[attr] = obj_or_dict[attr] if type(obj_or_dict) is dict else getattr(obj_or_dict, attr)
 
-            value_to_operation = getattr(obj, operated_attr)
+            value_to_operation = obj_or_dict[operated_attr] if type(obj_or_dict) is dict else getattr(obj_or_dict, operated_attr)
             operated_value = self._execute_attribute_or_method(value_to_operation, operation_name, operation_params)
 
             obj_attrs_dict[operation_name] = operated_value
@@ -482,10 +467,8 @@ class AbstractCollectionResource(AbstractResource):
         return collected_objects
 
     def get_objects_from_offset_limit_and_collect_operation(self, attributes_functions_str):
-        offset_limit_snippet = attributes_functions_str[:attributes_functions_str.index('/*')]
+        offset_limit_snippet , collect_operation_snippet = self.split_offset_limit_and_collect_operation(attributes_functions_str, add_collect_attrs_in_offset_limit=True)
         queryset_or_objects = self.get_objects_from_offset_limit_operation(offset_limit_snippet)
-
-        collect_operation_snippet = attributes_functions_str[attributes_functions_str.index('/*') + 2:]
         collected_objects = self.get_objects_from_collect_operation(collect_operation_snippet, queryset=queryset_or_objects)
 
         return collected_objects
@@ -506,14 +489,6 @@ class AbstractCollectionResource(AbstractResource):
         else:
             return self.model_class().objects.distinct(*distinct_parameters)
 
-    '''
-    def get_objects_from_group_by_operation(self, attributes_functions_str):
-        attributes_functions_list = self.remove_last_slash(attributes_functions_str).split('/')
-        parameters = attributes_functions_list[1:][0].split(',')
-
-        return self.model_class().objects.values(*parameters)
-    '''
-
     def get_objects_from_group_by_count_operation(self, attributes_functions_str):
         attributes_functions_list = self.remove_last_slash(attributes_functions_str).split('/')
         parameters = attributes_functions_list[1:][0].split(',')
@@ -526,31 +501,20 @@ class AbstractCollectionResource(AbstractResource):
 
     def get_objects_from_offset_limit_operation(self, attributes_functions_str):
         attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
+        selected_attrs = None
 
         if self.path_has_projection(attributes_functions_str):
-            num_params = attrs_funcs_arr[3].split('&')
+            offset, limit = int( attrs_funcs_arr[3] ), int( attrs_funcs_arr[4] )
             selected_attrs = self.extract_projection_attributes(attributes_functions_str)
-
         else:
-            num_params = attrs_funcs_arr[1].split('&')
-            selected_attrs = attrs_funcs_arr[2].split(',') if len(attrs_funcs_arr) > 2 else None
-
-        offset = int(num_params[0])
-        limit = int(num_params[1])
+            offset, limit = int( attrs_funcs_arr[1] ), int( attrs_funcs_arr[2] )
 
         # starting from 0 or 1 has the same effect
         offset = offset if offset == 0 else offset - 1
 
-        if self.path_has_projection(attributes_functions_str):
-            objects = self.model_class().objects.values(*selected_attrs)[offset:offset + limit]
-
-        else:
-            if len(attrs_funcs_arr) > 2:
-                objects = self.model_class().objects.values(*selected_attrs)[offset:offset + limit]
-            else:
-                objects = self.model_class().objects.all()[offset:offset + limit]
-
-        return objects
+        if selected_attrs is not None:
+            return self.model_class().objects.values(*selected_attrs)[offset:offset + limit]
+        return self.model_class().objects.all()[offset:offset + limit]
 
     # ---------------------------------------- GET CONTEXT FROM OPERATION  ----------------------------------------
     def get_context_for_filter_operation(self, request, attributes_functions_str):
@@ -600,7 +564,8 @@ class AbstractCollectionResource(AbstractResource):
         return self.get_context_for_resource_type(resource_type, attributes_functions_str)
 
     def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
-        raise NotImplementedError("'required_context_for_offset_limit_operation' must be implemented in subclasses")
+        return self.get_context_for_operation(request, attributes_functions_str)
+        #raise NotImplementedError("'required_context_for_offset_limit_operation' must be implemented in subclasses")
 
     def get_context_for_distinct_operation(self, request, attributes_functions_str):
         resource_type = self.resource_type_or_default_resource_type(request)
@@ -779,6 +744,7 @@ class AbstractCollectionResource(AbstractResource):
         attributes_functions_str = self.kwargs.get('attributes_functions')
 
         if self.is_simple_path(attributes_functions_str):
+            self.add_allowed_methods(['delete', 'post'])
             return self.required_object_for_simple_path(request)
 
         if self.path_has_only_attributes(attributes_functions_str):
@@ -801,6 +767,11 @@ class AbstractCollectionResource(AbstractResource):
             self.add_base_headers(request, response)
         return response
 
+    def head(self, request, *args, **kwargs):
+        if self.is_simple_path(self.kwargs.get('attributes_functions')):
+            self.add_allowed_methods(['delete', 'post'])
+        return super(AbstractCollectionResource, self).head(request, *args, **kwargs)
+
     def basic_post(self, request):
         response =  Response(status=status.HTTP_201_CREATED, content_type=CONTENT_TYPE_JSON)
         response['Content-Location'] = request.path + str(self.object_model.pk)
@@ -818,11 +789,13 @@ class AbstractCollectionResource(AbstractResource):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    '''
     def hashed_value(self, object_):
         dt = datetime.now()
         local_hash = self.__class__.__name__ + str(dt.microsecond)
 
         return local_hash
+    '''
 
     def get_object_by_only_attributes(self, attribute_names_str):
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
@@ -830,4 +803,24 @@ class AbstractCollectionResource(AbstractResource):
 
     def get_objects_from_simple_path(self):
         return self.model_class().objects.all()
+
+    # ----------------------------------------- OPERATION SINTAX CHECK  -----------------------------------------
+    def offset_limit_operation_sintax_is_ok(self, attributes_functions_str):
+        if self.path_has_projection(attributes_functions_str):
+            offset_limit_snippet_arr = self.remove_projection_from_path(attributes_functions_str).split('/')
+        else:
+            offset_limit_snippet_arr = self.remove_last_slash(attributes_functions_str).split('/')
+
+        if offset_limit_snippet_arr[0] != self.operation_controller.offset_limit_collection_operation_name:
+            return False
+
+        try:
+            if int( offset_limit_snippet_arr[1] ) < 0 or int( offset_limit_snippet_arr[2] ) < 0:
+                return False
+        except (ValueError, IndexError):
+            return False
+
+        if len(offset_limit_snippet_arr) > 3 and not self.is_operation(offset_limit_snippet_arr[3]):
+            return False
+        return True
 
