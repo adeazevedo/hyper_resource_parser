@@ -12,6 +12,10 @@ from django.db import models
 # Create your models here.
 from hyper_resource_py.settings import SECRET_KEY
 
+class EntryPoint(BusinessModel):
+    gasto_list = models.CharField(max_length=200)
+    tipo_gasto_list = models.CharField(max_length=200)
+    usuario_list = models.CharField(max_length=200)
 
 class Usuario(BusinessModel):
     id= models.AutoField(primary_key=True)

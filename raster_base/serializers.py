@@ -4,6 +4,13 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from rest_framework.serializers import HyperlinkedRelatedField
 
+class EntryPointSerializer(BusinessSerializer):
+    class Meta:
+        model = EntryPoint
+        fields = ["imagem-exemplo-tile1-list", "imagem-exemplo1-list", "imagem-exemplo2-list", "imagem-exemplo4-tile2-list"]
+        identifier = None
+        identifiers = []
+
 class ImagemExemplo1Serializer(GeoBusinessSerializer):
     class Meta:
         model = ImagemExemplo1

@@ -2,10 +2,16 @@ from django.conf.urls import include, url
 from rest_framework.urlpatterns import format_suffix_patterns
 from raster_base import views 
 
+# maybe the operations below doesn't make sense for entry point
+#'distinct'
+#'group-by-count'
+#'join'
+#"group-by-sum"
 
 app_name="raster_base"
 
 urlpatterns = format_suffix_patterns((
+    url(r'^(?P<attributes_functions>count-resource.*$|projection.*$|filter.*$|collect.*$|offset-limit.*$)/?$', views.APIRoot.as_view(), name='api_root_af'), # HARCODED
     url(r'^$', views.APIRoot.as_view(), name='api_root'),
 
     url(r'^imagem-exemplo1-list/(?P<pk>[0-9]+)/?$', views.ImagemExemplo1Detail.as_view(), name='ImagemExemplo1_detail'),

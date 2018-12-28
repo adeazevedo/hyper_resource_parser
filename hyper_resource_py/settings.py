@@ -186,6 +186,56 @@ USE_L10N = True
 
 USE_TZ = True
 
+'''
+def get_http_host(record):
+    record.http_host = record.request.META["HTTP_HOST"]
+    record.http_accept = record.request.META["HTTP_ACCEPT"]
+    record.http_user_agent = record.request.META["HTTP_USER_AGENT"]
+    record.request_method = record.request.META["REQUEST_METHOD"]
+    return True
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module}\n{status_code} {message}\n' +
+                      'ORIGIN IP: {http_host}\n' +
+                      'ACCEPT: {http_accept}\n'
+                      'USER AGENT: {http_user_agent}\n'
+                      'METHOD: {request_method}\n' +
+                      '\n--------------------\n',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'http_host_filter': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': get_http_host,
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'D:\desenv\hyper_resource_log_files\debug.log',
+            'formatter': 'verbose',
+            'filters': ['http_host_filter']
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+'''
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/

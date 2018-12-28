@@ -1,10 +1,13 @@
-from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext
+from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext, NonSpatialResourceContext, \
+    AbstractCollectionResourceContext
+
+
 class BusinessModelContext(FeatureResouceContext):
     pass
 class BusinessModelCollectionContext(FeatureCollectionResourceContext):
     pass
 
-class GastoContext(FeatureResouceContext):
+class GastoContext(NonSpatialResourceContext):
     """
      def attributes_contextualized_dict(self):
         dic_context =  {
@@ -41,7 +44,7 @@ class GastoContext(FeatureResouceContext):
         return dic_context
     """
 
-class GastoCollectionContext(FeatureCollectionResourceContext):
+class GastoCollectionContext(AbstractCollectionResourceContext):
     """
     def attributes_contextualized_dict(self):
 
@@ -79,13 +82,13 @@ class GastoCollectionContext(FeatureCollectionResourceContext):
         return dic_context
     """
 
-class TipoGastoContext(FeatureResouceContext):
+class TipoGastoContext(NonSpatialResourceContext):
     pass
-class TipoGastoCollectionContext(FeatureCollectionResourceContext):
+class TipoGastoCollectionContext(AbstractCollectionResourceContext):
     pass
 
-class UsuarioContext(FeatureResouceContext):
+class UsuarioContext(NonSpatialResourceContext):
     pass
-class UsuarioCollectionContext(FeatureCollectionResourceContext):
+class UsuarioCollectionContext(AbstractCollectionResourceContext):
     pass
 

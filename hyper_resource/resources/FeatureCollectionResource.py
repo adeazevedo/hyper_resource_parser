@@ -332,11 +332,60 @@ class FeatureCollectionResource(SpatialCollectionResource):
         })
         return dicti
 
+    def operation_name_return_type_dic(self):
+        dicti = super(FeatureCollectionResource, self).operation_name_return_type_dic()
+        dicti.update({
+            self.operation_controller.bbcontaining_operation_name:          self.return_type_for_specialized_operation,
+            self.operation_controller.bboverlaping_operation_name:          self.return_type_for_specialized_operation,
+            self.operation_controller.contained_operation_name:             self.return_type_for_specialized_operation,
+            self.operation_controller.containing_operation_name:            self.return_type_for_specialized_operation,
+            self.operation_controller.containing_properly_operation_name:   self.return_type_for_specialized_operation,
+            self.operation_controller.covering_by_operation_name:           self.return_type_for_specialized_operation,
+            self.operation_controller.covering_operation_name:              self.return_type_for_specialized_operation,
+            self.operation_controller.crossing_operation_name:              self.return_type_for_specialized_operation,
+            self.operation_controller.disjointing_operation_name:           self.return_type_for_specialized_operation,
+            self.operation_controller.intersecting_operation_name:          self.return_type_for_specialized_operation,
+            self.operation_controller.isvalid_operation_name:               self.return_type_for_specialized_operation,
+            self.operation_controller.overlaping_operation_name:            self.return_type_for_specialized_operation,
+            self.operation_controller.relating_operation_name:              self.return_type_for_specialized_operation,
+            self.operation_controller.touching_operation_name:              self.return_type_for_specialized_operation,
+            self.operation_controller.within_operation_name:                self.return_type_for_specialized_operation,
+            self.operation_controller.on_left_operation_name:               self.return_type_for_specialized_operation,
+            self.operation_controller.on_right_operation_name:              self.return_type_for_specialized_operation,
+            self.operation_controller.overlaping_left_operation_name:       self.return_type_for_specialized_operation,
+            self.operation_controller.overlaping_right_operation_name:      self.return_type_for_specialized_operation,
+            self.operation_controller.overlaping_above_operation_name:      self.return_type_for_specialized_operation,
+            self.operation_controller.overlaping_below_operation_name:      self.return_type_for_specialized_operation,
+            self.operation_controller.strictly_above_operation_name:        self.return_type_for_specialized_operation,
+            self.operation_controller.strictly_below_operation_name:        self.return_type_for_specialized_operation,
+            self.operation_controller.distance_gt_operation_name:           self.return_type_for_specialized_operation,
+            self.operation_controller.distance_gte_operation_name:          self.return_type_for_specialized_operation,
+            self.operation_controller.distance_lt_operation_name:           self.return_type_for_specialized_operation,
+            self.operation_controller.distance_lte_operation_name:          self.return_type_for_specialized_operation,
+            self.operation_controller.dwithin_operation_name:               self.return_type_for_specialized_operation,
+            self.operation_controller.union_collection_operation_name:      self.return_type_for_union_operation,
+            self.operation_controller.extent_collection_operation_name:     self.return_type_for_extent_operation,
+            self.operation_controller.make_line_collection_operation_name:  self.return_type_for_make_line_operation
+        })
+        return dicti
+
     # Responds an array of operations name.
     def array_of_operation_name(self):
         collection_operations_array = super(FeatureCollectionResource, self).array_of_operation_name()
         collection_operations_array.extend(self.operation_controller.feature_collection_operations_dict().keys())
         return collection_operations_array
+
+    def return_type_for_specialized_operation(self, attributes_functions_str):
+        return self.default_resource_type()
+
+    def return_type_for_union_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_make_line_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_extent_operation(self, attributes_functions_str):
+        pass
 
     def required_object_for_specialized_operation(self, request, attributes_functions_str):
         first_oper_snippet, second_oper_snippet = self.split_combined_operation(attributes_functions_str)
@@ -571,36 +620,39 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return objects
 
-    '''
-    def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
-        return self.get_context_for_operation(request, attributes_functions_str)
-        #attrs_str = self.extract_offset_limit_operation_attrs(attributes_functions_str, as_string=True)
-
-        #if self.is_simple_path(attrs_str):
-        #return self.context_resource.context( self.resource_type_or_default_resource_type(request) )
-        #return self.get_context_by_only_attributes(request, attrs_str)
-    '''
-
     def get_context_for_specialized_operation(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         resource_type = self.define_resource_type_by_operation(request, operation_name)
-        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
+        context["@context"].update( self.context_resource.attributes_contextualized_dict() )
+        context["@context"].update(
+            {
+                "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+                "subClassOf": {"@id": "rdfs:subClassOf", "@type": "@vocab" }
+            }
+        )
+        context["subClassOf"] = self.context_resource.get_context_superclass()
+        return context
+        #operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        #resource_type = self.define_resource_type_by_operation(request, operation_name)
+        #return self.context_resource.context(resource_type)
 
     def get_context_for_union_operation(self, request, attributes_functions_str):
         resource_type_by_accept = self.resource_type_or_default_resource_type(request)
         resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else 'Feature'
-        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
 
     def get_context_for_extent_operation(self, request, attributes_functions_str):
         resource_type_by_accept = self.resource_type_or_default_resource_type(request)
         resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else 'Thing'
-        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
 
     def get_context_for_make_line_operation(self, request, attributes_functions_str):
         resource_type_by_accept = self.resource_type_or_default_resource_type(request)
         resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else LineString
-        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
 
+    '''
     def set_resource_type_context_by_operation(self, request, oper_name):
         resource_type = self.resource_type_or_default_resource_type(request)
 
@@ -615,6 +667,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
         self.context_resource.set_context_to_resource_type(request, self.object_model, ret_type)
 
         return self.context_resource.get_resource_type_identification()
+    '''
 
     def get_png(self, queryset, request):
         geom_type = None

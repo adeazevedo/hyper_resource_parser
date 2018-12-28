@@ -83,7 +83,8 @@ def imports_str_as_array(a_name):
     arr.append("from " + a_name + ".models import *\n")
     arr.append("from " + a_name + ".serializers import *\n")
     arr.append("from " + a_name + ".contexts import *\n\n")
-    arr.append("from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot, FeatureAPIRoot\n")
+    #arr.append("from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot, FeatureAPIRoot\n")
+    arr.append("from hyper_resource.resources.EntryPointResource import *")
     arr.append("from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource\n")
     arr.append("from hyper_resource.resources.AbstractResource import *\n")
     arr.append("from hyper_resource.resources.CollectionResource import CollectionResource\n")
@@ -114,11 +115,11 @@ def generate_file(package_name, default_name='views.py'):
                 break
 
         if has_spatial_model:
-            sr.write('class APIRoot(FeatureAPIRoot):\n\n')
+            sr.write('class APIRoot(FeatureEntryPointResource):\n\n')
         else:
-            sr.write('class APIRoot(NonSpatialAPIRoot):\n\n')
-
-        sr.write((' ' * 4) + 'def get_root_response(self, request, format=None):\n')
+            sr.write('class APIRoot(NonSpatialEntryPointResource):\n\n')
+        sr.write((' ' * 4) + 'serializer_class = EntryPointSerializer\n\n')
+        sr.write((' ' * 4) + 'def get_root_response(self, request, format=None, *args, **kwargs):\n')
         sr.write((' ' * 8) + 'root_links = {\n\n')
         for tuple_name_and_class in arr_tuple_name_and_class:
             get_root_str = generate_get_root_response(package_name ,tuple_name_and_class[0])

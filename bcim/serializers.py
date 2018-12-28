@@ -1,12 +1,34 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer
-from rest_framework_gis.serializers import GeoFeatureModelSerializer
-from rest_framework.reverse import reverse
 
+from rest_framework.reverse import reverse
+from hyper_resource.serializers import BusinessSerializer, GeoBusinessSerializer
 from hyper_resource_py.urls import basic_path, protocol, host_name
 from .models import *
 
-class UnidadeFederacaoSerializer(GeoFeatureModelSerializer):
+class EntryPointSerializer(BusinessSerializer):
+    class Meta:
+        model = EntryPoint
+        fields = ["unidades-federativas", "municipios", "outros-limites-oficiais",
+             "paises", "terras-indigenas", "unidades-de-conservacao-nao-snuc", "unidades-de-protecao-integral",
+             "unidades-de-uso-sustentavel", "aglomerados-rurais-de-extensao-urbana", "aglomerados-rurais-isolado",
+             "aldeias-indigenas", "areas-edificadas", "capitais", "cidades", "vilas", "curvas-batimetricas",
+             "curvas-de-nivel", "curvas-de-nivel", "dunas", "elementos-fisiografico-natural", "picos",
+             "pontos-cotados-altimetricos", "pontos-cotados-batimetricos", "eclusas", "edificacoes-de-construcao-portuaria",
+             "edificacoes_de_construcao_aeroportuaria", "edificacoes_de_metro_ferroviaria", "fundeadouros", "pistas-de-ponto-pouso",
+             "pontes", "sinalizacoes", "travessias", "trechos-dutos", "trechos-ferroviarios", "trechos-hidroviarios",
+             "trechos-rodoviarios", "tuneis", "brejos-e-pantanos", "mangues", "vegetacoes-de-restinga", "edificacoes-publica-militar",
+             "postos-fiscais", "edificacoes-agropecuarias-de-extracao-vegetal-e-pesca", "edificacoes-industrial",
+             "extracoes-minerais", "edificacoes-religiosa", "estacoes-geradoras-de-energia-eletrica", "hidreletricas",
+             "termeletricas", "torres-de-energia", "bancos-de-areia", "barragens", "corredeiras", "fozes-maritima",
+             "ilhas", "massas-dagua", "quedas-dagua", "recifes", "rochas-em-agua", "sumidouros-vertedouros",
+             "terrenos-sujeito-a-inundacao", "trechos-de-drenagem", "trechos-de-massa-dagua",
+             "areas-de-desenvolvimento-de-controle", "marcos-de-limite"]
+        identifier = None
+        identifiers = []
+
+
+class UnidadeFederacaoSerializer(GeoBusinessSerializer):
     class Meta:
         model = UnidadeFederacao
         geo_field = 'geom'
@@ -15,7 +37,7 @@ class UnidadeFederacaoSerializer(GeoFeatureModelSerializer):
         identifier = 'id_objeto'
 
 
-class MunicipioSerializer(GeoFeatureModelSerializer):
+class MunicipioSerializer(GeoBusinessSerializer):
     class Meta:
         model = Municipio
         geo_field = 'geom'
@@ -23,7 +45,7 @@ class MunicipioSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto', 'geocodigo']
         identifier = 'id_objeto'
 
-class OutrasUnidProtegidasSerializer(GeoFeatureModelSerializer):
+class OutrasUnidProtegidasSerializer(GeoBusinessSerializer):
     class Meta:
         model = OutrasUnidProtegidas
         geo_field = 'geom'
@@ -31,7 +53,7 @@ class OutrasUnidProtegidasSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class OutrosLimitesOficiaisSerializer(GeoFeatureModelSerializer):
+class OutrosLimitesOficiaisSerializer(GeoBusinessSerializer):
     class Meta:
         model = OutrosLimitesOficiais
         geo_field = 'geom'
@@ -41,7 +63,7 @@ class OutrosLimitesOficiaisSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class PaisSerializer(GeoFeatureModelSerializer):
+class PaisSerializer(GeoBusinessSerializer):
     class Meta:
         model = Pais
         geo_field = 'geom'
@@ -50,7 +72,7 @@ class PaisSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TerraIndigenaSerializer(GeoFeatureModelSerializer):
+class TerraIndigenaSerializer(GeoBusinessSerializer):
     class Meta:
         model = TerraIndigena
         geo_field = 'geom'
@@ -60,7 +82,7 @@ class TerraIndigenaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class UnidadeConservacaoNaoSnucSerializer(GeoFeatureModelSerializer):
+class UnidadeConservacaoNaoSnucSerializer(GeoBusinessSerializer):
     class Meta:
         model = UnidadeConservacaoNaoSnuc
         geo_field = 'geom'
@@ -70,7 +92,7 @@ class UnidadeConservacaoNaoSnucSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class UnidadeProtecaoIntegralSerializer(GeoFeatureModelSerializer):
+class UnidadeProtecaoIntegralSerializer(GeoBusinessSerializer):
     class Meta:
         model = UnidadeProtecaoIntegral
         geo_field = 'geom'
@@ -80,7 +102,7 @@ class UnidadeProtecaoIntegralSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class UnidadeUsoSustentavelSerializer(GeoFeatureModelSerializer):
+class UnidadeUsoSustentavelSerializer(GeoBusinessSerializer):
     class Meta:
         model = UnidadeUsoSustentavel
         geo_field = 'geom'
@@ -90,7 +112,7 @@ class UnidadeUsoSustentavelSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class AglomeradoRuralDeExtensaoUrbanaSerializer(GeoFeatureModelSerializer):
+class AglomeradoRuralDeExtensaoUrbanaSerializer(GeoBusinessSerializer):
     class Meta:
         model = AglomeradoRuralDeExtensaoUrbana
         geo_field = 'geom'
@@ -99,7 +121,7 @@ class AglomeradoRuralDeExtensaoUrbanaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class AglomeradoRuralIsoladoSerializer(GeoFeatureModelSerializer):
+class AglomeradoRuralIsoladoSerializer(GeoBusinessSerializer):
     class Meta:
         model = AglomeradoRuralIsolado
         geo_field = 'geom'
@@ -108,7 +130,7 @@ class AglomeradoRuralIsoladoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class AldeiaIndigenaSerializer(GeoFeatureModelSerializer):
+class AldeiaIndigenaSerializer(GeoBusinessSerializer):
     class Meta:
         model = AldeiaIndigena
         geo_field = 'geom'
@@ -117,7 +139,7 @@ class AldeiaIndigenaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class AreaEdificadaSerializer(GeoFeatureModelSerializer):
+class AreaEdificadaSerializer(GeoBusinessSerializer):
     class Meta:
         model = AreaEdificada
         geo_field = 'geom'
@@ -126,7 +148,7 @@ class AreaEdificadaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class CapitalSerializer(GeoFeatureModelSerializer):
+class CapitalSerializer(GeoBusinessSerializer):
     class Meta:
         model = Capital
         geo_field = 'geom'
@@ -135,7 +157,7 @@ class CapitalSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class CidadeSerializer(GeoFeatureModelSerializer):
+class CidadeSerializer(GeoBusinessSerializer):
     class Meta:
         model = Cidade
         geo_field = 'geom'
@@ -144,7 +166,7 @@ class CidadeSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class VilaSerializer(GeoFeatureModelSerializer):
+class VilaSerializer(GeoBusinessSerializer):
     class Meta:
         model = Vila
         geo_field = 'geom'
@@ -153,7 +175,7 @@ class VilaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class CurvaBatimetricaSerializer(GeoFeatureModelSerializer):
+class CurvaBatimetricaSerializer(GeoBusinessSerializer):
     class Meta:
         model = CurvaBatimetrica
         geo_field = 'geom'
@@ -162,7 +184,7 @@ class CurvaBatimetricaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class CurvaNivelSerializer(GeoFeatureModelSerializer):
+class CurvaNivelSerializer(GeoBusinessSerializer):
     class Meta:
         model = CurvaNivel
         geo_field = 'geom'
@@ -171,7 +193,7 @@ class CurvaNivelSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class DunaSerializer(GeoFeatureModelSerializer):
+class DunaSerializer(GeoBusinessSerializer):
     class Meta:
         model = Duna
         geo_field = 'geom'
@@ -180,7 +202,7 @@ class DunaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class ElementoFisiograficoNaturalSerializer(GeoFeatureModelSerializer):
+class ElementoFisiograficoNaturalSerializer(GeoBusinessSerializer):
     class Meta:
         model = ElementoFisiograficoNatural
         geo_field = 'geom'
@@ -189,7 +211,7 @@ class ElementoFisiograficoNaturalSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class PicoSerializer(GeoFeatureModelSerializer):
+class PicoSerializer(GeoBusinessSerializer):
     class Meta:
         model = Pico
         geo_field = 'geom'
@@ -198,7 +220,7 @@ class PicoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class PontoCotadoAltimetricoSerializer(GeoFeatureModelSerializer):
+class PontoCotadoAltimetricoSerializer(GeoBusinessSerializer):
     class Meta:
         model = PontoCotadoAltimetrico
         geo_field = 'geom'
@@ -207,7 +229,7 @@ class PontoCotadoAltimetricoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class PontoCotadoBatimetricoSerializer(GeoFeatureModelSerializer):
+class PontoCotadoBatimetricoSerializer(GeoBusinessSerializer):
     class Meta:
         model = PontoCotadoBatimetrico
         geo_field = 'geom'
@@ -216,7 +238,7 @@ class PontoCotadoBatimetricoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EclusaSerializer(GeoFeatureModelSerializer):
+class EclusaSerializer(GeoBusinessSerializer):
     class Meta:
         model = Eclusa
         geo_field = 'geom'
@@ -226,7 +248,7 @@ class EclusaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EdifConstPortuariaSerializer(GeoFeatureModelSerializer):
+class EdifConstPortuariaSerializer(GeoBusinessSerializer):
     class Meta:
         model = EdifConstPortuaria
         geo_field = 'geom'
@@ -235,7 +257,7 @@ class EdifConstPortuariaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EdifConstrAeroportuariaSerializer(GeoFeatureModelSerializer):
+class EdifConstrAeroportuariaSerializer(GeoBusinessSerializer):
     class Meta:
         model = EdifConstrAeroportuaria
         geo_field = 'geom'
@@ -244,7 +266,7 @@ class EdifConstrAeroportuariaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EdifMetroFerroviariaSerializer(GeoFeatureModelSerializer):
+class EdifMetroFerroviariaSerializer(GeoBusinessSerializer):
     class Meta:
         model = EdifMetroFerroviaria
         geo_field = 'geom'
@@ -253,7 +275,7 @@ class EdifMetroFerroviariaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class FundeadouroSerializer(GeoFeatureModelSerializer):
+class FundeadouroSerializer(GeoBusinessSerializer):
     class Meta:
         model = Fundeadouro
         geo_field = 'geom'
@@ -262,7 +284,7 @@ class FundeadouroSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class PistaPontoPousoSerializer(GeoFeatureModelSerializer):
+class PistaPontoPousoSerializer(GeoBusinessSerializer):
     class Meta:
         model = PistaPontoPouso
         geo_field = 'geom'
@@ -272,7 +294,7 @@ class PistaPontoPousoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class PonteSerializer(GeoFeatureModelSerializer):
+class PonteSerializer(GeoBusinessSerializer):
     class Meta:
         model = Ponte
         geo_field = 'geom'
@@ -282,7 +304,7 @@ class PonteSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class SinalizacaoSerializer(GeoFeatureModelSerializer):
+class SinalizacaoSerializer(GeoBusinessSerializer):
     class Meta:
         model = Sinalizacao
         geo_field = 'geom'
@@ -291,7 +313,7 @@ class SinalizacaoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TravessiaSerializer(GeoFeatureModelSerializer):
+class TravessiaSerializer(GeoBusinessSerializer):
     class Meta:
         model = Travessia
         geo_field = 'geom'
@@ -300,7 +322,7 @@ class TravessiaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TrechoDutoSerializer(GeoFeatureModelSerializer):
+class TrechoDutoSerializer(GeoBusinessSerializer):
     class Meta:
         model = TrechoDuto
         geo_field = 'geom'
@@ -310,7 +332,7 @@ class TrechoDutoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TrechoFerroviarioSerializer(GeoFeatureModelSerializer):
+class TrechoFerroviarioSerializer(GeoBusinessSerializer):
     class Meta:
         model = TrechoFerroviario
         geo_field = 'geom'
@@ -320,7 +342,7 @@ class TrechoFerroviarioSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TrechoHidroviarioSerializer(GeoFeatureModelSerializer):
+class TrechoHidroviarioSerializer(GeoBusinessSerializer):
     class Meta:
         model = TrechoHidroviario
         geo_field = 'geom'
@@ -330,7 +352,7 @@ class TrechoHidroviarioSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TrechoRodoviarioSerializer(GeoFeatureModelSerializer):
+class TrechoRodoviarioSerializer(GeoBusinessSerializer):
     class Meta:
         model = TrechoRodoviario
         geo_field = 'geom'
@@ -339,7 +361,7 @@ class TrechoRodoviarioSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TunelSerializer(GeoFeatureModelSerializer):
+class TunelSerializer(GeoBusinessSerializer):
     class Meta:
         model = Tunel
         geo_field = 'geom'
@@ -349,7 +371,7 @@ class TunelSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class BrejoPantanoSerializer(GeoFeatureModelSerializer):
+class BrejoPantanoSerializer(GeoBusinessSerializer):
     class Meta:
         model = BrejoPantano
         geo_field = 'geom'
@@ -359,7 +381,7 @@ class BrejoPantanoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class MangueSerializer(GeoFeatureModelSerializer):
+class MangueSerializer(GeoBusinessSerializer):
     class Meta:
         model = Mangue
         geo_field = 'geom'
@@ -369,7 +391,7 @@ class MangueSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class VegRestingaSerializer(GeoFeatureModelSerializer):
+class VegRestingaSerializer(GeoBusinessSerializer):
     class Meta:
         model = VegRestinga
         geo_field = 'geom'
@@ -379,7 +401,7 @@ class VegRestingaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EdifPubMilitarSerializer(GeoFeatureModelSerializer):
+class EdifPubMilitarSerializer(GeoBusinessSerializer):
     class Meta:
         model = EdifPubMilitar
         geo_field = 'geom'
@@ -388,7 +410,7 @@ class EdifPubMilitarSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class PostoFiscalSerializer(GeoFeatureModelSerializer):
+class PostoFiscalSerializer(GeoBusinessSerializer):
     class Meta:
         model = PostoFiscal
         geo_field = 'geom'
@@ -397,7 +419,7 @@ class PostoFiscalSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EdifAgropecExtVegetalPescaSerializer(GeoFeatureModelSerializer):
+class EdifAgropecExtVegetalPescaSerializer(GeoBusinessSerializer):
     class Meta:
         model = EdifAgropecExtVegetalPesca
         geo_field = 'geom'
@@ -406,7 +428,7 @@ class EdifAgropecExtVegetalPescaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EdifIndustrialSerializer(GeoFeatureModelSerializer):
+class EdifIndustrialSerializer(GeoBusinessSerializer):
     class Meta:
         model = EdifIndustrial
         geo_field = 'geom'
@@ -415,7 +437,7 @@ class EdifIndustrialSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class ExtMineralSerializer(GeoFeatureModelSerializer):
+class ExtMineralSerializer(GeoBusinessSerializer):
     class Meta:
         model = ExtMineral
         geo_field = 'geom'
@@ -424,7 +446,7 @@ class ExtMineralSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EdifReligiosaSerializer(GeoFeatureModelSerializer):
+class EdifReligiosaSerializer(GeoBusinessSerializer):
     class Meta:
         model = EdifReligiosa
         geo_field = 'geom'
@@ -433,7 +455,7 @@ class EdifReligiosaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class EstGeradEnergiaEletricaSerializer(GeoFeatureModelSerializer):
+class EstGeradEnergiaEletricaSerializer(GeoBusinessSerializer):
     class Meta:
         model = EstGeradEnergiaEletrica
         geo_field = 'geom'
@@ -443,7 +465,7 @@ class EstGeradEnergiaEletricaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class HidreletricaSerializer(GeoFeatureModelSerializer):
+class HidreletricaSerializer(GeoBusinessSerializer):
     class Meta:
         model = Hidreletrica
         geo_field = 'geom'
@@ -453,7 +475,7 @@ class HidreletricaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TermeletricaSerializer(GeoFeatureModelSerializer):
+class TermeletricaSerializer(GeoBusinessSerializer):
     class Meta:
         model = Termeletrica
         geo_field = 'geom'
@@ -463,7 +485,7 @@ class TermeletricaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TorreEnergiaSerializer(GeoFeatureModelSerializer):
+class TorreEnergiaSerializer(GeoBusinessSerializer):
     class Meta:
         model = TorreEnergia
         geo_field = 'geom'
@@ -473,7 +495,7 @@ class TorreEnergiaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class BancoAreiaSerializer(GeoFeatureModelSerializer):
+class BancoAreiaSerializer(GeoBusinessSerializer):
     class Meta:
         model = BancoAreia
         geo_field = 'geom'
@@ -482,7 +504,7 @@ class BancoAreiaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class BarragemSerializer(GeoFeatureModelSerializer):
+class BarragemSerializer(GeoBusinessSerializer):
     class Meta:
         model = Barragem
         geo_field = 'geom'
@@ -491,7 +513,7 @@ class BarragemSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class CorredeiraSerializer(GeoFeatureModelSerializer):
+class CorredeiraSerializer(GeoBusinessSerializer):
     class Meta:
         model = Corredeira
         geo_field = 'geom'
@@ -500,7 +522,7 @@ class CorredeiraSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class FozMaritimaSerializer(GeoFeatureModelSerializer):
+class FozMaritimaSerializer(GeoBusinessSerializer):
     class Meta:
         model = FozMaritima
         geo_field = 'geom'
@@ -509,7 +531,7 @@ class FozMaritimaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class IlhaSerializer(GeoFeatureModelSerializer):
+class IlhaSerializer(GeoBusinessSerializer):
     class Meta:
         model = Ilha
         geo_field = 'geom'
@@ -518,7 +540,7 @@ class IlhaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class MassaDaguaSerializer(GeoFeatureModelSerializer):
+class MassaDaguaSerializer(GeoBusinessSerializer):
     class Meta:
         model = MassaDagua
         geo_field = 'geom'
@@ -527,7 +549,7 @@ class MassaDaguaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class QuedaDaguaSerializer(GeoFeatureModelSerializer):
+class QuedaDaguaSerializer(GeoBusinessSerializer):
     class Meta:
         model = QuedaDagua
         geo_field = 'geom'
@@ -537,7 +559,7 @@ class QuedaDaguaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class RecifeSerializer(GeoFeatureModelSerializer):
+class RecifeSerializer(GeoBusinessSerializer):
     class Meta:
         model = Recife
         geo_field = 'geom'
@@ -546,7 +568,7 @@ class RecifeSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class RochaEmAguaSerializer(GeoFeatureModelSerializer):
+class RochaEmAguaSerializer(GeoBusinessSerializer):
     class Meta:
         model = RochaEmAgua
         geo_field = 'geom'
@@ -556,7 +578,7 @@ class RochaEmAguaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class SumidouroVertedouroSerializer(GeoFeatureModelSerializer):
+class SumidouroVertedouroSerializer(GeoBusinessSerializer):
     class Meta:
         model = SumidouroVertedouro
         geo_field = 'geom'
@@ -565,7 +587,7 @@ class SumidouroVertedouroSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TerrenoSujeitoInundacaoSerializer(GeoFeatureModelSerializer):
+class TerrenoSujeitoInundacaoSerializer(GeoBusinessSerializer):
     class Meta:
         model = TerrenoSujeitoInundacao
         geo_field = 'geom'
@@ -574,7 +596,7 @@ class TerrenoSujeitoInundacaoSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TrechoDrenagemSerializer(GeoFeatureModelSerializer):
+class TrechoDrenagemSerializer(GeoBusinessSerializer):
     class Meta:
         model = TrechoDrenagem
         geo_field = 'geom'
@@ -584,7 +606,7 @@ class TrechoDrenagemSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class TrechoMassaDaguaSerializer(GeoFeatureModelSerializer):
+class TrechoMassaDaguaSerializer(GeoBusinessSerializer):
     class Meta:
         model = TrechoMassaDagua
         geo_field = 'geom'
@@ -593,7 +615,7 @@ class TrechoMassaDaguaSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class AreaDesenvolvimentoControleSerializer(GeoFeatureModelSerializer):
+class AreaDesenvolvimentoControleSerializer(GeoBusinessSerializer):
     class Meta:
         model = AreaDesenvolvimentoControle
         geo_field = 'geom'
@@ -602,7 +624,7 @@ class AreaDesenvolvimentoControleSerializer(GeoFeatureModelSerializer):
         identifiers = ['id_objeto']
         identifier = 'id_objeto'
 
-class MarcoDeLimiteSerializer(GeoFeatureModelSerializer):
+class MarcoDeLimiteSerializer(GeoBusinessSerializer):
     class Meta:
         model = MarcoDeLimite
         geo_field = 'geom'

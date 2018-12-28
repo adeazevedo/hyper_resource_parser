@@ -16,11 +16,6 @@ class AbstractCollectionResource(AbstractResource):
     def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
         raise NotImplementedError("'define_resource_type_by_collect_operation' must be implemented in subclasses")
 
-    '''
-    def define_content_type_by_operation(self, request, operation_name):
-        return self.content_type_or_default_content_type(request)
-    '''
-
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
         arr_str = attributes_functions_str.split('/')[1:]
 
@@ -36,9 +31,9 @@ class AbstractCollectionResource(AbstractResource):
         return False
 
     def split_combined_operation(self, attributes_functions_str):
-        oc = BaseOperationController()
-        operators_list = ['*' + key for key in oc.expression_operators_dict().keys()]
-        operators_list.extend( ['*' + key for key in oc.logical_operators_dict().keys()] )
+        #oc = BaseOperationController()
+        operators_list = ['*' + key for key in self.operation_controller.expression_operators_dict().keys()]
+        operators_list.extend( ['*' + key for key in self.operation_controller.expression_logical_operators().keys()] )
 
         attrs_functs_str = self.remove_last_slash(attributes_functions_str)
         attrs_funcs_arr = attrs_functs_str.split('/')
@@ -87,50 +82,6 @@ class AbstractCollectionResource(AbstractResource):
         operation_in_collect_name = self.extract_collect_operation_snippet(attributes_functions_str).split("/")[2]
         return BaseOperationController().dict_all_operation_dict()[operation_in_collect_name]
 
-    '''
-    def extract_offset_limit_operation_snippet(self, attributes_functions_str):
-        offset_limit_oper_snippet = self.remove_last_slash(attributes_functions_str)
-
-        if self.path_has_projection(attributes_functions_str):
-            offset_limit_oper_snippet = self.remove_projection_from_path(attributes_functions_str)
-
-        if '/*' + self.operation_controller.collect_collection_operation_name in offset_limit_oper_snippet:
-            offset_limit_oper_snippet = offset_limit_oper_snippet[:offset_limit_oper_snippet.index('*') - 1]
-
-        return offset_limit_oper_snippet
-    '''
-
-    '''
-    def extract_offset_limit_operation_attrs(self, attributes_functions_str, as_string=False):
-        offset_limit_oper_snippet = self.extract_offset_limit_operation_snippet(attributes_functions_str)
-        offset_limit_oper_snippet_arr = offset_limit_oper_snippet.split('/')
-
-        if as_string:
-            if len(offset_limit_oper_snippet_arr) == 3:
-                return offset_limit_oper_snippet_arr[-1]
-
-            return None
-
-        if len(offset_limit_oper_snippet_arr) == 3:
-            return sorted( offset_limit_oper_snippet_arr[-1].split(',') )
-
-        return None
-    '''
-
-    '''
-    def projection_attrs_equals_offset_limit_attributes(self, attributes_functions_str):
-        offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_functions_str)
-
-        if offset_limit_attrs is None:
-            return True
-
-        projection_attrs = self.extract_projection_attributes(attributes_functions_str)
-        projection_attrs.sort()
-        offset_limit_attrs.sort()
-
-        return projection_attrs == offset_limit_attrs
-    '''
-
     def projection_attrs_equals_collect_attrs(self, attributes_functions_str):
         projection_attrs = self.extract_projection_attributes(attributes_functions_str)
         collected_attributes = self.extract_collect_operation_attributes(attributes_functions_str)
@@ -138,20 +89,6 @@ class AbstractCollectionResource(AbstractResource):
         collected_attributes.sort()
 
         return projection_attrs == collected_attributes
-
-    '''
-    def offset_limit_attrs_equals_collect_attrs(self, attributes_function_str):
-        offset_limit_attrs = self.extract_offset_limit_operation_attrs(attributes_function_str)
-
-        if offset_limit_attrs is None:
-            return True
-
-        collect_attrs = self.extract_collect_operation_attributes(attributes_function_str)
-        offset_limit_attrs.sort()
-        collect_attrs.sort()
-
-        return offset_limit_attrs == collect_attrs
-    '''
 
     def split_offset_limit_and_collect_operation(self, attributes_functions_str, add_collect_attrs_in_offset_limit=True):
         offset_limit_snippet = '/'.join( self.remove_last_slash(attributes_functions_str).split('/')[:3] )
@@ -260,6 +197,9 @@ class AbstractCollectionResource(AbstractResource):
         return self.required_object_for_aggregation_operation(request, serialized_data)
 
     def required_object_for_filter_operation(self, request, attributes_functions_str):
+        #if not self.filter_operation_sintax_is_ok(attributes_functions_str):
+        #    return self.required_object_for_invalid_sintax(attributes_functions_str)
+
         business_objects = self.get_objects_from_filter_operation(attributes_functions_str)
 
         if self.path_has_projection(attributes_functions_str):
@@ -300,6 +240,9 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(serialized_data, self.content_type_or_default_content_type(request), business_objects, 200)
 
     def required_object_for_offset_limit_and_collect_collection_operation(self, request, attributes_functions_str):
+        if not self.offset_limit_operation_sintax_is_ok(attributes_functions_str):
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
+
         offset_limit_and_collect_snippet = self.remove_last_slash(attributes_functions_str)
 
         if self.path_has_projection(attributes_functions_str) and not self.projection_attrs_equals_collect_attrs(attributes_functions_str):
@@ -392,6 +335,9 @@ class AbstractCollectionResource(AbstractResource):
         return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_offset_limit_and_collect_operation(self, request, attributes_functions_str):
+        if not self.offset_limit_operation_sintax_is_ok(attributes_functions_str):
+            return self.required_object_for_invalid_sintax(attributes_functions_str)
+
         return self.required_context_for_collect_operation(request, attributes_functions_str)
 
     def required_context_for_simple_path(self, request):
@@ -500,14 +446,15 @@ class AbstractCollectionResource(AbstractResource):
         return self.model_class().objects.all().values( attrs_funcs_arr[1] ).annotate(sum=Sum( attrs_funcs_arr[2] ))
 
     def get_objects_from_offset_limit_operation(self, attributes_functions_str):
-        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split('/')
-        selected_attrs = None
-
         if self.path_has_projection(attributes_functions_str):
-            offset, limit = int( attrs_funcs_arr[3] ), int( attrs_funcs_arr[4] )
             selected_attrs = self.extract_projection_attributes(attributes_functions_str)
+            attrs_funcs_without_projection = self.remove_projection_from_path(attributes_functions_str).split("/")
         else:
-            offset, limit = int( attrs_funcs_arr[1] ), int( attrs_funcs_arr[2] )
+            selected_attrs = None
+            attrs_funcs_without_projection = self.remove_last_slash(attributes_functions_str).split('/')
+
+        offset_str, limit_str = attrs_funcs_without_projection[1].split("&")
+        offset, limit = int(offset_str), int(limit_str)
 
         # starting from 0 or 1 has the same effect
         offset = offset if offset == 0 else offset - 1
@@ -524,14 +471,12 @@ class AbstractCollectionResource(AbstractResource):
         self.context_resource.set_context_to_operation(self.object_model, operation_name)
         context = self.context_resource.get_dict_context()
         context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        context['@id'] = self.context_resource.get_resource_type_identification(resource_type)['@id']
-        context['@type'] = self.context_resource.get_resource_type_identification(resource_type)['@type']
-
+        context.update(self.context_resource.get_default_resource_type_identification())
         return context
 
     def get_context_for_collect_operation(self, request, attributes_functions_str):
         resource_type = self.define_resource_type_by_collect_operation(request, attributes_functions_str)
-        context = self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
         context["@context"].update( self.get_context_for_attr_and_operation_in_collect(request, attributes_functions_str) )
         return context
 
@@ -541,8 +486,8 @@ class AbstractCollectionResource(AbstractResource):
         operated_attr = attrs.pop()
 
         operation_in_collect = self.extract_collect_operation_snippet(attributes_functions_str).split('/')[2]
-        oper_context = self.context_resource.get_context_to_operation(operation_in_collect)["@context"]
-        attrs_and_oper_context.update(oper_context)
+        #oper_context = self.context_resource.get_context_to_operation(operation_in_collect)["@context"]
+        #attrs_and_oper_context.update(oper_context)
 
         oper_type_called = BaseOperationController().dict_all_operation_dict()[operation_in_collect]
         operated_attr_context = self.context_resource.attribute_contextualized_dict_for_type(oper_type_called.return_type)
@@ -561,7 +506,17 @@ class AbstractCollectionResource(AbstractResource):
         else:
             resource_type = self.get_operation_type_called(attributes_functions_str).return_type
 
-        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        res_type_context = {}
+        res_type_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
+
+        #operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        #res_type_context['@context'] = self.context_resource.get_context_to_operation(operation_name)['@context']
+        res_type_context['@context'] = {
+            "hydra": "http://www.w3.org/ns/hydra/core#",
+            attributes_functions_str: {"@id": "hydra:totalItems", "@type": "https://schema.org/Integer"}
+        }
+
+        return res_type_context
 
     def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
         return self.get_context_for_operation(request, attributes_functions_str)
@@ -569,11 +524,11 @@ class AbstractCollectionResource(AbstractResource):
 
     def get_context_for_distinct_operation(self, request, attributes_functions_str):
         resource_type = self.resource_type_or_default_resource_type(request)
-        return self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
 
     def get_context_for_group_by_operation(self, request, attributes_functions_str):
         resource_type = self.resource_type_or_default_resource_type(request)
-        context = self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
 
         attr_name = self.remove_last_slash(attributes_functions_str).split('/')[-1]
         context_dict_for_attr = {}
@@ -583,7 +538,7 @@ class AbstractCollectionResource(AbstractResource):
 
     def get_context_for_group_by_count_operation(self, request, attributes_functions_str):
         resource_type = self.resource_type_or_default_resource_type(request)
-        context = self.get_context_for_resource_type(resource_type, attributes_functions_str)
+        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
 
         attr_name = self.remove_last_slash(attributes_functions_str).split('/')[-1]
         context_dict_for_attr = {}
@@ -606,14 +561,39 @@ class AbstractCollectionResource(AbstractResource):
         operation_name = self.operation_controller.group_by_sum_collection_operation_name
         group_by_attr = self.remove_last_slash(attributes_functions_str).split("/")[1]
 
-        context = self.context_resource.get_resource_type_identification(resource_type)
+        context = self.context_resource.get_default_resource_type_identification(resource_type)
         context["hydra:supportedOperations"] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
         context["@context"] = {
-            operation_name: self.context_resource.get_context_to_operation( operation_name ),
+            #operation_name: self.context_resource.get_context_to_operation( operation_name ),
             group_by_attr: self.context_resource.attribute_contextualized_dict_for_field( self.field_for(group_by_attr) ),
             "sum": {"@id": "http://schema.org/Float", "@type": "http://schema.org/Float", "hydra:supportedOperations": []}
         }
         return context
+
+    # -------------------------------------- GET RETURN TYPE FROM OPERATION  --------------------------------------
+    def return_type_for_collect_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_filter_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_count_resource_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_offset_limit_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_distinct_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_offset_limit_and_collect_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_group_by_count_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_group_by_sum_operation(self, attributes_functions_str):
+        pass
 
     def transform_queryset_in_object_model_list(self, queryset):
         if type(queryset[0]) == self.model_class():
@@ -736,6 +716,22 @@ class AbstractCollectionResource(AbstractResource):
         })
         return dicti
 
+    def operation_name_return_type_dic(self):
+        dicti = super(AbstractCollectionResource, self).operation_name_return_type_dic()
+        dicti.update({
+            self.operation_controller.filter_collection_operation_name: self.return_type_for_filter_operation,
+            self.operation_controller.collect_collection_operation_name: self.return_type_for_collect_operation,
+            self.operation_controller.count_resource_collection_operation_name: self.return_type_for_count_resource_operation,
+            self.operation_controller.offset_limit_collection_operation_name: self.return_type_for_offset_limit_operation,
+            self.operation_controller.distinct_collection_operation_name: self.return_type_for_distinct_operation,
+            self.operation_controller.group_by_count_collection_operation_name: self.return_type_for_group_by_count_operation,
+            self.operation_controller.filter_and_collect_collection_operation_name: self.return_type_for_collect_operation,
+            self.operation_controller.offset_limit_and_collect_collection_operation_name: self.return_type_for_offset_limit_and_collect_operation,
+            self.operation_controller.filter_and_count_resource_collection_operation_name: self.return_type_for_count_resource_operation,
+            self.operation_controller.group_by_sum_collection_operation_name: self.return_type_for_group_by_sum_operation,
+        })
+        return dicti
+
     def basic_get(self, request, *args, **kwargs):
         self.object_model = self.model_class()()
         self.current_object_state = self.object_model
@@ -789,14 +785,6 @@ class AbstractCollectionResource(AbstractResource):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    '''
-    def hashed_value(self, object_):
-        dt = datetime.now()
-        local_hash = self.__class__.__name__ + str(dt.microsecond)
-
-        return local_hash
-    '''
-
     def get_object_by_only_attributes(self, attribute_names_str):
         attribute_names_str_as_array = self.remove_last_slash(attribute_names_str).split(',')
         return self.model_class().objects.values(*attribute_names_str_as_array)
@@ -815,12 +803,247 @@ class AbstractCollectionResource(AbstractResource):
             return False
 
         try:
-            if int( offset_limit_snippet_arr[1] ) < 0 or int( offset_limit_snippet_arr[2] ) < 0:
+            offset, limit = offset_limit_snippet_arr[1].split("&")
+            if int(offset) < 0 or int(limit) < 0:
                 return False
         except (ValueError, IndexError):
             return False
 
-        if len(offset_limit_snippet_arr) > 3 and not self.is_operation(offset_limit_snippet_arr[3]):
+        if len(offset_limit_snippet_arr) > 2 and not self.is_operation(offset_limit_snippet_arr[2]):
             return False
         return True
+
+    def convert_value_to_filter_attribute_type(self, type_to_convert_value, literal_value_str):
+        try:
+            converter = ConverterType()
+            return converter.value_converted( type_to_convert_value, literal_value_str)
+            # TIP: Return the uri with parameters converted is more eficient than return True or False
+        except:
+            return None
+
+    def filter_operation_expression_operator_index(self, attributes_functions_arr):
+        try:
+            return attributes_functions_arr.index('or')
+        except:
+            pass
+
+        and_index = -1
+        for idx, attr_funct in enumerate(attributes_functions_arr):
+            if attr_funct == 'and' and attributes_functions_arr[idx - 2] != 'between':
+                return idx
+        else:
+            return and_index
+
+    def filter_operation_sintax_first_three_index_is_ok(self, attributes_functions_arr):
+        if len(attributes_functions_arr) < 3:
+            return False
+        if attributes_functions_arr[0] != self.operation_controller.filter_collection_operation_name:
+            return False
+        if not self.is_attribute(attributes_functions_arr[1]):
+            return False
+
+        expression_operator = attributes_functions_arr[2]
+        if expression_operator not in self.operation_controller.expression_operators_dict().keys():
+            return False
+        if self.operation_controller.expression_operator_expects_parameter(expression_operator) and len(attributes_functions_arr) == 3:
+            return False
+
+        return True
+
+    def filter_operation_sintax_fourth_index_is_ok(self, attributes_functions_arr):
+        if len(attributes_functions_arr) == 3:
+            return True
+
+        value_to_convert = attributes_functions_arr[3]
+        type_to_convert_value = type(self.field_for(attributes_functions_arr[1]))
+        value_converted_or_none = self.convert_value_to_filter_attribute_type(type_to_convert_value, value_to_convert)
+
+        return True if value_converted_or_none else False
+
+    def filter_operation_sintax_fifth_index_is_ok(self, attributes_functions_arr):
+        if len(attributes_functions_arr) < 5:
+            return True
+
+        expression_operator = attributes_functions_arr[2]
+        if self.operation_controller.expression_operator_expects_parameter(expression_operator):
+            # special treatement for between operator
+            if expression_operator == 'between' and attributes_functions_arr[4] != 'and':
+                return False
+
+            if not attributes_functions_arr[4] in self.operation_controller.expression_logical_operators():
+                return False
+
+        return True
+
+    def filter_operation_sintax_ending_is_ok(self, attributes_functions_arr):
+        last_index_value = attributes_functions_arr[-1]
+        if last_index_value in self.operation_controller.dict_all_operation_dict():
+            return True
+
+        if last_index_value in self.operation_controller.expression_operators_dict() and\
+            not self.operation_controller.expression_operator_expects_parameter(last_index_value):
+            return True
+
+        value_to_convert = attributes_functions_arr[-1]
+
+        if len(attributes_functions_arr) > 5 and attributes_functions_arr[-4] == 'between': # if len(array) > 5 could have 'between'
+            type_to_convert_value = type(self.field_for(attributes_functions_arr[-5]))
+        else:
+            type_to_convert_value = type(self.field_for(attributes_functions_arr[-3]))
+        value_converted_or_none = self.convert_value_to_filter_attribute_type(type_to_convert_value, value_to_convert)
+
+        return True if value_converted_or_none else False
+
+    def filter_operation_sintax_is_ok(self, attributes_functions_str):
+        if self.path_has_projection(attributes_functions_str):
+            attributes_functions_str = self.remove_projection_from_path(attributes_functions_str)
+
+        if self.path_has_url(attributes_functions_str):
+            attributes_functions_arr = self.attribute_functions_str_with_url_splitted_by_slash(attributes_functions_str)
+        else:
+            attributes_functions_arr = self.remove_last_slash(attributes_functions_str).split('/')
+
+        if not self.filter_operation_sintax_first_three_index_is_ok(attributes_functions_arr):
+            return False
+        if not self.filter_operation_sintax_fourth_index_is_ok(attributes_functions_arr):
+            return False
+        if not self.filter_operation_sintax_fifth_index_is_ok(attributes_functions_arr):
+            return False
+
+        expression_operator_index = self.filter_operation_expression_operator_index(attributes_functions_arr)
+
+        if expression_operator_index != -1:
+            recursive_sintax_check_str = "filter" + "/" + "/".join(attributes_functions_arr[expression_operator_index+1:])
+            return self.filter_operation_sintax_is_ok( recursive_sintax_check_str )
+        return self.filter_operation_sintax_ending_is_ok(attributes_functions_arr)
+
+    '''
+    # relative to 'filter' operation sintax check
+    def resolve_filter_external_references(self, attributes_functions_arr):
+        attrs_funcs_arr_without_external_refs = []
+        for attr_func in attributes_functions_arr:
+            if self.path_has_url(attr_func):
+                literal_value = self.filter_external_reference_converted(attr_func, attributes_functions_arr)
+                attrs_funcs_arr_without_external_refs.append(literal_value)
+            else:
+                attrs_funcs_arr_without_external_refs.append(attr_func)
+        return attrs_funcs_arr_without_external_refs
+
+    def filter_external_reference_converted(self, url_in_attr_func_arr, attributes_functions_arr):
+        converter = ConverterType()
+        url_index = attributes_functions_arr.index(url_in_attr_func_arr)
+        comparation_attr = attributes_functions_arr[url_index - 2]  # the url is aways imediatly after a boolean operator
+        convert_url_to = type(self.field_for(comparation_attr))
+        return converter.value_converted(convert_url_to, url_in_attr_func_arr)
+
+    def filter_operation_logical_operator_index_or_none(self, attributes_functions_arr):
+        for logical_operator in self.operation_controller.logical_operators_dict().keys():
+            if logical_operator in attributes_functions_arr:
+                return attributes_functions_arr.index(logical_operator)
+        return None
+
+    def filter_operation_first_three_indexes_is_ok(self, filter_oper_snippet_arr):
+        if len(filter_oper_snippet_arr) < 3:
+            return False
+        if filter_oper_snippet_arr[0] != self.operation_controller.filter_collection_operation_name:
+            return False
+        if not self.is_attribute(filter_oper_snippet_arr[1]):
+            return False
+        if filter_oper_snippet_arr[2] not in self.operation_controller.expression_operators_dict():
+            return False
+        return True
+
+    #	-> example: filter/nome/eq/ carlos ('eq' filter_oper_snippet_arr[2] require an value)
+    #	-> example: filter/nome/isnull/ and /email/eq/aaa@bbb ('isnull' filter_oper_snippet_arr[2] doesn't require an value)
+    def filter_operation_fourth_index_is_ok(self, filter_oper_snippet_arr):
+        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
+        comparation_field = filter_oper_snippet_arr[1]
+
+        # if the filter_oper_snippet_arr[2] boolean operator has no parameters and len(filter_oper_snippet_arr) > 3 filter_oper_snippet_arr[3] must be an logical operator
+        if len(third_index_bool_operator.parameters) == 0:
+            if len(filter_oper_snippet_arr) == 3:
+                return True
+            return filter_oper_snippet_arr[3] in self.operation_controller.logical_operators_dict()
+
+        if issubclass(type( self.field_for(comparation_field) ), third_index_bool_operator.parameters[0]):
+            return True
+        return False
+
+    #   -> example: filter/nome/eq/carlos/ and /email/eq/aaa@bbb.com ('eq' filter_oper_snippet_arr[2] require an value)
+	#	-> example: filter/nome/isnull/and/ email /eq/aaa@bbb.com ('isnull' filter_oper_snippet_arr[2] doesn't require an value)
+    def filter_operation_fifth_index_is_ok(self, filter_oper_snippet_arr):
+        if len(filter_oper_snippet_arr) < 5:
+            return True
+
+        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
+
+        # if filter_oper_snippet_arr[2] has paramenters, filter_oper_snippet_arr[4] must be an logical operator
+        if len(third_index_bool_operator.parameters) > 0:
+            if filter_oper_snippet_arr[4] not in self.operation_controller.logical_operators_dict():
+                return False
+            else:
+                return True
+
+        # if filter_oper_snippet_arr[2] has no paramenters, filter_oper_snippet_arr[3] must be an logical operator and filter_oper_snippet_arr[4] must be an attribute
+        if filter_oper_snippet_arr[3] in self.operation_controller.logical_operators_dict() and self.is_attribute(filter_oper_snippet_arr[4]):
+            return True
+        return False
+
+    def filter_operation_sixth_index_is_ok(self, filter_oper_snippet_arr):
+        if len(filter_oper_snippet_arr) < 6:
+            return True
+
+        # if filter_oper_snippet_arr[4] is an logical operator filter_oper_snippet_arr[5] must be an attribute
+        if filter_oper_snippet_arr[4] in self.operation_controller.logical_operators_dict():
+            if self.is_attribute(filter_oper_snippet_arr[5]):
+                return True
+            return False
+
+        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
+
+        # if filter_oper_snippet_arr[2] has no parameters, filter_oper_snippet_arr[3] is an logical operator and filter_oper_snippet_arr[4] is an attribute, filter_oper_snippet_arr[5] must be an boolean operator
+        if  (len(third_index_bool_operator.parameters) == 0) and\
+            (filter_oper_snippet_arr[3] in self.operation_controller.logical_operators_dict()) and\
+            (self.is_attribute(filter_oper_snippet_arr[4])):
+            if filter_oper_snippet_arr[5] in self.operation_controller.expression_operators_dict():
+                return True
+        return False # if everything else fails, this is not a valid filter operation
+
+    # ATTENTION: is only possible to determine the ending of the filter operation by this way if, there is no logical operator in sintax
+    def filter_operation_ending_is_ok(self, filter_oper_snippet_arr):
+        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
+
+        if len(third_index_bool_operator.parameters) > 0:
+            return self.is_attribute(filter_oper_snippet_arr[3])
+
+        if len(filter_oper_snippet_arr) == 3:
+            return True
+        return filter_oper_snippet_arr[3] in self._dict_all_operation_dict()
+
+    def filter_operation_sintax_is_ok(self, attributes_functions_str):
+        if self.path_has_url(attributes_functions_str):
+            filter_with_url_arr = self.attribute_functions_str_with_url_splitted_by_slash(attributes_functions_str)
+            filter_oper_snippet_arr = self.resolve_filter_external_references(filter_with_url_arr)
+        else:
+            filter_oper_snippet_arr = self.remove_last_slash(attributes_functions_str).split("/")
+
+        if not self.filter_operation_first_three_indexes_is_ok(filter_oper_snippet_arr):
+            return False
+        if not self.filter_operation_fourth_index_is_ok(filter_oper_snippet_arr):
+            return False
+        if not self.filter_operation_fifth_index_is_ok(filter_oper_snippet_arr):
+            return False
+        if not self.filter_operation_sixth_index_is_ok(filter_oper_snippet_arr):
+            return False
+
+        logical_operator_index = self.filter_operation_logical_operator_index_or_none(filter_oper_snippet_arr)
+
+        if logical_operator_index is not None:
+            unchecked_filter_operation_snippet_arr = filter_oper_snippet_arr[logical_operator_index+1:]
+            unchecked_filter_operation_snippet_str = self.operation_controller.filter_collection_operation_name + "/" +\
+                                                     "/".join(unchecked_filter_operation_snippet_arr)
+            return self.filter_operation_sintax_is_ok(unchecked_filter_operation_snippet_str)
+        else:
+            return True
+        '''
 

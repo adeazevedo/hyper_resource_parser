@@ -8,11 +8,12 @@ from hyper_resource.resources.TiffResource import TiffResource
 from hyper_resource.views import * # depraced
 from raster_base.contexts import *
 from raster_base.serializers import *
-from hyper_resource.contexts import BaseContext, RasterAPIRoot
+from hyper_resource.resources.EntryPointResource import RasterEntryPointResource
 
-class APIRoot(RasterAPIRoot):
+class APIRoot(RasterEntryPointResource):
+    serializer_class = EntryPointSerializer
 
-    def get_root_response(self, request, format=None):
+    def get_root_response(self, request, format=None, *args, **kwargs):
         root_links = {
           'imagem-exemplo1-list': reverse('raster_base:ImagemExemplo1_list' , request=request, format=format),
           'imagem-exemplo2-list': reverse('raster_base:ImagemExemplo2_list' , request=request, format=format),

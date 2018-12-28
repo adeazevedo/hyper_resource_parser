@@ -135,7 +135,6 @@ class AbstractResource(APIView):
         self.iri_metadata = ''
         self.iri_style = ''
         self.operation_controller = BaseOperationController()
-        self.token_need = self.token_is_need()
         self.e_tag = None
         self.temporary_content_type = None
         self.resource_type = None
@@ -239,7 +238,7 @@ class AbstractResource(APIView):
     def access_control_expose_headers_str(self):
         return ', '.join(CORS_EXPOSE_HEADERS)
 
-    def add_cors_header_in_header(self, response):
+    def add_cors_headers_in_header(self, response):
         response['access-control-allow-origin'] = self.access_control_allow_origin_str()
         response['access-control-allow-methods'] = self.access_control_allow_methods_str()
         response['access-control-allow-headers'] = self.access_control_allow_headers_str()
@@ -259,7 +258,7 @@ class AbstractResource(APIView):
         self.add_url_in_header(iri_base + '.jsonld', response, rel='http://www.w3.org/ns/json-ld#context"; type="application/ld+json')
         self.add_url_in_header(self.iri_metadata, response, rel="metadata")
         self.add_url_in_header(self.iri_style, response, rel="stylesheet")
-        self.add_cors_header_in_header(response)
+        self.add_cors_headers_in_header(response)
 
         if self.is_entry_point:
             self.add_url_in_header(iri_base, response, rel='http://schema.org/EntryPoint')
@@ -321,18 +320,21 @@ class AbstractResource(APIView):
 
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         attrs_list = self.remove_last_slash(attributes_functions_str).split(",")
-        if len(attrs_list) > 1:
-            self._set_context_to_attributes(attrs_list)
-        else:
-            self._set_context_to_only_one_attribute(attrs_list[0])
+        #if len(attrs_list) > 1:
+        self._set_context_to_attributes(attrs_list)
+        #else:
+        #    self._set_context_to_only_one_attribute(attrs_list[0])
 
         resource_type = self.define_resource_type_by_only_attributes(request, attributes_functions_str)
-        self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
+        #self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
 
         supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
         #supported_properties_dict = self.context_resource.supportedProperties(attribute_names=attrs_list)
 
         context = self.context_resource.get_dict_context()
+        fields_for_attrs = self.fields_to_web_for_attribute_names(attrs_list)
+        context.update( self.context_resource.get_resource_id_and_type_by_attributes(fields_for_attrs) )
+
         context['hydra:supportedOperations'] = supported_operation_dict
         #context['hydra:supportedProperties'] = supported_properties_dict
         return context
@@ -343,7 +345,7 @@ class AbstractResource(APIView):
         context = self.context_resource.get_context_to_operation(operation_name)
 
         resource_type = self.define_resource_type_by_operation(request, operation_name)
-        context.update(self.context_resource.get_resource_type_identification(resource_type))
+        context.update(self.context_resource.get_default_resource_type_identification())
 
         context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
         context['@context']['hydra'] = "http://www.w3.org/ns/hydra/core#"
@@ -416,10 +418,12 @@ class AbstractResource(APIView):
     def _set_context_to_attributes(self, attribute_name_array):
         self.context_resource.set_context_to_attributes(attribute_name_array)
 
+    '''
     def _set_context_to_only_one_attribute(self, attribute_name):
         attribute_type = self.field_for(attribute_name)
         self.context_resource.set_context_to_only_one_attribute(self.current_object_state, attribute_name,
                                                                 attribute_type)
+    '''
 
     def _set_context_to_operation(self, operation_name):
         self.context_resource.set_context_to_operation(self.current_object_state, operation_name)
@@ -467,11 +471,7 @@ class AbstractResource(APIView):
         return CONTENT_TYPE_JSON
 
     def default_resource_type(self):
-        return 'Thing'
-
-    # must be overridden
-    def define_resource_type(self, request, attributes_functions_str):
-        pass
+        return object
 
     def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
         raise NotImplementedError("'define_resource_type_by_only_attributes' must be implemented in subclasses")
@@ -1029,14 +1029,26 @@ class AbstractResource(APIView):
             return None
         return method_to_execute(*[request, attributes_functions_str])
 
+    def execute_method_to_get_return_type_from_operation(self, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        method_to_execute = self.get_return_type_from_operation(operation_name)
+        if method_to_execute is None:
+            return None
+        return method_to_execute(attributes_functions_str)
 
-    def get_context_for_resource_type(self, resource_type, attributes_functions_str):
+    def get_context_for_operation_resource_type(self, resource_type, attributes_functions_str):
         res_type_context = {}
         res_type_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        res_type_context.update( self.context_resource.get_resource_type_identification(resource_type) )
-        operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        res_type_context['@context'] = self.context_resource.get_context_to_operation(operation_name)['@context']
-        res_type_context['@context']['hydra'] = "http://www.w3.org/ns/hydra/core#"
+
+        operation_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
+        res_type_context.update( self.context_resource.get_resource_type_identification_by_operation_return(operation_return_type) )
+
+        #operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        #res_type_context['@context'] = self.context_resource.get_context_to_operation(operation_name)['@context']
+        res_type_context['@context'] = {
+            "hydra": "http://www.w3.org/ns/hydra/core#"
+        }
+
         return res_type_context
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
@@ -1289,6 +1301,12 @@ class AbstractResource(APIView):
     def get_objects_from_join_operation(self, request, attributes_functions_str):
         raise NotImplementedError("'get_operation_type_called' must be implemented in subclasses")
 
+    def return_type_for_join_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_projection_operation(self, attributes_functions_str):
+        pass
+
     #todo: need handle non 200 status code response
     def build_join_operation(self, request, attributes_functions_str):
         uri_before_oper, join_attrs, uri_or_data_after_oper = self.split_join_uri(request, attributes_functions_str)
@@ -1340,6 +1358,14 @@ class AbstractResource(APIView):
 
         return d[operation_name]
 
+    def get_return_type_from_operation(self, operation_name):
+        d = self.operation_name_return_type_dic()
+
+        if operation_name is None:
+            return None
+
+        return d[operation_name]
+
     # Must be overrided
     def operation_name_method_dic(self):
         d = {
@@ -1352,6 +1378,12 @@ class AbstractResource(APIView):
         return {
             self.operation_controller.join_operation_name: self.required_context_for_join_operation,
             self.operation_controller.projection_operation_name: self.required_context_for_projection_operation
+        }
+
+    def operation_name_return_type_dic(self):
+        return {
+            self.operation_controller.join_operation_name: self.return_type_for_join_operation,
+            self.operation_controller.projection_operation_name: self.return_type_for_projection_operation
         }
 
     def projection_operation_sintax_is_ok(self, attributes_functions_str):

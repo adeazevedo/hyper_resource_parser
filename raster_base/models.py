@@ -10,6 +10,12 @@ from hyper_resource.models import FeatureModel, BusinessModel, RasterModel, Tiff
 
 from django.contrib.gis.db import models
 
+class EntryPoint(BusinessModel):
+    imagem_exemplo_tile1_list = models.CharField(max_length=200)
+    imagem_exemplo1_list = models.CharField(max_length=200)
+    imagem_exemplo2_list = models.CharField(max_length=200)
+    imagem_exemplo4_tile2_list = models.CharField(max_length=200)
+
 class ImagemExemplo1(TiffModel):
     rid = models.AutoField(primary_key=True)
     rast = models.RasterField(blank=True, null=True)  # This field type is a guess.

@@ -5,6 +5,7 @@ from hyper_resource.resources.RasterCollectionResource import RasterCollectionRe
 
 class TiffCollectionResource(RasterCollectionResource):
 
+    '''
     def default_content_type(self):
         return CONTENT_TYPE_JSON
 
@@ -50,4 +51,5 @@ class TiffCollectionResource(RasterCollectionResource):
         dic_attrib_key_iri_value = BaseModel().get_iris_raster(self, kwargs)
         self.field_names = list(dic_attrib_key_iri_value.keys())
         return super(TiffCollectionResource, self).options(request, *args, **kwargs)
+    '''
 

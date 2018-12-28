@@ -5,7 +5,8 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot
+from hyper_resource.contexts import EntryPointResourceContext
+from hyper_resource.resources.EntryPointResource import NonSpatialEntryPointResource
 from controle.models import *
 from controle.serializers import *
 from controle.contexts import *
@@ -15,9 +16,10 @@ from hyper_resource.resources.NonSpatialResource import NonSpatialResource
 
 
 
-class APIRoot(NonSpatialAPIRoot):
+class APIRoot(NonSpatialEntryPointResource):
+    serializer_class = EntryPointSerializer
 
-    def get_root_response(self, request, format=None):
+    def get_root_response(self, request, format=None, *args, **kwargs):
         root_links = {
           'gasto-list': reverse('controle_v1:Gasto_list' , request=request, format=format),
           'tipo-gasto-list': reverse('controle_v1:TipoGasto_list' , request=request, format=format),
@@ -32,7 +34,7 @@ class GastoList(CollectionResource):
     serializer_class = GastoSerializer
     contextclassname = 'gasto-list'
     def initialize_context(self):
-        self.context_resource = GastoContext()
+        self.context_resource = GastoCollectionContext()
         self.context_resource.resource = self
 
 

@@ -5,7 +5,8 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework import generics
 from rest_framework import status
-from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot
+from hyper_resource.contexts import EntryPointResourceContext
+from hyper_resource.resources.EntryPointResource import NonSpatialEntryPointResource
 from user_management.models import *
 from user_management.serializers import *
 from user_management.contexts import *
@@ -13,9 +14,9 @@ from user_management.contexts import *
 from hyper_resource.resources.CollectionResource import CollectionResource
 from hyper_resource.resources.NonSpatialResource import NonSpatialResource
 
-class APIRoot(NonSpatialAPIRoot):
+class APIRoot(NonSpatialEntryPointResource):
 
-    def get_root_response(self, request, format=None):
+    def get_root_response(self, request, format=None, *args, **kwargs):
         root_links = {
 
           'api-resource-list': reverse('user_management:APIResource_list' , request=request, format=format),

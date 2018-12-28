@@ -23,6 +23,7 @@ def generate_snippets_to_url(model_class_name, model_class):
     primary_key_name = 'pk'
     unique_field_name = get_unique_field_name_or_none(model_class)
     arr = []
+    arr.append((' ' * 4) + 'url(r"^(?P<attributes_functions>count-resource.*$|projection.*$|filter.*$|collect.*$|offset-limit.*$)/?$", views.APIRoot.as_view(), name="api_root_af"), # HARCODED')
     arr.append((' ' * 4) + 'url(r' +"'^"+  context_name +'/(?P<'+ primary_key_name +'>[0-9]+)/?$' +"'"+ ', views.' +
                model_class_name + 'Detail.as_view(), name=' + "'" + model_class_name +'_detail' +"'" + '),\n')
     arr.append((' ' * 4) + 'url(r' + "'^" + context_name + '/(?P<' + primary_key_name +

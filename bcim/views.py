@@ -8,13 +8,15 @@ from rest_framework import status
 
 from bcim.contexts import *
 from .serializers import *
-from hyper_resource.contexts import BaseContext, FeatureAPIRoot
+from hyper_resource.contexts import EntryPointResourceContext
+from hyper_resource.resources.EntryPointResource import FeatureEntryPointResource
 from hyper_resource.resources.FeatureCollectionResource import FeatureCollectionResource
 from hyper_resource.resources.FeatureResource import FeatureResource
 
-class APIRoot(FeatureAPIRoot):
+class APIRoot(FeatureEntryPointResource):
+    serializer_class = EntryPointSerializer
     
-    def get_root_response(self, request, format=None):
+    def get_root_response(self, request, format=None, *args, **kwargs):
         root_links = {
             'unidades federativas': reverse('bcim_v1:uf_list', request=request, format=format),
             'municipios': reverse('bcim_v1:municipio_list', request=request, format=format),

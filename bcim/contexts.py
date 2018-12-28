@@ -1,7 +1,8 @@
 from hyper_resource.contexts import ContextResource, FeatureResouceContext, FeatureCollectionResourceContext
 
-class UnidadeFederacaoContext(FeatureResouceContext):
+class UnidadeFederacaoListContext(FeatureCollectionResourceContext):
 
+    '''
     def attributes_contextualized_dict(self):
 
         dic_context = {            "id_objeto":  "http://schema.org/identifier",
@@ -14,8 +15,12 @@ class UnidadeFederacaoContext(FeatureResouceContext):
                        }
 
         return dic_context
+    '''
     def representation_name(self):
         return "sigla"
+
+    def get_default_resource_id_vocabulary(self):
+        return "https://schema.org/State"
 
     #def  supportedProperties(self):
     #dic = {"hydra:supportedProperties": [
@@ -27,6 +32,7 @@ class UnidadeFederacaoContext(FeatureResouceContext):
 
 class UnidadeFederacaoDetailContext(FeatureResouceContext):
 
+    '''
     def attributes_contextualized_dict(self):
 
         dic_context = {            "id_objeto":  "http://schema.org/identifier",
@@ -39,16 +45,16 @@ class UnidadeFederacaoDetailContext(FeatureResouceContext):
                        }
 
         return dic_context
+    '''
+    def get_default_resource_id_vocabulary(self):
+        return "https://schema.org/State"
 
     def representation_name(self):
         return "sigla"
 
 class TrechoDrenagemListContext(FeatureResouceContext):
     pass
-class UnidadeFederacaoListContext(FeatureResouceContext):
-    pass
-class UnidadeFederacaoDetailContext(FeatureResouceContext):
-    pass
+
 class MunicipioListContext(FeatureResouceContext):
     pass
 
@@ -58,7 +64,7 @@ class MunicipioDetailContext(FeatureResouceContext):
 class AldeiaIndigenaDetailContext(FeatureResouceContext):
     pass
 
-class AldeiaIndigenaListContext(FeatureResouceContext):
+class AldeiaIndigenaListContext(FeatureCollectionResourceContext):
     pass
 
 class OutrasUnidProtegidasContext(FeatureResouceContext):

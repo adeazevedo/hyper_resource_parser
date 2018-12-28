@@ -4,11 +4,12 @@ from controle import views
 
 app_name = "controle"
 urlpatterns = format_suffix_patterns((
+    url(r'^(?P<attributes_functions>count-resource.*$|projection.*$|filter.*$|collect.*$|offset-limit.*$)/?$', views.APIRoot.as_view(), name='api_root_af'), # HARCODED
     url(r'^$', views.APIRoot.as_view(), name='api_root'),
 
     url(r'^gasto-list/(?P<pk>[0-9]+)/?$', views.GastoDetail.as_view(), name='Gasto_detail'),
     url(r'^gasto-list/(?P<pk>[0-9]+)/(?P<attributes_functions>.*)/?$', views.GastoDetail.as_view(), name='Gasto_detail_af'),
-    url(r'^gasto-list/$', views.GastoList.as_view(), name='Gasto_list'),
+    url(r'^gasto-list/?$', views.GastoList.as_view(), name='Gasto_list'),
     url(r'^gasto-list/(?P<attributes_functions>.*)/?$', views.GastoList.as_view(), name='Gasto_list_af'),
 
     url(r'^tipo-gasto-list/(?P<pk>[0-9]+)/?$', views.TipoGastoDetail.as_view(), name='TipoGasto_detail'),

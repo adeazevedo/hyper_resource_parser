@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from hyper_resource.models import FeatureModel, FeatureModel
+from hyper_resource.models import FeatureModel, FeatureModel, BusinessModel
 # This is an auto-generated Django model module.
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
@@ -13,6 +13,72 @@ from django.contrib.gis.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from hyper_resource.models import FeatureModel, FeatureModel
+
+class EntryPoint(BusinessModel):
+    unidades_federativas = models.CharField(max_length=200)
+    municipios = models.CharField(max_length=200)
+    outros_limites_oficiais = models.CharField(max_length=200)
+    paises = models.CharField(max_length=200)
+    terras_indigenas = models.CharField(max_length=200)
+    unidades_de_conservacao_nao_snuc = models.CharField(max_length=200)
+    unidades_de_protecao_integral = models.CharField(max_length=200)
+    unidades_de_uso_sustentavel = models.CharField(max_length=200)
+    aglomerados_rurais_de_extensao_urbana = models.CharField(max_length=200)
+    aglomerados_rurais_isolado = models.CharField(max_length=200)
+    aldeias_indigenas = models.CharField(max_length=200)
+    areas_edificadas = models.CharField(max_length=200)
+    capitais = models.CharField(max_length=200)
+    cidades = models.CharField(max_length=200)
+    vilas = models.CharField(max_length=200)
+    curvas_batimetricas = models.CharField(max_length=200)
+    curvas_de_nivel = models.CharField(max_length=200)
+    dunas = models.CharField(max_length=200)
+    elementos_fisiografico_natural = models.CharField(max_length=200)
+    picos = models.CharField(max_length=200)
+    pontos_cotados_altimetricos = models.CharField(max_length=200)
+    pontos_cotados_batimetricos = models.CharField(max_length=200)
+    eclusas = models.CharField(max_length=200)
+    edificacoes_de_construcao_portuaria = models.CharField(max_length=200)
+    edificacoes_de_construcao_aeroportuaria = models.CharField(max_length=200)
+    edificacoes_de_metro_ferroviaria = models.CharField(max_length=200)
+    fundeadouros = models.CharField(max_length=200)
+    pistas_de_ponto_pouso = models.CharField(max_length=200)
+    pontes = models.CharField(max_length=200)
+    sinalizacoes = models.CharField(max_length=200)
+    travessias = models.CharField(max_length=200)
+    trechos_dutos = models.CharField(max_length=200)
+    trechos_ferroviarios = models.CharField(max_length=200)
+    trechos_hidroviarios = models.CharField(max_length=200)
+    trechos_rodoviarios = models.CharField(max_length=200)
+    tuneis = models.CharField(max_length=200)
+    brejos_e_pantanos = models.CharField(max_length=200)
+    mangues = models.CharField(max_length=200)
+    vegetacoes_de_restinga = models.CharField(max_length=200)
+    edificacoes_publica_militar = models.CharField(max_length=200)
+    postos_fiscais = models.CharField(max_length=200)
+    edificacoes_agropecuarias_de_extracao_vegetal_e_pesca = models.CharField(max_length=200)
+    edificacoes_industrial = models.CharField(max_length=200)
+    extracoes_minerais = models.CharField(max_length=200)
+    edificacoes_religiosa = models.CharField(max_length=200)
+    estacoes_geradoras_de_energia_eletrica = models.CharField(max_length=200)
+    hidreletricas = models.CharField(max_length=200)
+    termeletricas = models.CharField(max_length=200)
+    torres_de_energia = models.CharField(max_length=200)
+    bancos_de_areia = models.CharField(max_length=200)
+    barragens = models.CharField(max_length=200)
+    corredeiras = models.CharField(max_length=200)
+    fozes_maritima = models.CharField(max_length=200)
+    ilhas = models.CharField(max_length=200)
+    massas_dagua = models.CharField(max_length=200)
+    quedas_dagua = models.CharField(max_length=200)
+    recifes = models.CharField(max_length=200)
+    rochas_em_agua = models.CharField(max_length=200)
+    sumidouros_vertedouros = models.CharField(max_length=200)
+    terrenos_sujeito_a_inundacao = models.CharField(max_length=200)
+    trechos_de_drenagem = models.CharField(max_length=200)
+    trechos_de_massa_dagua = models.CharField(max_length=200)
+    areas_de_desenvolvimento_de_controle = models.CharField(max_length=200)
+    marcos_de_limite = models.CharField(max_length=200)
 
 
 class EdifPubMilitar(FeatureModel):

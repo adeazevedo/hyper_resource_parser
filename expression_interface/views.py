@@ -9,7 +9,8 @@ from rest_framework.views import APIView
 
 from expression_interface.contexts import SubBooleanOperatorResourceContext, LogicalOperatorResourceContext
 from hyper_resource.models import boolean_operator, logical_operator
-from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot
+from hyper_resource.contexts import EntryPointResourceContext
+from hyper_resource.resources.EntryPointResource import NonSpatialEntryPointResource
 from rest_framework.response import Response
 
 from hyper_resource.resources.AbstractResource import AbstractResource
@@ -63,64 +64,15 @@ ENABLE_COMPLEX_REQUESTS = True
 
 GEOSGEOMETRY_SUBCLASSES = ['POINT', 'MULTIPOINT', 'LINESTRING', 'MULTILINESTRING', 'POLYGON', 'MULTIPOLYGON', 'GEOMETRYCOLLECTION']
 
-class APIRoot(NonSpatialAPIRoot):
+class APIRoot(NonSpatialEntryPointResource):
 
-    def get_root_response(self, request, format=None):
+    def get_root_response(self, request, format=None, *args, **kwargs):
         root_links = {
             'boolean-operators': reverse('expression_interface:sub_boolean_operator', request=request, format=format),
             'logical_operator': reverse('expression_interface:logical_operator', request=request, format=format),
         }
         ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))
         return ordered_dict_of_link
-
-    '''
-    def __init__(self):
-        super(APIRoot, self).__init__()
-        self.base_context = BaseContext('api-root')
-
-    def add_url_in_header(self, url, response, rel):
-        link = ' <'+url+'>; rel=\"'+rel+'\" '
-        if "Link" not in response:
-            response['Link'] = link
-        else:
-            response['Link'] += "," + link
-        return response
-
-    def add_cors_headers_in_header(self, response):
-        response["access-control-allow-origin"] = "*"
-        access_control_allow_headers_str = ''
-        for value in CORS_ALLOW_HEADERS:
-            access_control_allow_headers_str += ', ' + value
-
-        access_control_expose_headers_str = ''
-        for value in CORS_EXPOSE_HEADERS:
-            access_control_expose_headers_str += ', ' + value
-
-        access_control_allow_methods_str = ''
-        for value in ACCESS_CONTROL_ALLOW_METHODS:
-            access_control_allow_methods_str += ', ' + value
-        response['access-control-allow-headers'] = access_control_allow_headers_str
-        response['access-control-expose-headers'] = access_control_expose_headers_str
-        response['access-control-allow-methods'] = access_control_allow_methods_str
-
-    def options(self, request, *args, **kwargs):
-        context = self.base_context.getContextData(request)
-        root_links = get_root_response(request)
-        context.update(root_links)
-        response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")
-        entry_pointURL = reverse('bcim_v1:api_root', request=request)
-        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
-        response = self.base_context.addContext(request, response)
-        return response
-
-    def get(self, request, format=None, *args, **kwargs):
-        root_links = get_root_response(request)
-        response = Response(root_links)
-        self.add_cors_headers_in_header(response)
-        entry_pointURL = reverse('bcim_v1:api_root', request=request)
-        response = self.add_url_in_header(entry_pointURL, response, 'http://schema.org/EntryPoint')
-        return self.base_context.addContext(request, response)
-    '''
 
 class SubBooleanOperatorResource(AbstractResource):
     contextclassname = 'sub-boolean-operators'

@@ -3,6 +3,16 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from rest_framework.serializers import ModelSerializer, HyperlinkedRelatedField
 
+from hyper_resource.serializers import BusinessSerializer
+
+
+class EntryPointSerializer(BusinessSerializer):
+    class Meta:
+        model = EntryPoint
+        fields = ["gasto-list", "tipo-gasto-list", "usuario-list"]
+        identifier = None
+        identifiers = []
+
 class GastoSerializer(ModelSerializer):
     tipo_gasto = HyperlinkedRelatedField(view_name='controle_v1:TipoGasto_detail', many=False, read_only=True)
     usuario = HyperlinkedRelatedField(view_name='controle_v1:Usuario_detail', many=False, read_only=True)

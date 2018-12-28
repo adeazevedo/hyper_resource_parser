@@ -6,6 +6,7 @@ from bcim import views
 
 app_name = "bcim"
 urlpatterns = (
+    url(r'^(?P<attributes_functions>count-resource.*$|projection.*$|filter.*$|collect.*$|offset-limit.*$)/?$', views.APIRoot.as_view(), name='api_root_af'), # HARCODED
     url(r'^$', views.APIRoot.as_view(), name='api_root'),
 
     #unidades federativas

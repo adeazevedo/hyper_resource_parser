@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from collections import OrderedDict
+
 from rest_framework.serializers import ModelSerializer
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -73,3 +75,48 @@ class GeoBusinessSerializer(GeoFeatureModelSerializer):
 
     def update(self, instance, validated_data):
         return self.create_or_update(instance, validated_data)
+
+    def to_representation(self, instance):
+        """
+        Serialize objects -> primitives.
+        """
+        # prepare OrderedDict geojson structure
+        feature = OrderedDict()
+        # the list of fields that will be processed by get_properties
+        # we will remove fields that have been already processed
+        # to increase performance on large numbers
+        fields = list(self.fields.values())
+
+        # optional id attribute
+        if self.Meta.id_field:
+            field = self.fields[self.Meta.id_field]
+            value = field.get_attribute(instance)
+            feature[self.Meta.identifier] = field.to_representation(value)
+            fields.remove(field)
+
+        # required type attribute
+        # must be "Feature" according to GeoJSON spec
+        feature["type"] = "Feature"
+
+        # required geometry attribute
+        # MUST be present in output according to GeoJSON spec
+        field = self.fields[self.Meta.geo_field]
+        geo_value = field.get_attribute(instance)
+        feature["geometry"] = field.to_representation(geo_value)
+        fields.remove(field)
+        # Bounding Box
+        # if auto_bbox feature is enabled
+        # bbox will be determined automatically automatically
+        if self.Meta.auto_bbox and geo_value:
+            feature["bbox"] = geo_value.extent
+        # otherwise it can be determined via another field
+        elif self.Meta.bbox_geo_field:
+            field = self.fields[self.Meta.bbox_geo_field]
+            value = field.get_attribute(instance)
+            feature["bbox"] = value.extent if hasattr(value, 'extent') else None
+            fields.remove(field)
+
+        # GeoJSON properties
+        feature["properties"] = self.get_properties(instance, fields)
+
+        return feature

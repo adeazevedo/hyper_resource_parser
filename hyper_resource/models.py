@@ -644,30 +644,6 @@ class BaseOperationController(object):
         d['upper'] = Type_Called('upper', [], str)
         return d
 
-    def expression_operators_dict(self):
-        d = {}
-        d['neq'] = Type_Called('neq', [object], None)
-        d['eq'] = Type_Called('eq', [object], None)
-        d['lt'] = Type_Called('lt', [object], None)
-        d['lte'] = Type_Called('lte', [object], None)
-        d['gt'] = Type_Called('gt', [object], None)
-        d['gte'] = Type_Called('gte', [object], None)
-        d['between'] = Type_Called('between', [object, 'and', object], None)
-        d['isnull'] = Type_Called('isnull', [], None)
-        d['isnotnull'] = Type_Called('isnotnull', [], None)
-        d['like'] = Type_Called('like', [object], None)
-        d['notlike'] = Type_Called('notlike', [object], None)
-        d['in'] = Type_Called('in', [list], None)
-        d['notin'] = Type_Called('notin', [list], None)
-        return d
-
-    def logical_operators_dict(self):
-        d = {}
-        d['and'] = Type_Called('and', [], None)
-        d['or'] = Type_Called('or', [], None)
-        #d['not'] = Type_Called('not', [], None)
-        return d
-
     def dict_by_type_geometry_operations_dict(self):
 
         dicti = {}
@@ -834,7 +810,6 @@ class CollectionResourceOperationController(BaseOperationController):
         self.count_resource_collection_operation_name = 'count-resource'
         self.offset_limit_collection_operation_name = 'offset-limit'
         self.distinct_collection_operation_name = 'distinct'
-        #self.group_by_collection_operation_name = 'group_by'
         self.group_by_count_collection_operation_name = 'group-by-count'
         self.filter_and_collect_collection_operation_name = 'filter-and-collect'
         self.filter_and_count_resource_collection_operation_name = 'filter-and-count-resource'
@@ -842,6 +817,7 @@ class CollectionResourceOperationController(BaseOperationController):
         self.join_operation_name = 'join'
         self.group_by_sum_collection_operation_name = "group-by-sum"
         self.projection_operation_name = 'projection'
+        self.all_operations_dict = self.collection_operations_dict()
 
     # operations that return a subcollection of an collection
     def subcollection_operations_dict(self):
@@ -873,7 +849,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
         dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [list, 'hydra:operation'], object)
         dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
-        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int, list], object)
+        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
         dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
         #dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
         dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
@@ -885,6 +861,39 @@ class CollectionResourceOperationController(BaseOperationController):
 
     def dict_all_operation_dict(self):
         return self.collection_operations_dict()
+
+    def set_filter_operation_return_type(self, new_filter_return_type):
+        self.all_operations_dict[self.filter_collection_operation_name].return_type = new_filter_return_type
+
+    def set_collect_operation_return_type(self, new_collect_return_type):
+        self.all_operations_dict[self.collect_collection_operation_name].return_type = new_collect_return_type
+
+    def expression_operator_expects_parameter(self, operator_name):
+        return True if len(self.expression_operators_dict()[operator_name].parameters) > 0 else False
+
+    def expression_operators_dict(self):
+        d = {}
+        d['neq'] = Type_Called('neq', [object], None)
+        d['eq'] = Type_Called('eq', [object], None)
+        d['lt'] = Type_Called('lt', [object], None)
+        d['lte'] = Type_Called('lte', [object], None)
+        d['gt'] = Type_Called('gt', [object], None)
+        d['gte'] = Type_Called('gte', [object], None)
+        d['between'] = Type_Called('between', [object, 'and', object], None)
+        d['isnull'] = Type_Called('isnull', [], None)
+        d['isnotnull'] = Type_Called('isnotnull', [], None)
+        d['like'] = Type_Called('like', [object], None)
+        d['notlike'] = Type_Called('notlike', [object], None)
+        d['in'] = Type_Called('in', [list], None)
+        d['notin'] = Type_Called('notin', [list], None)
+        return d
+
+    def expression_logical_operators(self):
+        d = {}
+        d['and'] = Type_Called('and', [], None)
+        d['or'] = Type_Called('or', [], None)
+        #d['not'] = Type_Called('not', [], None)
+        return d
 
 class SpatialCollectionOperationController(CollectionResourceOperationController):
 
@@ -995,6 +1004,64 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
       operation_dict = self.dict_all_operation_dict()[a_type]
       return name in operation_dict
 
+    def expression_operators_dict(self):
+        d = super(SpatialCollectionOperationController, self).expression_operators_dict()
+        d.update({
+            self.bbcontaining_operation_name:       Type_Called(self.bbcontaining_operation_name, [GEOSGeometry], None),
+            self.bboverlaping_operation_name:       Type_Called(self.bboverlaping_operation_name, [GEOSGeometry], None),
+            self.contained_operation_name:          Type_Called(self.contained_operation_name, [GEOSGeometry], None),
+            self.containing_operation_name:         Type_Called(self.containing_operation_name, [GEOSGeometry], None),
+            self.containing_properly_operation_name:Type_Called(self.containing_properly_operation_name, [GEOSGeometry], None),
+            self.covering_by_operation_name:        Type_Called(self.covering_by_operation_name, [GEOSGeometry], None),
+            self.covering_operation_name:           Type_Called(self.covering_operation_name, [GEOSGeometry], None),
+            self.crossing_operation_name:           Type_Called(self.crossing_operation_name, [GEOSGeometry], None),
+            self.disjointing_operation_name:        Type_Called(self.disjointing_operation_name, [GEOSGeometry], None),
+            self.intersecting_operation_name:       Type_Called(self.intersecting_operation_name, [GEOSGeometry], None),
+            self.isvalid_operation_name:            Type_Called(self.isvalid_operation_name, [GEOSGeometry], None),
+            self.overlaping_operation_name:         Type_Called(self.overlaping_operation_name, [GEOSGeometry], None),
+            self.relating_operation_name:           Type_Called(self.relating_operation_name, [GEOSGeometry], None),
+            self.touching_operation_name:           Type_Called(self.touching_operation_name, [GEOSGeometry], None),
+            self.within_operation_name:             Type_Called(self.within_operation_name, [GEOSGeometry], None),
+            self.on_left_operation_name:            Type_Called(self.on_left_operation_name, [GEOSGeometry], None),
+            self.on_right_operation_name:           Type_Called(self.on_right_operation_name, [GEOSGeometry], None),
+            self.overlaping_left_operation_name:    Type_Called(self.overlaping_left_operation_name, [GEOSGeometry], None),
+            self.overlaping_right_operation_name:   Type_Called(self.overlaping_right_operation_name, [GEOSGeometry], None),
+            self.overlaping_above_operation_name:   Type_Called(self.overlaping_above_operation_name, [GEOSGeometry], None),
+            self.overlaping_below_operation_name:   Type_Called(self.overlaping_below_operation_name, [GEOSGeometry], None),
+            self.strictly_above_operation_name:     Type_Called(self.strictly_above_operation_name, [GEOSGeometry], None),
+            self.strictly_below_operation_name:     Type_Called(self.strictly_below_operation_name, [GEOSGeometry], None),
+            self.distance_gt_operation_name:        Type_Called(self.distance_gt_operation_name, [GEOSGeometry], None),
+            self.distance_gte_operation_name:       Type_Called(self.distance_gte_operation_name, [GEOSGeometry], None),
+            self.distance_lt_operation_name:        Type_Called(self.distance_lt_operation_name, [GEOSGeometry], None),
+            self.distance_lte_operation_name:       Type_Called(self.distance_lte_operation_name, [GEOSGeometry], None),
+            self.dwithin_operation_name:            Type_Called(self.dwithin_operation_name, [GEOSGeometry], None)
+        })
+        return d
+
+class EntryPointResourceOperationController(CollectionResourceOperationController):
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = object.__new__(cls, *args, **kwargs)
+            cls._instance.initialize()
+        return cls._instance
+
+    def initialize(self):
+        self.filter_collection_operation_name = 'filter'
+        self.collect_collection_operation_name = 'collect'
+        self.count_resource_collection_operation_name = 'count-resource'
+        self.offset_limit_collection_operation_name = 'offset-limit'
+        self.projection_operation_name = 'projection'
+
+    def collection_operations_dict(self):
+        dict = {}
+        dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
+        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [list, 'hydra:operation'], object)
+        dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
+        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
+        dict[self.projection_operation_name] = Type_Called(self.projection_operation_name, [list], object)
+        return dict
+
 class BusinessModel(models.Model):
     class Meta:
         abstract = True
@@ -1065,7 +1132,7 @@ class BusinessModel(models.Model):
         return operation_name in self.public_operation_names()
 
     def is_attribute(self, attribute_name):
-        return (attribute_name in dir(self) and not callable(getattr(self, attribute_name)))
+        return (attribute_name in dir(self) and not callable(getattr(self, attribute_name, None)))
 
     def operations_with_parameters_type(self):
         return {}
