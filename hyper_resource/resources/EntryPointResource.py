@@ -15,7 +15,7 @@ class AbstractEntryPointResource(AbstractCollectionResource):
         super(AbstractCollectionResource, self).__init__()
         self.operation_controller = EntryPointResourceOperationController()
 
-    def default_resource_type(self):
+    def default_resource_representation(self):
         return 'EntryPoint'
         #return 'https://www.hydra-cg.com/spec/latest/core/#hydra:entrypoint'
 

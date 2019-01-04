@@ -1,5 +1,6 @@
 from hyper_resource.resources.AbstractResource import *
 
+COLLECTION_TYPE = "Collection"
 
 class AbstractCollectionResource(AbstractResource):
 
@@ -7,14 +8,20 @@ class AbstractCollectionResource(AbstractResource):
         super(AbstractCollectionResource, self).__init__()
         self.queryset = None
 
-    def default_resource_type(self):
-        return 'Collection'
+    def default_resource_representation(self):
+        return COLLECTION_TYPE
 
-    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
-        return self.resource_type_or_default_resource_type(request)
+    def define_resource_representation_by_only_attributes(self, request, attributes_functions_str):
+        return self.resource_representation_or_default_resource_representation(request)
 
-    def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
-        raise NotImplementedError("'define_resource_type_by_collect_operation' must be implemented in subclasses")
+    def define_resource_representation_from_collect_operation(self, request, attributes_functions_str):
+        raise NotImplementedError("'define_resource_representation_by_collect_operation' must be implemented in subclasses")
+
+    def define_resource_representation_from_count_resource_operation(self, request, attributes_functions_str):
+        resource_representation_by_accept = self.resource_representation_or_default_resource_representation(request)
+        if resource_representation_by_accept == self.dict_by_accept_resource_representation()[CONTENT_TYPE_OCTET_STREAM]:
+            return bytes
+        return self.get_operation_type_called(attributes_functions_str).return_type
 
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
         arr_str = attributes_functions_str.split('/')[1:]
@@ -78,9 +85,13 @@ class AbstractCollectionResource(AbstractResource):
         collect_attrs = collect_oper_snippet_arr[1]
         return collect_attrs.replace('&', ',') if as_string else collect_attrs.split('&')
 
-    def get_operation_in_collect_type_called(self, attributes_functions_str):
+    def extract_operation_snippet_from_collect_operation_str(self, attributes_functions_str):
+        operation_in_collect_arr =  self.extract_collect_operation_snippet(attributes_functions_str).split("/")[2:]
+        return "/".join(operation_in_collect_arr)
+
+    def get_operation_in_collect_return_type(self, attributes_functions_str):
         operation_in_collect_name = self.extract_collect_operation_snippet(attributes_functions_str).split("/")[2]
-        return BaseOperationController().dict_all_operation_dict()[operation_in_collect_name]
+        return BaseOperationController().dict_all_operation_dict()[operation_in_collect_name].return_type
 
     def projection_attrs_equals_collect_attrs(self, attributes_functions_str):
         projection_attrs = self.extract_projection_attributes(attributes_functions_str)
@@ -341,7 +352,7 @@ class AbstractCollectionResource(AbstractResource):
         return self.required_context_for_collect_operation(request, attributes_functions_str)
 
     def required_context_for_simple_path(self, request):
-        resource_type = self.resource_type_or_default_resource_type(request)
+        resource_type = self.resource_representation_or_default_resource_representation(request)
         return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def generics_collection_operation_name(self):
@@ -466,7 +477,7 @@ class AbstractCollectionResource(AbstractResource):
     # ---------------------------------------- GET CONTEXT FROM OPERATION  ----------------------------------------
     def get_context_for_filter_operation(self, request, attributes_functions_str):
         operation_name = self.operation_controller.filter_collection_operation_name
-        resource_type = self.define_resource_type_by_operation(request, operation_name)
+        resource_type = self.define_resource_representation_by_operation(request, operation_name)
 
         self.context_resource.set_context_to_operation(self.object_model, operation_name)
         context = self.context_resource.get_dict_context()
@@ -475,23 +486,36 @@ class AbstractCollectionResource(AbstractResource):
         return context
 
     def get_context_for_collect_operation(self, request, attributes_functions_str):
-        resource_type = self.define_resource_type_by_collect_operation(request, attributes_functions_str)
-        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
-        context["@context"].update( self.get_context_for_attr_and_operation_in_collect(request, attributes_functions_str) )
+        context = {}
+        return_type_for_collect_operation = self.return_type_for_collect_operation(attributes_functions_str)
+        context["@type"] = self.context_resource.get_vocabulary_for(return_type_for_collect_operation)
+
+        collect_attributes_arr = self.extract_collect_operation_attributes(attributes_functions_str)
+        if len(collect_attributes_arr) == 1:
+            return_type_for_oper_in_collect = self.get_operation_in_collect_return_type(attributes_functions_str)
+            context["@id"] = self.context_resource.get_vocabulary_for(return_type_for_oper_in_collect)
+        else:
+            context["@id"] = self.context_resource.get_vocabulary_for(object)
+
+        context.update(self.context_resource.get_context_superclass_by_return_type(return_type_for_collect_operation))
+
+        context["@context"] = self.get_context_for_attributes_in_collect_operation(request, attributes_functions_str)
+        context["@context"].update(self.context_resource.get_subClassOf_term_definition())
+        #context["@context"].pop(self.geometry_field_name())
+        resource_representation = self.define_resource_representation_from_collect_operation(request, attributes_functions_str)
+        context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
         return context
 
-    def get_context_for_attr_and_operation_in_collect(self, request, attributes_functions_str):
+    def get_context_for_attributes_in_collect_operation(self, request, attributes_functions_str):
         attrs_and_oper_context = {}
         attrs = self.extract_collect_operation_attributes(attributes_functions_str)
-        operated_attr = attrs.pop()
+        attrs.pop()
 
         operation_in_collect = self.extract_collect_operation_snippet(attributes_functions_str).split('/')[2]
-        #oper_context = self.context_resource.get_context_to_operation(operation_in_collect)["@context"]
-        #attrs_and_oper_context.update(oper_context)
+        oper_in_collect_return_type = self.get_operation_in_collect_return_type(attributes_functions_str)
 
-        oper_type_called = BaseOperationController().dict_all_operation_dict()[operation_in_collect]
-        operated_attr_context = self.context_resource.attribute_contextualized_dict_for_type(oper_type_called.return_type)
-        attrs_and_oper_context.update( {operated_attr: operated_attr_context} )
+        operated_attr_context = self.context_resource.attribute_contextualized_dict_for_type(oper_in_collect_return_type)
+        attrs_and_oper_context.update( {operation_in_collect: operated_attr_context} )
 
         for attr in attrs:
             acontext_for_field = self.context_resource.attribute_contextualized_dict_for_field(self.field_for(attr))
@@ -499,36 +523,28 @@ class AbstractCollectionResource(AbstractResource):
         return attrs_and_oper_context
 
     def get_context_for_count_resource_operation(self, request, attributes_functions_str):
-        res_type_by_accept = self.resource_type_or_default_resource_type(request)
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        count_resource_return_type = self.return_type_for_count_resource_operation(attributes_functions_str)
+        context = self.context_resource.get_resource_id_and_type_by_operation_return_type(operation_name, count_resource_return_type)
 
-        if res_type_by_accept == self.dict_by_accept_resource_type()[CONTENT_TYPE_OCTET_STREAM]:
-            resource_type = 'bytes'
-        else:
-            resource_type = self.get_operation_type_called(attributes_functions_str).return_type
+        resource_representation = self.define_resource_representation_from_count_resource_operation(request, attributes_functions_str)
+        context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
 
-        res_type_context = {}
-        res_type_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-
-        #operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        #res_type_context['@context'] = self.context_resource.get_context_to_operation(operation_name)['@context']
-        res_type_context['@context'] = {
-            "hydra": "http://www.w3.org/ns/hydra/core#",
-            attributes_functions_str: {"@id": "hydra:totalItems", "@type": "https://schema.org/Integer"}
-        }
-
-        return res_type_context
+        context['@context'] = self.context_resource.get_subClassOf_term_definition()
+        context['@context']["total"] = {"@id": "https://schema.org/Integer", "@type": "https://schema.org/Integer"}
+        return context
 
     def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
         return self.get_context_for_operation(request, attributes_functions_str)
         #raise NotImplementedError("'required_context_for_offset_limit_operation' must be implemented in subclasses")
 
     def get_context_for_distinct_operation(self, request, attributes_functions_str):
-        resource_type = self.resource_type_or_default_resource_type(request)
-        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
+        resource_type = self.resource_representation_or_default_resource_representation(request)
+        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
     def get_context_for_group_by_operation(self, request, attributes_functions_str):
-        resource_type = self.resource_type_or_default_resource_type(request)
-        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
+        resource_type = self.resource_representation_or_default_resource_representation(request)
+        context = self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
         attr_name = self.remove_last_slash(attributes_functions_str).split('/')[-1]
         context_dict_for_attr = {}
@@ -537,27 +553,31 @@ class AbstractCollectionResource(AbstractResource):
         return context
 
     def get_context_for_group_by_count_operation(self, request, attributes_functions_str):
-        resource_type = self.resource_type_or_default_resource_type(request)
-        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
+        resource_type = self.resource_representation_or_default_resource_representation(request)
+        context = self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
+        context["@context"] = self.context_resource.get_hydra_term_definition()
+        context["@context"].update(self.context_resource.get_subClassOf_term_definition())
 
         attr_name = self.remove_last_slash(attributes_functions_str).split('/')[-1]
         context_dict_for_attr = {}
         context_dict_for_attr[attr_name] = self.context_resource.attribute_contextualized_dict_for_field(self.field_for(attr_name))
+        context["@context"].update(context_dict_for_attr)
 
-        group_by_count_acontext_dict = {
-                                        "count": {
-                                                    "@id": "http://schema.org/Integer",
-                                                    "@type": "http://schema.org/Integer",
-                                                    "hydra:supportedOperations": []
-                                                }
-                                        }
-        group_by_count_acontext_dict.update(context_dict_for_attr)
-        context["@context"].update(group_by_count_acontext_dict)
+        context["@context"].update(
+            {
+                "count": {
+                    "@id": "http://schema.org/Integer",
+                    "@type": "http://schema.org/Integer"
+                }
+            }
+        )
+
+        #context.update(self.context_resource.get_default_context_superclass())
         return context
 
     def get_context_for_group_by_sum_operation(self, request, attributes_functions_str):
         context = {}
-        resource_type = self.resource_type_or_default_resource_type(request)
+        resource_type = self.resource_representation_or_default_resource_representation(request)
         operation_name = self.operation_controller.group_by_sum_collection_operation_name
         group_by_attr = self.remove_last_slash(attributes_functions_str).split("/")[1]
 
@@ -571,14 +591,17 @@ class AbstractCollectionResource(AbstractResource):
         return context
 
     # -------------------------------------- GET RETURN TYPE FROM OPERATION  --------------------------------------
+    def return_type_by_only_attributes(self, attributes_functions_str):
+        return COLLECTION_TYPE
+
     def return_type_for_collect_operation(self, attributes_functions_str):
-        pass
+        return COLLECTION_TYPE
 
     def return_type_for_filter_operation(self, attributes_functions_str):
         pass
 
     def return_type_for_count_resource_operation(self, attributes_functions_str):
-        pass
+        return int
 
     def return_type_for_offset_limit_operation(self, attributes_functions_str):
         pass
@@ -590,7 +613,7 @@ class AbstractCollectionResource(AbstractResource):
         pass
 
     def return_type_for_group_by_count_operation(self, attributes_functions_str):
-        pass
+        return "Collection"
 
     def return_type_for_group_by_sum_operation(self, attributes_functions_str):
         pass
@@ -917,133 +940,4 @@ class AbstractCollectionResource(AbstractResource):
             return self.filter_operation_sintax_is_ok( recursive_sintax_check_str )
         return self.filter_operation_sintax_ending_is_ok(attributes_functions_arr)
 
-    '''
-    # relative to 'filter' operation sintax check
-    def resolve_filter_external_references(self, attributes_functions_arr):
-        attrs_funcs_arr_without_external_refs = []
-        for attr_func in attributes_functions_arr:
-            if self.path_has_url(attr_func):
-                literal_value = self.filter_external_reference_converted(attr_func, attributes_functions_arr)
-                attrs_funcs_arr_without_external_refs.append(literal_value)
-            else:
-                attrs_funcs_arr_without_external_refs.append(attr_func)
-        return attrs_funcs_arr_without_external_refs
-
-    def filter_external_reference_converted(self, url_in_attr_func_arr, attributes_functions_arr):
-        converter = ConverterType()
-        url_index = attributes_functions_arr.index(url_in_attr_func_arr)
-        comparation_attr = attributes_functions_arr[url_index - 2]  # the url is aways imediatly after a boolean operator
-        convert_url_to = type(self.field_for(comparation_attr))
-        return converter.value_converted(convert_url_to, url_in_attr_func_arr)
-
-    def filter_operation_logical_operator_index_or_none(self, attributes_functions_arr):
-        for logical_operator in self.operation_controller.logical_operators_dict().keys():
-            if logical_operator in attributes_functions_arr:
-                return attributes_functions_arr.index(logical_operator)
-        return None
-
-    def filter_operation_first_three_indexes_is_ok(self, filter_oper_snippet_arr):
-        if len(filter_oper_snippet_arr) < 3:
-            return False
-        if filter_oper_snippet_arr[0] != self.operation_controller.filter_collection_operation_name:
-            return False
-        if not self.is_attribute(filter_oper_snippet_arr[1]):
-            return False
-        if filter_oper_snippet_arr[2] not in self.operation_controller.expression_operators_dict():
-            return False
-        return True
-
-    #	-> example: filter/nome/eq/ carlos ('eq' filter_oper_snippet_arr[2] require an value)
-    #	-> example: filter/nome/isnull/ and /email/eq/aaa@bbb ('isnull' filter_oper_snippet_arr[2] doesn't require an value)
-    def filter_operation_fourth_index_is_ok(self, filter_oper_snippet_arr):
-        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
-        comparation_field = filter_oper_snippet_arr[1]
-
-        # if the filter_oper_snippet_arr[2] boolean operator has no parameters and len(filter_oper_snippet_arr) > 3 filter_oper_snippet_arr[3] must be an logical operator
-        if len(third_index_bool_operator.parameters) == 0:
-            if len(filter_oper_snippet_arr) == 3:
-                return True
-            return filter_oper_snippet_arr[3] in self.operation_controller.logical_operators_dict()
-
-        if issubclass(type( self.field_for(comparation_field) ), third_index_bool_operator.parameters[0]):
-            return True
-        return False
-
-    #   -> example: filter/nome/eq/carlos/ and /email/eq/aaa@bbb.com ('eq' filter_oper_snippet_arr[2] require an value)
-	#	-> example: filter/nome/isnull/and/ email /eq/aaa@bbb.com ('isnull' filter_oper_snippet_arr[2] doesn't require an value)
-    def filter_operation_fifth_index_is_ok(self, filter_oper_snippet_arr):
-        if len(filter_oper_snippet_arr) < 5:
-            return True
-
-        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
-
-        # if filter_oper_snippet_arr[2] has paramenters, filter_oper_snippet_arr[4] must be an logical operator
-        if len(third_index_bool_operator.parameters) > 0:
-            if filter_oper_snippet_arr[4] not in self.operation_controller.logical_operators_dict():
-                return False
-            else:
-                return True
-
-        # if filter_oper_snippet_arr[2] has no paramenters, filter_oper_snippet_arr[3] must be an logical operator and filter_oper_snippet_arr[4] must be an attribute
-        if filter_oper_snippet_arr[3] in self.operation_controller.logical_operators_dict() and self.is_attribute(filter_oper_snippet_arr[4]):
-            return True
-        return False
-
-    def filter_operation_sixth_index_is_ok(self, filter_oper_snippet_arr):
-        if len(filter_oper_snippet_arr) < 6:
-            return True
-
-        # if filter_oper_snippet_arr[4] is an logical operator filter_oper_snippet_arr[5] must be an attribute
-        if filter_oper_snippet_arr[4] in self.operation_controller.logical_operators_dict():
-            if self.is_attribute(filter_oper_snippet_arr[5]):
-                return True
-            return False
-
-        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
-
-        # if filter_oper_snippet_arr[2] has no parameters, filter_oper_snippet_arr[3] is an logical operator and filter_oper_snippet_arr[4] is an attribute, filter_oper_snippet_arr[5] must be an boolean operator
-        if  (len(third_index_bool_operator.parameters) == 0) and\
-            (filter_oper_snippet_arr[3] in self.operation_controller.logical_operators_dict()) and\
-            (self.is_attribute(filter_oper_snippet_arr[4])):
-            if filter_oper_snippet_arr[5] in self.operation_controller.expression_operators_dict():
-                return True
-        return False # if everything else fails, this is not a valid filter operation
-
-    # ATTENTION: is only possible to determine the ending of the filter operation by this way if, there is no logical operator in sintax
-    def filter_operation_ending_is_ok(self, filter_oper_snippet_arr):
-        third_index_bool_operator = self.operation_controller.expression_operators_dict()[ filter_oper_snippet_arr[2] ]
-
-        if len(third_index_bool_operator.parameters) > 0:
-            return self.is_attribute(filter_oper_snippet_arr[3])
-
-        if len(filter_oper_snippet_arr) == 3:
-            return True
-        return filter_oper_snippet_arr[3] in self._dict_all_operation_dict()
-
-    def filter_operation_sintax_is_ok(self, attributes_functions_str):
-        if self.path_has_url(attributes_functions_str):
-            filter_with_url_arr = self.attribute_functions_str_with_url_splitted_by_slash(attributes_functions_str)
-            filter_oper_snippet_arr = self.resolve_filter_external_references(filter_with_url_arr)
-        else:
-            filter_oper_snippet_arr = self.remove_last_slash(attributes_functions_str).split("/")
-
-        if not self.filter_operation_first_three_indexes_is_ok(filter_oper_snippet_arr):
-            return False
-        if not self.filter_operation_fourth_index_is_ok(filter_oper_snippet_arr):
-            return False
-        if not self.filter_operation_fifth_index_is_ok(filter_oper_snippet_arr):
-            return False
-        if not self.filter_operation_sixth_index_is_ok(filter_oper_snippet_arr):
-            return False
-
-        logical_operator_index = self.filter_operation_logical_operator_index_or_none(filter_oper_snippet_arr)
-
-        if logical_operator_index is not None:
-            unchecked_filter_operation_snippet_arr = filter_oper_snippet_arr[logical_operator_index+1:]
-            unchecked_filter_operation_snippet_str = self.operation_controller.filter_collection_operation_name + "/" +\
-                                                     "/".join(unchecked_filter_operation_snippet_arr)
-            return self.filter_operation_sintax_is_ok(unchecked_filter_operation_snippet_str)
-        else:
-            return True
-        '''
 

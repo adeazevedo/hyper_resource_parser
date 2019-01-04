@@ -81,5 +81,5 @@ class Gasto(BusinessModel):
     usuario = models.ForeignKey(Usuario, related_name='gastos', on_delete=models.PROTECT)
     valor = models.FloatField()
     detalhe = models.CharField(max_length=100, null=True)
-    cod_municipio = models.CharField(max_length=7, null=True)
+    #cod_municipio = models.CharField(max_length=7, null=True)
 

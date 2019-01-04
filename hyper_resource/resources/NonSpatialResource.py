@@ -96,9 +96,9 @@ class NonSpatialResource(AbstractResource):
             return self.required_object_for_invalid_sintax(attributes_functions_str)
         return res
 
-    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
-        r_type = self.resource_type_or_default_resource_type(request)
-        if r_type != self.default_resource_type():
+    def define_resource_representation_by_only_attributes(self, request, attributes_functions_str):
+        r_type = self.resource_representation_or_default_resource_representation(request)
+        if r_type != self.default_resource_representation():
             return r_type
 
         attrs_functs_arr = self.remove_last_slash(attributes_functions_str).split(',')
@@ -106,7 +106,7 @@ class NonSpatialResource(AbstractResource):
             # the field type has priority over default resource type
             return type(self.field_for(attrs_functs_arr[0]))
 
-        return self.default_resource_type()
+        return self.default_resource_representation()
 
     def options(self, request, *args, **kwargs):
         required_object = self.basic_options(request, *args, **kwargs)

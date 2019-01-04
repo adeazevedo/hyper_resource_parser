@@ -12,10 +12,12 @@ from rest_framework.response import Response
 
 from hyper_resource.resources.AbstractResource import *
 from hyper_resource.resources.AbstractResource import RequiredObject
+from hyper_resource.resources.FeatureResource import FeatureResource
 from hyper_resource.resources.SpatialCollectionResource import SpatialCollectionResource
-from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource
+from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource, COLLECTION_TYPE
 from hyper_resource.models import SpatialCollectionOperationController, BaseOperationController, FactoryComplexQuery, \
     ConverterType, FeatureModel
+from hyper_resource.contexts import FeatureCollection
 from copy import deepcopy
 from image_generator.img_generator import BuilderPNG
 
@@ -26,8 +28,8 @@ class FeatureCollectionResource(SpatialCollectionResource):
          self.operation_controller = SpatialCollectionOperationController()
          #self.operation_controller.initialize()
 
-    def default_resource_type(self):
-        return 'FeatureCollection'
+    def default_resource_representation(self):
+        return FeatureCollection
 
     def geometry_operations(self):
         return self.operation_controller.feature_collection_operations_dict()
@@ -72,7 +74,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
             return self.default_content_type()
         return CONTENT_TYPE_JSON
 
-    def dict_by_accept_resource_type(self):
+    def dict_by_accept_resource_representation(self):
         dict = {
             CONTENT_TYPE_OCTET_STREAM: 'GeobufCollection'
         }
@@ -80,14 +82,14 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return dict
 
     #todo: need prioritize in unity tests
-    def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
+    def define_resource_representation_from_collect_operation(self, request, attributes_functions_str):
         collected_attrs = self.extract_collect_operation_attributes(attributes_functions_str)
-        res_type_by_accept = self.resource_type_or_default_resource_type(request)
-        oper_in_collect_ret_type = self.get_operation_in_collect_type_called(attributes_functions_str).return_type
+        res_type_by_accept = self.resource_representation_or_default_resource_representation(request)
+        oper_in_collect_ret_type = self.get_operation_in_collect_return_type(attributes_functions_str)
 
-        if res_type_by_accept != self.default_resource_type():
+        if res_type_by_accept != self.default_resource_representation():
             if self.geometry_field_name() not in collected_attrs:
-                return 'bytes'
+                return bytes
 
             # the operated attribute isn't the geometric attribute
             if self.geometry_field_name() != collected_attrs[-1]:
@@ -95,38 +97,38 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
             if issubclass(oper_in_collect_ret_type, GEOSGeometry):
                 return res_type_by_accept
-            return 'bytes'
+            return bytes
 
         # at this point 'res_type_by_accept' current value is 'FeatureCollection'
         if self.geometry_field_name() not in collected_attrs:
-            return "Collection"
+            return COLLECTION_TYPE
 
         # at this point collect operation has geometric attribute
         if len(collected_attrs) == 1:
             if issubclass(oper_in_collect_ret_type, GEOSGeometry):
                 return GeometryCollection
-            return "Collection"
+            return COLLECTION_TYPE
 
         return res_type_by_accept
 
-    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
+    def define_resource_representation_by_only_attributes(self, request, attributes_functions_str):
         attr_arr = self.remove_last_slash(attributes_functions_str).split(",")
-        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
+        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
         accept_content_type = request.META.get(HTTP_ACCEPT, '')
 
-        alpha_dict_by_accept = super(FeatureCollectionResource, self).dict_by_accept_resource_type()
+        alpha_dict_by_accept = super(FeatureCollectionResource, self).dict_by_accept_resource_representation()
 
-        if resource_type_by_accept != self.default_resource_type():
+        if resource_type_by_accept != self.default_resource_representation():
             if self.geometry_field_name() in attr_arr:
                 return resource_type_by_accept
             return alpha_dict_by_accept[ accept_content_type ] if accept_content_type in alpha_dict_by_accept else "Thing"
 
         if self.geometry_field_name() in attr_arr:
             if len(attr_arr) > 1:
-                return self.default_resource_type()
+                return self.default_resource_representation()
             return GeometryCollection
 
-        return "Collection"
+        return COLLECTION_TYPE
 
     #todo
     def path_request_is_ok(self, attributes_functions_str):
@@ -375,8 +377,40 @@ class FeatureCollectionResource(SpatialCollectionResource):
         collection_operations_array.extend(self.operation_controller.feature_collection_operations_dict().keys())
         return collection_operations_array
 
+    def return_type_by_only_attributes(self, attributes_functions_str):
+        attrs = self.remove_last_slash(attributes_functions_str).split(",")
+        if self.geometry_field_name() not in attrs:
+            return super(FeatureCollectionResource, self).return_type_by_only_attributes(attributes_functions_str)
+
+        if len(attrs) > 1:
+            return FeatureCollection
+        return GeometryCollection
+
+    def return_type_for_group_by_count_operation(self, attributes_functions_str):
+        grouped_attribute = self.remove_last_slash(attributes_functions_str).split("/")[-1]
+        if grouped_attribute != self.geometry_field_name():
+            return super(FeatureCollectionResource, self).return_type_for_group_by_count_operation(attributes_functions_str)
+        return FeatureCollection
+
+    def return_type_for_collect_operation(self, attributes_functions_str):
+        attributes_in_collect_arr = self.extract_collect_operation_attributes(attributes_functions_str)
+        if self.geometry_field_name() not in attributes_in_collect_arr:
+            return super(FeatureCollectionResource, self).return_type_for_collect_operation(attributes_functions_str)
+
+        operated_attribute = attributes_in_collect_arr[-1]
+        if not self.geometry_field_name() == operated_attribute:
+            return FeatureCollection
+
+        operation_in_collect_return_type = self.get_operation_in_collect_return_type(attributes_functions_str)
+        if not issubclass(operation_in_collect_return_type, GEOSGeometry):
+            return COLLECTION_TYPE
+
+        if len(attributes_in_collect_arr) > 1:
+            return FeatureCollection
+        return GeometryCollection
+
     def return_type_for_specialized_operation(self, attributes_functions_str):
-        return self.default_resource_type()
+        return self.default_resource_representation()
 
     def return_type_for_union_operation(self, attributes_functions_str):
         pass
@@ -620,54 +654,68 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
         return objects
 
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        context = super(FeatureCollectionResource, self).get_context_by_only_attributes(request, attributes_functions_str)
+        if self.geometry_field_name() in context["@context"].keys():
+            context["@context"].pop(self.geometry_field_name())
+        return context
+
     def get_context_for_specialized_operation(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        resource_type = self.define_resource_type_by_operation(request, operation_name)
-        context = self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
-        context["@context"].update( self.context_resource.attributes_contextualized_dict() )
-        context["@context"].update(
-            {
-                "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-                "subClassOf": {"@id": "rdfs:subClassOf", "@type": "@vocab" }
-            }
-        )
-        context["subClassOf"] = self.context_resource.get_context_superclass()
+        resource_type = self.define_resource_representation_by_operation(request, operation_name)
+        context = self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
+        context["@context"].update(self.context_resource.attributes_contextualized_dict())
         return context
         #operation_name = self.get_operation_name_from_path(attributes_functions_str)
         #resource_type = self.define_resource_type_by_operation(request, operation_name)
         #return self.context_resource.context(resource_type)
 
     def get_context_for_union_operation(self, request, attributes_functions_str):
-        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
-        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else 'Feature'
-        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
+        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
+        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else 'Feature'
+        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
     def get_context_for_extent_operation(self, request, attributes_functions_str):
-        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
-        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else 'Thing'
-        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
+        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
+        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else 'Thing'
+        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
     def get_context_for_make_line_operation(self, request, attributes_functions_str):
-        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
-        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_type() else LineString
-        return self.get_context_for_operation_resource_type(resource_type, attributes_functions_str)
+        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
+        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else LineString
+        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
-    '''
-    def set_resource_type_context_by_operation(self, request, oper_name):
-        resource_type = self.resource_type_or_default_resource_type(request)
+    def get_context_for_collect_operation(self, request, attributes_functions_str):
+        context = super(FeatureCollectionResource, self).get_context_for_collect_operation(request, attributes_functions_str)
 
-        if resource_type is None or resource_type == self.default_resource_type():
-            all_operations_dict = self._dict_all_operation_dict()
-            oper_ret_type = all_operations_dict[oper_name].return_type
-            ret_type = resource_type if oper_ret_type == object else oper_ret_type
+        attrs = self.extract_collect_operation_attributes(attributes_functions_str)
+        if self.geometry_field_name() not in attrs:
+            return context
 
+        operated_attribute = attrs[-1]
+        if self.geometry_field_name() != operated_attribute:
+            context["@context"].pop(self.geometry_field_name())
+            context["@id"] = self.context_resource.get_vocabulary_for("Feature")
+            return context
+
+        oper_in_collect_return_type = self.get_operation_in_collect_return_type(attributes_functions_str)
+        if not issubclass(oper_in_collect_return_type, GEOSGeometry):
+            return context
+
+        if len(attrs) > 1:
+            context["@id"] = self.context_resource.get_vocabulary_for("Feature")
         else:
-            ret_type = resource_type
+            context["@id"] = self.context_resource.get_vocabulary_for(GEOSGeometry)
 
-        self.context_resource.set_context_to_resource_type(request, self.object_model, ret_type)
+        return context
 
-        return self.context_resource.get_resource_type_identification()
-    '''
+    def get_context_for_attributes_in_collect_operation(self, request, attributes_functions_str):
+        context = super(FeatureCollectionResource, self).get_context_for_attributes_in_collect_operation(request, attributes_functions_str)
+        operation_in_collect_name = self.extract_collect_operation_snippet(attributes_functions_str).split('/')[2]
+        oper_return_type = BaseOperationController().dict_all_operation_dict()[operation_in_collect_name].return_type
+        if issubclass(oper_return_type, GEOSGeometry):
+            context.pop(operation_in_collect_name)
+        return context
 
     def get_png(self, queryset, request):
         geom_type = None

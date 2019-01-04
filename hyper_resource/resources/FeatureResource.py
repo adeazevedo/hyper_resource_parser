@@ -6,21 +6,15 @@ class FeatureResource(SpatialResource):
     def __init__(self):
         super(FeatureResource, self).__init__()
 
-    def default_resource_type(self):
+    def default_resource_representation(self):
         return 'Feature'
 
-    def dict_by_accept_resource_type(self):
+    def dict_by_accept_resource_representation(self):
         dict = {
             CONTENT_TYPE_OCTET_STREAM: 'Geobuf'
         }
 
         return dict
-
-    '''
-    def hashed_value(self, object_):
-        dt = datetime.now()
-        return self.__class__.__name__ + str(dt.microsecond)
-    '''
 
     # Must be overridden
     def initialize_context(self):
@@ -158,81 +152,155 @@ class FeatureResource(SpatialResource):
     def operation_name_context_dic(self):
         dict = super(FeatureResource, self).operation_name_context_dic()
         dict.update({
-            self.operation_controller.area_operation_name: self.required_context_for_operation,
-            self.operation_controller.boundary_operation_name: self.required_context_for_operation,
-            self.operation_controller.buffer_operation_name: self.required_context_for_operation,
-            self.operation_controller.centroid_operation_name: self.required_context_for_operation,
-            self.operation_controller.contains_operation_name: self.required_context_for_operation,
-            self.operation_controller.convex_hull_operation_name: self.required_context_for_operation,
-            self.operation_controller.coord_seq_operation_name: self.required_context_for_operation,
-            self.operation_controller.coords_operation_name: self.required_context_for_operation,
-            self.operation_controller.count_operation_name: self.required_context_for_operation,
-            self.operation_controller.crosses_operation_name: self.required_context_for_operation,
-            self.operation_controller.crs_operation_name: self.required_context_for_operation,
-            self.operation_controller.difference_operation_name: self.required_context_for_operation,
-            self.operation_controller.dims_operation_name: self.required_context_for_operation,
-            self.operation_controller.disjoint_operation_name: self.required_context_for_operation,
-            self.operation_controller.distance_operation_name: self.required_context_for_operation,
-            self.operation_controller.empty_operation_name: self.required_context_for_operation,
-            self.operation_controller.envelope_operation_name: self.required_context_for_operation,
-            self.operation_controller.equals_operation_name: self.required_context_for_operation,
-            self.operation_controller.equals_exact_operation_name: self.required_context_for_operation,
-            self.operation_controller.ewkb_operation_name: self.required_context_for_operation,
-            self.operation_controller.ewkt_operation_name: self.required_context_for_operation,
-            self.operation_controller.extend_operation_name: self.required_context_for_operation,
-            self.operation_controller.extent_operation_name: self.required_context_for_operation,
-            self.operation_controller.geojson_operation_name: self.required_context_for_operation,
-            self.operation_controller.geom_type_operation_name: self.required_context_for_operation,
-            self.operation_controller.geom_typeid_operation_name: self.required_context_for_operation,
-            self.operation_controller.get_coords_operation_name: self.required_context_for_operation,
-            self.operation_controller.get_srid_operation_name: self.required_context_for_operation,
-            self.operation_controller.get_x_operation_name: self.required_context_for_operation,
-            self.operation_controller.get_y_operation_name: self.required_context_for_operation,
-            self.operation_controller.get_z_operation_name: self.required_context_for_operation,
-            self.operation_controller.has_cs_operation_name: self.required_context_for_operation,
-            self.operation_controller.hasz_operation_name: self.required_context_for_operation,
-            self.operation_controller.hex_operation_name: self.required_context_for_operation,
-            self.operation_controller.hexewkb_operation_name: self.required_context_for_operation,
-            self.operation_controller.index_operation_name: self.required_context_for_operation,
-            self.operation_controller.intersection_operation_name: self.required_context_for_operation,
-            self.operation_controller.intersects_operation_name: self.required_context_for_operation,
-            self.operation_controller.interpolate_operation_name: self.required_context_for_operation,
-            self.operation_controller.json_operation_name: self.required_context_for_operation,
-            self.operation_controller.kml_operation_name: self.required_context_for_operation,
-            self.operation_controller.length_operation_name: self.required_context_for_operation,
-            self.operation_controller.normalize_operation_name: self.required_context_for_operation,
-            self.operation_controller.num_coords_operation_name: self.required_context_for_operation,
-            self.operation_controller.num_geom_operation_name: self.required_context_for_operation,
-            self.operation_controller.num_points_operation_name: self.required_context_for_operation,
-            self.operation_controller.ogr_operation_name: self.required_context_for_operation,
-            self.operation_controller.overlaps_operation_name: self.required_context_for_operation,
-            self.operation_controller.point_on_surface_operation_name: self.required_context_for_operation,
-            self.operation_controller.relate_operation_name: self.required_context_for_operation,
-            self.operation_controller.relate_pattern_operation_name: self.required_context_for_operation,
-            self.operation_controller.ring_operation_name: self.required_context_for_operation,
+            self.operation_controller.area_operation_name:              self.required_context_for_non_spatial_return_operation,
+            self.operation_controller.boundary_operation_name:          self.required_context_for_operation,
+            self.operation_controller.buffer_operation_name:            self.required_context_for_operation,
+            self.operation_controller.centroid_operation_name:          self.required_context_for_operation,
+            self.operation_controller.contains_operation_name:          self.required_context_for_operation,
+            self.operation_controller.convex_hull_operation_name:       self.required_context_for_operation,
+            self.operation_controller.coord_seq_operation_name:         self.required_context_for_operation,
+            self.operation_controller.coords_operation_name:            self.required_context_for_operation,
+            self.operation_controller.count_operation_name:             self.required_context_for_operation,
+            self.operation_controller.crosses_operation_name:           self.required_context_for_operation,
+            self.operation_controller.crs_operation_name:               self.required_context_for_operation,
+            self.operation_controller.difference_operation_name:        self.required_context_for_operation,
+            self.operation_controller.dims_operation_name:              self.required_context_for_operation,
+            self.operation_controller.disjoint_operation_name:          self.required_context_for_operation,
+            self.operation_controller.distance_operation_name:          self.required_context_for_operation,
+            self.operation_controller.empty_operation_name:             self.required_context_for_operation,
+            self.operation_controller.envelope_operation_name:          self.required_context_for_operation,
+            self.operation_controller.equals_operation_name:            self.required_context_for_operation,
+            self.operation_controller.equals_exact_operation_name:      self.required_context_for_operation,
+            self.operation_controller.ewkb_operation_name:              self.required_context_for_operation,
+            self.operation_controller.ewkt_operation_name:              self.required_context_for_operation,
+            self.operation_controller.extend_operation_name:            self.required_context_for_operation,
+            self.operation_controller.extent_operation_name:            self.required_context_for_operation,
+            self.operation_controller.geojson_operation_name:           self.required_context_for_operation,
+            self.operation_controller.geom_type_operation_name:         self.required_context_for_operation,
+            self.operation_controller.geom_typeid_operation_name:       self.required_context_for_operation,
+            self.operation_controller.get_coords_operation_name:        self.required_context_for_operation,
+            self.operation_controller.get_srid_operation_name:          self.required_context_for_operation,
+            self.operation_controller.get_x_operation_name:             self.required_context_for_operation,
+            self.operation_controller.get_y_operation_name:             self.required_context_for_operation,
+            self.operation_controller.get_z_operation_name:             self.required_context_for_operation,
+            self.operation_controller.has_cs_operation_name:            self.required_context_for_operation,
+            self.operation_controller.hasz_operation_name:              self.required_context_for_operation,
+            self.operation_controller.hex_operation_name:               self.required_context_for_operation,
+            self.operation_controller.hexewkb_operation_name:           self.required_context_for_operation,
+            self.operation_controller.index_operation_name:             self.required_context_for_operation,
+            self.operation_controller.intersection_operation_name:      self.required_context_for_operation,
+            self.operation_controller.intersects_operation_name:        self.required_context_for_operation,
+            self.operation_controller.interpolate_operation_name:       self.required_context_for_operation,
+            self.operation_controller.json_operation_name:              self.required_context_for_operation,
+            self.operation_controller.kml_operation_name:               self.required_context_for_operation,
+            self.operation_controller.length_operation_name:            self.required_context_for_operation,
+            self.operation_controller.normalize_operation_name:         self.required_context_for_operation,
+            self.operation_controller.num_coords_operation_name:        self.required_context_for_operation,
+            self.operation_controller.num_geom_operation_name:          self.required_context_for_operation,
+            self.operation_controller.num_points_operation_name:        self.required_context_for_operation,
+            self.operation_controller.ogr_operation_name:               self.required_context_for_operation,
+            self.operation_controller.overlaps_operation_name:          self.required_context_for_operation,
+            self.operation_controller.point_on_surface_operation_name:  self.required_context_for_operation,
+            self.operation_controller.relate_operation_name:            self.required_context_for_operation,
+            self.operation_controller.relate_pattern_operation_name:    self.required_context_for_operation,
+            self.operation_controller.ring_operation_name:              self.required_context_for_operation,
             #self.operation_controller.set_coords_operation_name: self.required_context_for_operation,
             #self.operation_controller.set_srid_operation_name: self.required_context_for_operation,
             #self.operation_controller.set_x_operation_name: self.required_context_for_operation,
             #self.operation_controller.set_y_operation_name: self.required_context_for_operation,
             #self.operation_controller.set_z_operation_name: self.required_context_for_operation,
-            self.operation_controller.simple_operation_name: self.required_context_for_operation,
-            self.operation_controller.simplify_operation_name: self.required_context_for_operation,
-            self.operation_controller.srid_operation_name: self.required_context_for_operation,
-            self.operation_controller.srs_operation_name: self.required_context_for_operation,
-            self.operation_controller.sym_difference_operation_name: self.required_context_for_operation,
-            self.operation_controller.touches_operation_name: self.required_context_for_operation,
-            self.operation_controller.transform_operation_name: self.required_context_for_operation,
-            self.operation_controller.union_operation_name: self.required_context_for_operation,
-            self.operation_controller.valid_operation_name: self.required_context_for_operation,
-            self.operation_controller.valid_reason_operation_name: self.required_context_for_operation,
-            self.operation_controller.within_operation_name: self.required_context_for_operation,
-            self.operation_controller.wkb_operation_name: self.required_context_for_operation,
-            self.operation_controller.wkt_operation_name: self.required_context_for_operation,
-            self.operation_controller.x_operation_name: self.required_context_for_operation,
-            self.operation_controller.y_operation_name: self.required_context_for_operation,
-            self.operation_controller.z_operation_name: self.required_context_for_operation,
+            self.operation_controller.simple_operation_name:            self.required_context_for_operation,
+            self.operation_controller.simplify_operation_name:          self.required_context_for_operation,
+            self.operation_controller.srid_operation_name:              self.required_context_for_operation,
+            self.operation_controller.srs_operation_name:               self.required_context_for_operation,
+            self.operation_controller.sym_difference_operation_name:    self.required_context_for_operation,
+            self.operation_controller.touches_operation_name:           self.required_context_for_operation,
+            self.operation_controller.transform_operation_name:         self.required_context_for_operation,
+            self.operation_controller.union_operation_name:             self.required_context_for_operation,
+            self.operation_controller.valid_operation_name:             self.required_context_for_operation,
+            self.operation_controller.valid_reason_operation_name:      self.required_context_for_operation,
+            self.operation_controller.within_operation_name:            self.required_context_for_operation,
+            self.operation_controller.wkb_operation_name:               self.required_context_for_operation,
+            self.operation_controller.wkt_operation_name:               self.required_context_for_operation,
+            self.operation_controller.x_operation_name:                 self.required_context_for_operation,
+            self.operation_controller.y_operation_name:                 self.required_context_for_operation,
+            self.operation_controller.z_operation_name:                 self.required_context_for_operation,
         })
         return dict
+
+    def operation_name_return_type_dic(self):
+        dicti = super(FeatureResource, self).operation_name_return_type_dic()
+        dicti.update({
+            self.operation_controller.area_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.boundary_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.buffer_operation_name:            self.return_type_for_specialized_operation,
+            self.operation_controller.centroid_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.contains_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.convex_hull_operation_name:       self.return_type_for_generic_spatial_operation,
+            self.operation_controller.coord_seq_operation_name:         self.return_type_for_generic_spatial_operation,
+            self.operation_controller.coords_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.count_operation_name:             self.return_type_for_generic_spatial_operation,
+            self.operation_controller.crosses_operation_name:           self.return_type_for_generic_spatial_operation,
+            self.operation_controller.crs_operation_name:               self.return_type_for_generic_spatial_operation,
+            self.operation_controller.difference_operation_name:        self.return_type_for_specialized_operation,
+            self.operation_controller.dims_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.disjoint_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.distance_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.empty_operation_name:             self.return_type_for_generic_spatial_operation,
+            self.operation_controller.envelope_operation_name:          self.return_type_for_specialized_operation,
+            self.operation_controller.equals_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.equals_exact_operation_name:      self.return_type_for_generic_spatial_operation,
+            self.operation_controller.ewkb_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.ewkt_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.extend_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.extent_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.geojson_operation_name:           self.return_type_for_generic_spatial_operation,
+            self.operation_controller.geom_type_operation_name:         self.return_type_for_generic_spatial_operation,
+            self.operation_controller.geom_typeid_operation_name:       self.return_type_for_generic_spatial_operation,
+            self.operation_controller.get_coords_operation_name:        self.return_type_for_generic_spatial_operation,
+            self.operation_controller.get_srid_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.get_x_operation_name:             self.return_type_for_generic_spatial_operation,
+            self.operation_controller.get_y_operation_name:             self.return_type_for_generic_spatial_operation,
+            self.operation_controller.get_z_operation_name:             self.return_type_for_generic_spatial_operation,
+            self.operation_controller.has_cs_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.hasz_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.hex_operation_name:               self.return_type_for_generic_spatial_operation,
+            self.operation_controller.hexewkb_operation_name:           self.return_type_for_generic_spatial_operation,
+            self.operation_controller.index_operation_name:             self.return_type_for_generic_spatial_operation,
+            self.operation_controller.intersection_operation_name:      self.return_type_for_specialized_operation,
+            self.operation_controller.intersects_operation_name:        self.return_type_for_generic_spatial_operation,
+            self.operation_controller.interpolate_operation_name:       self.return_type_for_generic_spatial_operation,
+            self.operation_controller.json_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.kml_operation_name:               self.return_type_for_generic_spatial_operation,
+            self.operation_controller.length_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.normalize_operation_name:         self.return_type_for_generic_spatial_operation,
+            self.operation_controller.num_coords_operation_name:        self.return_type_for_generic_spatial_operation,
+            self.operation_controller.num_geom_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.num_points_operation_name:        self.return_type_for_generic_spatial_operation,
+            self.operation_controller.ogr_operation_name:               self.return_type_for_specialized_operation,
+            self.operation_controller.overlaps_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.point_on_surface_operation_name:  self.return_type_for_generic_spatial_operation,
+            self.operation_controller.relate_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.relate_pattern_operation_name:    self.return_type_for_generic_spatial_operation,
+            self.operation_controller.ring_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.simple_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.simplify_operation_name:          self.return_type_for_specialized_operation,
+            self.operation_controller.srid_operation_name:              self.return_type_for_generic_spatial_operation,
+            self.operation_controller.srs_operation_name:               self.return_type_for_generic_spatial_operation,
+            self.operation_controller.sym_difference_operation_name:    self.return_type_for_specialized_operation,
+            self.operation_controller.touches_operation_name:           self.return_type_for_generic_spatial_operation,
+            self.operation_controller.transform_operation_name:         self.return_type_for_specialized_operation,
+            self.operation_controller.union_operation_name:             self.return_type_for_specialized_operation,
+            self.operation_controller.valid_operation_name:             self.return_type_for_generic_spatial_operation,
+            self.operation_controller.valid_reason_operation_name:      self.return_type_for_generic_spatial_operation,
+            self.operation_controller.within_operation_name:            self.return_type_for_generic_spatial_operation,
+            self.operation_controller.wkb_operation_name:               self.return_type_for_generic_spatial_operation,
+            self.operation_controller.wkt_operation_name:               self.return_type_for_generic_spatial_operation,
+            self.operation_controller.x_operation_name:                 self.return_type_for_generic_spatial_operation,
+            self.operation_controller.y_operation_name:                 self.return_type_for_generic_spatial_operation,
+            self.operation_controller.z_operation_name:                 self.return_type_for_generic_spatial_operation,
+        })
+        return dicti
 
     def required_object_for_simple_path(self, request):
         serializer = self.serializer_class(self.object_model)
@@ -315,6 +383,50 @@ class FeatureResource(SpatialResource):
     def add_context_to_joined_external_attributes(self, external_attributes_context):
         pass
 
+    def required_context_for_non_spatial_return_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_non_spatial_return_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        context = super(FeatureResource, self).get_context_by_only_attributes(request, attributes_functions_str)
+        if self.geometry_field_name() in context["@context"].keys():
+            context["@context"].pop(self.geometry_field_name())
+        return context
+
+    def get_context_for_non_spatial_return_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_operation(request, attributes_functions_str)
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        context["@context"].update( self.context_resource.get_operation_return_type_vocabulary_by_operation_name(operation_name) )
+        return context
+
+    def return_type_by_only_attributes(self, attributes_functions_str):
+        attrs = self.remove_last_slash(attributes_functions_str).split(",")
+        if len(attrs) > 1:
+            if self.geometry_field_name() in attrs:
+                return "Feature"
+            return object
+
+        object_model = self.get_object(self.kwargs)
+        attr_val = getattr(object_model, attrs[0])
+
+        if attrs[0] == self.geometry_field_name():
+            return attr_val.geom_type
+        return type(attr_val)
+
+    def return_type_for_specialized_operation(self, attributes_functions_str):
+        '''
+        Return type depends on specific geometry type
+        '''
+        model_object = self.get_object(self.kwargs)
+        geom_val = getattr(model_object, self.geometry_field_name())
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        operation_params = self.remove_last_slash(attributes_functions_str).split("/")[1:]
+        return type( self._execute_attribute_or_method(geom_val, operation_name, operation_params) )
+
+    def return_type_for_generic_spatial_operation(self, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        return self.operation_controller.dict_all_operation_dict()[operation_name].return_type
+
     def get_object_serialized_by_only_attributes(self, attributes_functions_str, object):
         attrs_arr = self.remove_last_slash(attributes_functions_str).split(',')
         serialized_object = {}
@@ -355,10 +467,10 @@ class FeatureResource(SpatialResource):
     def default_content_type(self):
         return CONTENT_TYPE_GEOJSON#self.temporary_content_type if self.temporary_content_type is not None else CONTENT_TYPE_GEOJSON
 
-    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
+    def define_resource_representation_by_only_attributes(self, request, attributes_functions_str):
         attrs_functs_arr = self.remove_last_slash(attributes_functions_str).split(',')
-        r_type = self.resource_type_or_default_resource_type(request)
-        if r_type != self.default_resource_type():
+        r_type = self.resource_representation_or_default_resource_representation(request)
+        if r_type != self.default_resource_representation():
             return r_type if self.geometry_field_name() in attrs_functs_arr else bytes
 
         if len(attrs_functs_arr) == 1:
@@ -393,18 +505,18 @@ class FeatureResource(SpatialResource):
             return self.default_content_type()
         return CONTENT_TYPE_JSON
 
-    def define_resource_type_by_operation(self, request, operation_name):
+    def define_resource_representation_by_operation(self, request, operation_name):
         operation_type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
-        res_type_by_accept = self.resource_type_or_default_resource_type(request)
+        res_type_by_accept = self.resource_representation_or_default_resource_representation(request)
 
         if operation_type_called.return_type == GEOSGeometry:
             return res_type_by_accept
         elif issubclass(operation_type_called.return_type, GEOSGeometry):
-            return res_type_by_accept if res_type_by_accept != self.default_resource_type() else operation_type_called.return_type
+            return res_type_by_accept if res_type_by_accept != self.default_resource_representation() else operation_type_called.return_type
         else:
             res_type_by_accept = bytes if res_type_by_accept == 'Geobuf' else res_type_by_accept
 
-        return operation_type_called.return_type if res_type_by_accept == self.default_resource_type() else res_type_by_accept
+        return operation_type_called.return_type if res_type_by_accept == self.default_resource_representation() else res_type_by_accept
 
     def get(self, request, format=None, *args, **kwargs):
         self.change_request_if_image_png_into_IRI(request)

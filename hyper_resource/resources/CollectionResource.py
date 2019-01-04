@@ -35,8 +35,8 @@ class CollectionResource(AbstractCollectionResource):
 
         return pagination_link
 
-    def define_resource_type_by_collect_operation(self, request, attributes_functions_str):
-        return self.resource_type_or_default_resource_type(request)
+    def define_resource_representation_from_collect_operation(self, request, attributes_functions_str):
+        return self.resource_representation_or_default_resource_representation(request)
 
     def operations_with_parameters_type(self):
         return self.operation_controller.collection_operations_dict()

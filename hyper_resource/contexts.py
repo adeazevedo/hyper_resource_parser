@@ -37,7 +37,7 @@ class Reflection:
         return [method for method in dir ( a_class ) if
                 callable ( getattr ( a_class, method ) ) and a_class.is_not_private ( method )]
 
-class FeatureCollection(object):
+class FeatureCollection(GeometryCollection):
     pass
 
 
@@ -54,9 +54,9 @@ def vocabularyDict():
     dict[DecimalField] = 'https://schema.org/Float'
     dict[AutoField]= 'https://schema.org/identifier'
     dict[int] = 'https://schema.org/Integer'
-    dict[CharField] = 'http://schema.org/Text'
-    dict[TextField] = 'http://schema.org/Text'
-    dict[str] = 'http://schema.org/Text'
+    dict[CharField] = 'https://schema.org/Text'
+    dict[TextField] = 'https://schema.org/Text'
+    dict[str] = 'https://schema.org/Text'
     dict[DateField] = 'http://schema.org/Date'
     dict[date] = 'http://schema.org/Date'
     dict[DateTimeField] = 'http://schema.org/DateTime'
@@ -69,7 +69,7 @@ def vocabularyDict():
     dict[Q] = 'http://extension.schema.org/expression'
     dict[bytes] = 'https://extension.schema.org/binary'
     dict[object] = 'https://schema.org/Thing'
-    dict['Collection'] = 'https://bib.schema.org/Collection'
+    dict['Collection'] = 'hydra:Collection'
 
     dict['nome'] = 'https://schema.org/name'
     dict['name'] = 'https://schema.org/name'
@@ -79,6 +79,7 @@ def vocabularyDict():
     dict['user'] = 'http://schema.org/Person'
 
     dict['FeatureCollection'] = 'http://geojson.org/geojson-ld/vocab.html#FeatureCollection'
+    dict[FeatureCollection] = 'http://geojson.org/geojson-ld/vocab.html#FeatureCollection'
     dict['Feature'] = 'http://geojson.org/geojson-ld/vocab.html#Feature'
     dict[GeometryField] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
     dict[PointField] = 'http://geojson.org/geojson-ld/vocab.html#Point'
@@ -89,15 +90,25 @@ def vocabularyDict():
     dict[MultiPointField] = 'http://geojson.org/geojson-ld/vocab.html#MultiPoint'
 
     dict[MultiPolygon] = 'http://geojson.org/geojson-ld/vocab.html#MultiPolygon'
+    dict['MultiPolygon'] = 'http://geojson.org/geojson-ld/vocab.html#MultiPolygon'
     dict[Polygon] = 'http://geojson.org/geojson-ld/vocab.html#Polygon'
+    dict['Polygon'] = 'http://geojson.org/geojson-ld/vocab.html#Polygon'
     dict[LineString] = 'http://geojson.org/geojson-ld/vocab.html#LineString'
+    dict['LineString'] = 'http://geojson.org/geojson-ld/vocab.html#LineString'
     dict[Point] = 'http://geojson.org/geojson-ld/vocab.html#Point'
+    dict['Point'] = 'http://geojson.org/geojson-ld/vocab.html#Point'
     dict[GEOSGeometry] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
+    dict['GEOSGeometry'] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
     dict[OGRGeometry] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
+    dict['OGRGeometry'] = 'http://geojson.org/geojson-ld/vocab.html#geometry'
     dict[MultiLineString] = 'http://geojson.org/geojson-ld/vocab.html#MultiLineString'
+    dict['MultiLineString'] = 'http://geojson.org/geojson-ld/vocab.html#MultiLineString'
     dict[MultiPoint] = 'http://geojson.org/geojson-ld/vocab.html#MultiPoint'
+    dict['MultiPoint'] = 'http://geojson.org/geojson-ld/vocab.html#MultiPoint'
     dict[GeometryCollection] = 'http://geojson.org/geojson-ld/vocab.html#GeometryCollection'
+    dict['GeometryCollection'] = 'http://geojson.org/geojson-ld/vocab.html#GeometryCollection'
     dict[SpatialReference] = 'http://geojson.org/geojson-ld/vocab.html#SpatialReference'
+    dict['SpatialReference'] = 'http://geojson.org/geojson-ld/vocab.html#SpatialReference'
 
     #collection
     dict['filter'] = 'http://opengis.org/operations/filter'
@@ -257,11 +268,20 @@ def OperationVocabularyDict():
 
     return dic
 
+def OperationReturnTypeVocabularyDict():
+    dic = {}
+    dic['count-resource'] = {"@id": "hydra:totalItems", "@type": "https://schema.org/Thing"}
+    dic['area'] = {"@id": "https://schema.org/Float", "@type": "https://schema.org/Float"}
+    return dic
+
 def vocabulary(a_key):
     return vocabularyDict()[a_key] if a_key in vocabularyDict() else None
 
 def operation_vocabulary(a_key):
     return OperationVocabularyDict()[a_key] if a_key in OperationVocabularyDict() else None
+
+def operation_return_type_vocabulary(a_key, operation_return_type=None):
+    return OperationReturnTypeVocabularyDict()[a_key] if a_key in OperationReturnTypeVocabularyDict() else None
 
 class SupportedProperty():
     def __init__(self, property_name='', required=False, readable=True, writeable=True, is_unique=False, is_identifier=False, is_external=False ):
@@ -348,6 +368,7 @@ def initialize_dict():
     soc = SpatialCollectionOperationController()
     dict[GeometryCollection] = soc.feature_collection_operations_dict()
     dict['FeatureCollection'] = soc.feature_collection_operations_dict()
+    dict[FeatureCollection] = soc.feature_collection_operations_dict()
     dict['GeobufCollection'] = soc.feature_collection_operations_dict()
 
     coc = CollectionResourceOperationController()
@@ -384,42 +405,47 @@ class ContextResource:
 
     def attribute_contextualized_dict_for_field(self, field):
         voc = vocabulary(field.name)
-        oper_voc_list = operation_vocabulary(field.name)
 
         voc_type = vocabulary(type(field))
-        oper_voc_type_list = operation_vocabulary(type(field))
 
         res_voc = voc if voc is not None else voc_type
-        #oper_res_voc_list = voc if oper_voc_list is not None else oper_voc_type_list
 
         if res_voc is None:
-            res_voc  = "http://schema.org/Thing"
-        #if oper_res_voc_list is None:
-        #    oper_res_voc_list  = []
-
-        #oper_res_voc_dict_list = [{"hydra:Link": oper_res_voc} for oper_res_voc in oper_res_voc_list]
-        #return res_voc #{ "@id": res_voc, "@type": "@id"}
+            res_voc  = vocabulary(object)
         return {
             '@id': res_voc,
-            '@type':  ("@id" if isinstance(field, ForeignKey) else voc_type)# ,
-            #'hydra:supportedOperations': oper_res_voc_dict_list
+            '@type':  ("@id" if isinstance(field, ForeignKey) else voc_type)
         }
 
     def attribute_contextualized_dict_for_type(self, a_type):
         res_voc = vocabulary(a_type)
-        oper_voc_type_list = [] if operation_vocabulary(a_type) is None else operation_vocabulary(a_type)
-        oper_res_voc_dict_list = [{"hydra:Link": oper_res_voc} for oper_res_voc in oper_voc_type_list]
         return {
             '@id': res_voc,
-            '@type':  ("@id" if a_type == ForeignKey else res_voc) ,
-            'hydra:supportedOperations': oper_res_voc_dict_list
+            '@type':  ("@id" if a_type == ForeignKey else res_voc)
         }
+
+    def get_vocabulary_for(self, key):
+        return vocabulary(key)
+
+    def get_subClassOf_term_definition(self):
+        dicti = {
+            "subClassOf": {
+                "@id": "rdfs:subClassOf", "@type": "@vocab"
+            },
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#"
+        }
+        dicti.update(self.get_hydra_term_definition())
+        return dicti
+
+    def get_hydra_term_definition(self):
+        return {"hydra": "http://www.w3.org/ns/hydra/core#"}
 
     def attributes_contextualized_dict(self):
         dic_field = {}
         fields = self.resource.fields_to_web()
         for field_model in fields:
             dic_field[field_model.name] = self.attribute_contextualized_dict_for_field(field_model)
+        dic_field.update(self.get_subClassOf_term_definition())
         return dic_field
 
     def selectedAttributeContextualized_dict(self, attribute_name_array):
@@ -496,8 +522,11 @@ class ContextResource:
         iri_templates.append(dict)
         return {"iri_templates": iri_templates}
 
-    def get_context_superclass(self):
-        return "hydra:Class"
+    def get_default_context_superclass(self):
+        return {"subClassOf": "hydra:Resource"}
+
+    def get_context_superclass_by_return_type(self, return_type):
+        return {"subClassOf": "hydra:Resource"}
 
     def get_default_resource_type_identification(self):
         dicti = {}
@@ -506,70 +535,63 @@ class ContextResource:
         return dicti
 
     def get_default_resource_id_vocabulary(self):
-        id_vocabulary = vocabulary(self.resource.default_resource_type())
-        return id_vocabulary if id_vocabulary is not None else "http://schema.org/Thing"
+        id_vocabulary = vocabulary(self.resource.default_resource_representation())
+        return id_vocabulary if id_vocabulary is not None else vocabulary(object)
 
     def get_default_resource_type_vocabulary(self):
-        type_vocabulary = vocabulary(self.resource.default_resource_type())
-        return type_vocabulary if type_vocabulary is not None else "http://schema.org/Thing"
+        type_vocabulary = vocabulary(self.resource.default_resource_representation())
+        return type_vocabulary if type_vocabulary is not None else vocabulary(object)
 
-    def get_resource_id_and_type_by_attributes(self, attr_fields):
+    def get_resource_id_and_type_by_attributes_return_type(self, attr_list, return_type):
         dicti = {}
-        dicti["@id"] = self.get_resource_id_vocabulary_by_attributes(attr_fields)
-        dicti["@type"] = self.get_resource_type_vocabulary_by_attributes(attr_fields)
+        dicti["@id"] = self.get_resource_id_by_attributes_return_type(attr_list, return_type)
+        dicti["@type"] = vocabulary(object)
+        dicti.update( self.get_context_superclass_by_attributes(attr_list) )
         return dicti
 
+    def get_resource_id_by_attributes_return_type(self, attr_list, return_type):
+        if len(attr_list) == 1:
+            field_for_attribute = self.resource.field_for(attr_list[0])
+            return vocabulary(field_for_attribute.name) if vocabulary(field_for_attribute.name) is not None else vocabulary(type(field_for_attribute))
+        return vocabulary(return_type)
+
+    def get_context_superclass_by_attributes(self, attr_list):
+        return self.get_default_context_superclass()
+
+    '''
     def get_resource_id_vocabulary_by_attributes(self, attr_fields):
         if len(attr_fields) == 1:
             return vocabulary(attr_fields[0].name) if vocabulary(attr_fields[0].name) is not None else vocabulary( type(attr_fields[0] ))
         return vocabulary(object)
+    '''
 
+    '''
     def get_resource_type_vocabulary_by_attributes(self, attr_fields):
         raise NotImplementedError("'get_resource_type_vocabulary_by_attributes' must be implemented in subclasses")
+    '''
 
-    def get_resource_type_identification_by_operation_return(self, operation_return_type):
+    def get_operation_return_type_vocabulary_by_operation_name(self, operation_name):
         dicti = {}
-        dicti["@id"] = self.get_default_resource_id_vocabulary()
-        dicti["@type"] = self.get_default_resource_type_vocabulary()
+        return_id_and_type = operation_return_type_vocabulary(operation_name)
+        if return_id_and_type:
+            dicti[operation_name] = return_id_and_type
+        else:
+            dicti[operation_name] = {"@id": "https://schema.org/Thing", "@type": "https://schema.org/Thing"}
         return dicti
 
-    '''
-    def set_context_to_resource_type(self, request, object, object_type=None):
-        resource_type = self.resource.resource_type
-        if resource_type is None:
-            a_type = object_type if object_type is not None else type(object)
-        else:
-            a_type = object_type if resource_type == self.resource.default_resource_type() else resource_type
-        object_type_name = a_type.__name__ if inspect.isclass(a_type) else str(a_type)
 
-        if self.dict_context is None:
-            self.dict_context = { "@id": vocabulary(object_type_name),"@type": object_type_name }
-        else:
-            id_voc = vocabulary(a_type) if a_type in vocabularyDict() else "http://schema.org/Thing"
-            if "@id" in self.dict_context and "@type" in self.dict_context:
-                self.dict_context["@id"] = id_voc
-                self.dict_context["@type"] = object_type_name
-            else:
-                self.dict_context.update( {"@id": id_voc} )
-                self.dict_context.update( {"@type": object_type_name} )
-    '''
+    def get_resource_id_and_type_by_operation_return_type(self, operation_name, operation_return_type):
+        dicti = {}
+        dicti["@id"] = vocabulary(object)
+        dicti["@type"] = vocabulary(object)
+        dicti.update(self.get_default_context_superclass())
+        return dicti
 
     def set_context_to_attributes(self, attributes_name):
         self.dict_context = {}
         self.dict_context["@context"] = self.selectedAttributeContextualized_dict(attributes_name)
         self.dict_context["@context"]["hydra"] = "http://www.w3.org/ns/hydra/core#"
-
-    '''
-    def set_context_to_only_one_attribute(self, object, attribute_name, attribute_type=None):
-        self.set_context_to_attributes([attribute_name])
-
-        obj = getattr(object, attribute_name, None)
-        a_type = attribute_type if attribute_type is not None else type(obj)
-        isGeometry = isinstance(obj, GEOSGeometry) or isinstance(attribute_type, GeometryField)
-
-        if isGeometry:
-            self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(obj, a_type)
-    '''
+        self.dict_context["@context"].update(self.get_subClassOf_term_definition())
 
     def set_context_to_operation(self, object, operation_name):
         self.dict_context = {}
@@ -577,16 +599,6 @@ class ContextResource:
 
         dict [operation_name] = { "@id": vocabulary(operation_name),"@type": "@id" }
         self.dict_context["@context"] = dict
-
-    '''
-    def set_context_to_object(self, object, attribute_name):
-        self.dict_context = {}
-        self.dict_context["@context"] = self.selectedAttributeContextualized_dict([attribute_name])
-        if len(self.dict_context["@context"]) == 0:
-            self.set_context_to_operation(object, attribute_name)
-        else:
-            self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(object, type(object))
-    '''
 
     def get_context_to_operation(self, operation_name):
         dict = {}
@@ -596,23 +608,20 @@ class ContextResource:
     def initalize_context(self, resource_type):
         self.dict_context = {}
         self.dict_context["@context"] = self.attributes_contextualized_dict()
-
-        self.dict_context["@context"]["hydra"] = "http://www.w3.org/ns/hydra/core#"
-        self.dict_context["@context"]["rdfs"] = "http://www.w3.org/2000/01/rdf-schema#"
-        self.dict_context["@context"]["subClassOf"] = { "@id": "rdfs:subClassOf", "@type": "@vocab" }
-
+        self.dict_context["@context"].update(self.get_hydra_term_definition())
+        #self.dict_context["@context"].update(self.get_subClassOf_term_definition())
         self.dict_context["hydra:supportedProperties"] = self.supportedProperties()
         self.dict_context["hydra:supportedOperations"] = self.supportedOperationsFor(self.resource.object_model, resource_type)
         self.dict_context["hydra:representationName"] = self.representationName()
         self.dict_context["hydra:iriTemplate"] = self.iriTemplates()
-        self.dict_context["subClassOf"] = self.get_context_superclass()
+        self.dict_context.update(self.get_default_context_superclass())
         self.dict_context.update(self.get_default_resource_type_identification())
 
         return deepcopy(self.dict_context)
 
     def context(self, resource_type=None):
         if self.dict_context is None:
-            resource_type = resource_type if resource_type is not None else self.resource.default_resource_type()
+            resource_type = resource_type if resource_type is not None else self.resource.default_resource_representation()
             self.initalize_context(resource_type)
         return deepcopy(self.dict_context)
 
@@ -621,6 +630,33 @@ class FeatureResouceContext(ContextResource):
     def iri_template_contextualized_dict(self):
         pass
 
+    def get_resource_id_and_type_by_operation_return_type(self, operation_name, operation_return_type):
+        if not issubclass(operation_return_type, GEOSGeometry):
+            return super(FeatureResouceContext, self).get_resource_id_and_type_by_operation_return_type(operation_name, operation_return_type)
+        dicti = {}
+        dicti["@id"] = vocabulary(operation_return_type)
+        dicti["@type"] = vocabulary(operation_return_type)
+        dicti.update(self.get_default_context_superclass())
+        return dicti
+
+    def get_resource_id_and_type_by_attributes_return_type(self, attr_list, return_type):
+        id_and_type_voc = super(FeatureResouceContext, self).get_resource_id_and_type_by_attributes_return_type(attr_list, return_type)
+        if self.resource.geometry_field_name() not in attr_list:
+            return id_and_type_voc
+        id_and_type_voc["@type"] = vocabulary(return_type)
+        return id_and_type_voc
+
+    def get_resource_id_by_attributes_return_type(self, attr_list, return_type):
+        if self.resource.geometry_field_name() not in attr_list:
+            return super(FeatureResouceContext, self).get_resource_id_by_attributes_return_type(attr_list, return_type)
+        return vocabulary(return_type)
+
+    def attributes_contextualized_dict(self):
+        dict_field = super(FeatureResouceContext, self).attributes_contextualized_dict()
+        dict_field.pop(self.resource.geometry_field_name())
+        return dict_field
+
+    '''
     def get_resource_id_vocabulary_by_attributes(self, attr_fields):
         if len(attr_fields) == 1:
             return vocabulary(attr_fields[0].name) if vocabulary(attr_fields[0].name) is not None else vocabulary( type(attr_fields[0] ))
@@ -633,7 +669,9 @@ class FeatureResouceContext(ContextResource):
         if has_geom_field:
             return vocabulary("Feature")
         return vocabulary(object)
+    '''
 
+    '''
     def get_resource_type_vocabulary_by_attributes(self, attr_fields):
         if len(attr_fields) == 1:
             return vocabulary(type(attr_fields[0]))
@@ -642,20 +680,107 @@ class FeatureResouceContext(ContextResource):
             if issubclass( type(field), GeometryField):
                 return vocabulary('Feature')
         return vocabulary(object)
+    '''
 
 class AbstractCollectionResourceContext(ContextResource):
 
-    def get_context_superclass(self):
-        return "hydra:Collection"
+    def get_default_context_superclass(self):
+        return {"subClassOf": "hydra:Resource"}
 
+    def get_default_resource_id_vocabulary(self):
+        return vocabulary(object)
+
+    def get_resource_id_and_type_by_attributes_return_type(self, attr_list, return_type):
+        dicti = {}
+        dicti["@id"] = vocabulary(object)
+        dicti["@type"] = vocabulary(return_type)
+        dicti.update(self.get_context_superclass_by_attributes(attr_list))
+        return dicti
+
+    def get_resource_id_and_type_by_operation_return_type(self, operation_name, operation_return_type):
+        dicti = self.get_context_superclass_by_return_type(operation_return_type)
+
+        operation_id_type = operation_return_type_vocabulary(operation_name, operation_return_type)
+        if operation_id_type:
+            dicti.update(operation_id_type)
+        else:
+            dicti.update(
+                {"@id": vocabulary(object), "@type": vocabulary(operation_return_type)}
+            )
+        return dicti
+
+    def get_resource_id_by_attributes(self, attr_list):
+        '''
+        For Collection @id represents the identification of each element in collection and not the collection itself
+        '''
+        if len(attr_list) > 1:
+            return vocabulary(object)
+
+        field_for_attribute = self.resource.field_for(attr_list[0])
+        return vocabulary(field_for_attribute.name) if vocabulary(field_for_attribute.name) is not None else vocabulary(type(field_for_attribute))
+
+    '''
     def get_resource_type_vocabulary_by_attributes(self, attr_fields):
         return vocabulary('Collection')
+    '''
 
 class FeatureCollectionResourceContext(AbstractCollectionResourceContext):
+
+    def get_default_context_superclass(self):
+        return {"subClassOf": "hydra:Collection"}
+
+    def get_context_superclass_by_return_type(self, return_type):
+        if return_type not in [GeometryCollection, FeatureCollection]:
+            return super(FeatureCollectionResourceContext, self).get_context_superclass_by_return_type(return_type)
+        return self.get_default_context_superclass()
 
     def get_default_resource_id_vocabulary(self):
         return vocabulary("Feature")
 
+    def get_context_superclass_by_attributes(self, attr_list):
+        if self.resource.geometry_field_name() not in attr_list:
+            return super(FeatureCollectionResourceContext, self).get_default_context_superclass()
+        return self.get_default_context_superclass()
+
+    def get_resource_id_and_type_by_attributes_return_type(self, attr_list, return_type):
+        dicti = {}
+        dicti["@id"] = self.get_resource_id_by_attributes(attr_list)
+        dicti["@type"] = vocabulary(return_type)
+        dicti.update( self.get_context_superclass_by_attributes(attr_list) )
+        return dicti
+
+    def attributes_contextualized_dict(self):
+        dict_field = super(FeatureCollectionResourceContext, self).attributes_contextualized_dict()
+        dict_field.pop(self.resource.geometry_field_name())
+        return dict_field
+
+
+    '''
+    def get_resource_id_by_attributes_return_type(self, attr_list, return_type):
+        if self.resource.geometry_field_name() not in attr_list:
+            return super(FeatureCollectionResouceContext, self).get_resource_id_by_attributes_return_type(attr_list, return_type)
+        return vocabulary(return_type)
+    '''
+
+    def get_resource_id_by_attributes(self, attr_list):
+        if self.resource.geometry_field_name() not in attr_list:
+            return super(FeatureCollectionResourceContext, self).get_resource_id_by_attributes(attr_list)
+        if len(attr_list) > 1:
+            return vocabulary("Feature")
+
+        return vocabulary( type(self.resource.field_for(attr_list[0])) )
+
+    def get_resource_id_and_type_by_operation_return_type(self, operation_name, operation_return_type):
+        if not issubclass(operation_return_type, GEOSGeometry):
+            return super(FeatureCollectionResourceContext, self).get_resource_id_and_type_by_operation_return_type(operation_name, operation_return_type)
+        dicti = {}
+        geom_field = self.resource.field_for(self.resource.geometry_field_name())
+        dicti["@id"] = vocabulary( type(geom_field) )
+        dicti["@type"] = vocabulary(operation_return_type)
+        dicti.update(self.get_context_superclass_by_return_type(operation_return_type))
+        return dicti
+
+    '''
     def get_resource_id_vocabulary_by_attributes(self, attr_fields):
         if len(attr_fields) == 1:
             return vocabulary(attr_fields[0].name) if vocabulary(attr_fields[0].name) is not None else vocabulary( type(attr_fields[0] ))
@@ -665,7 +790,9 @@ class FeatureCollectionResourceContext(AbstractCollectionResourceContext):
                 return vocabulary('Feature')
 
         return super(FeatureCollectionResourceContext, self).get_resource_id_vocabulary_by_attributes(attr_fields)
+    '''
 
+    '''
     def get_resource_type_vocabulary_by_attributes(self, attr_fields):
 
         for field in attr_fields:
@@ -674,41 +801,24 @@ class FeatureCollectionResourceContext(AbstractCollectionResourceContext):
                     return vocabulary(GeometryCollection)
                 return vocabulary('FeatureCollection')
         return super(FeatureCollectionResourceContext, self).get_resource_type_vocabulary_by_attributes(attr_fields)
+    '''
 
 class NonSpatialResourceContext(ContextResource):
 
+    '''
     def get_resource_type_vocabulary_by_attributes(self, attr_fields):
         if len(attr_fields) == 1:
             return vocabulary(type(attr_fields[0]))
         return vocabulary(object)
+    '''
 
 class EntryPointResourceContext(ContextResource):
 
-    '''
-    def __init__(self, contextclassname, serializer_object=None):
-        self.serializer_object = serializer_object
-        self.contextclassname = contextclassname
-    '''
-
-    '''
-    def options(self, request):
-        response = Response(self.getContextData(request), status=status.HTTP_200_OK, content_type="application/ld+json")
-        response = self.createLinkOfContext(request, response)
-        return response
-    '''
-
-    '''
-    def get_resource_type_identification(self, resource_type):
-        res_type_identification = super(EntryPointResourceContext, self).get_resource_type_identification(resource_type)
-        res_type_identification["@id"] = "https://www.hydra-cg.com/spec/latest/core/#hydra:entrypoint"
-        return res_type_identification
-    '''
-
     def attributes_contextualized_dict(self):
         default_attrs_context_dict = super(EntryPointResourceContext, self).attributes_contextualized_dict()
-        for key in default_attrs_context_dict:
-            default_attrs_context_dict[key]["@type"] = "@id"
-            default_attrs_context_dict[key]["@id"] = "https://schema.org/Thing"
+        for field in self.resource.fields_to_web():
+            default_attrs_context_dict[field.name]["@type"] = "@id"
+            default_attrs_context_dict[field.name]["@id"] = "https://schema.org/Thing"
         return default_attrs_context_dict
 
     def addContext(self, request, response):
@@ -732,61 +842,6 @@ class EntryPointResourceContext(ContextResource):
 
         return response
 
-    '''
-    def getHydraData(self, request):
-        #classobject = Class.objects.get(name=self.contextclassname)
-        #serializerHydra = HydraSerializer(classobject, request)
-        return {}
-    '''
-
-    '''
-    def addIriTamplate(self, context, request, serializer_object):
-        url = request.build_absolute_uri()
-        iriTemplate = {
-            "@context": "http://www.w3.org/ns/hydra/context.jsonld",
-            "@type": "IriTemplate",
-            "template": url if url[-1] != '/' else url[:-1] +"{/attribute}",
-            "variableRepresentation": "BasicRepresentation",
-            "mapping": []
-        }
-        if serializer_object is not None:
-            for attr in serializer_object.Meta.identifiers:
-                iriTemplate['mapping'].append({
-                    "@type": "IriTemplateMapping",
-                    "variable": "attribute",
-                    "property": attr,
-                    "required": True
-                })
-        else:
-            iriTemplate['mapping'].append({
-                "@type": "IriTemplateMapping",
-                "variable": "attribute",
-                "property": "hydra:property",
-                "required": True
-            })
-
-        context['iriTemplate'] = iriTemplate
-        return context
-    '''
-
-    '''
-    def addRootLinks(self, context, root_links):
-        context['hydra:supportedProperties'] = []
-        for link_name in root_links.keys():
-            context['hydra:supportedProperties'].append(
-                {
-                    "@type": "hydra:SupportedProperty",#"hydra:Link",
-                    "hydra:required": "true",
-                    "isExternal": "false",
-                    "hydra:writeable": "false",
-                    "isIdentifier": "false",
-                    "hydra:readable": "true",
-                    "isUnique": "true",
-                    "hydra:property": link_name
-                }
-            )
-    '''
-
     def create_context_as_dict(self, dict_of_name_link):
         a_context = {}
         dicti = {"@context": a_context}
@@ -795,30 +850,13 @@ class EntryPointResourceContext(ContextResource):
 
         return dicti
 
-    '''
-    def getContextData(self, request):
-        try:
-            classobject = None #Class.objects.get(name=self.contextclassname)
-        except:
-            return ""
-        serializer = None #ContextSerializer(classobject)
-        contextdata = {} #serializer.data
-        hydradata = self.getHydraData(request)
-        if "@context" in hydradata:
-            hydradata["@context"].update(contextdata["@context"])
-        contextdata.update(hydradata)
-        #contextdata = self.addIriTamplate(contextdata, request, self.serializer_object)
-        contextdata["@id"] = "https://www.hydra-cg.com/spec/latest/core/#hydra:entrypoint"
-        return contextdata
-    '''
-
 class FeatureEntryPointResourceContext(EntryPointResourceContext):
 
     def attributes_contextualized_dict(self):
-        default_attrs_context_dict = super(EntryPointResourceContext, self).attributes_contextualized_dict()
-        for key in default_attrs_context_dict:
-            default_attrs_context_dict[key]["@type"] = "@id"
-            default_attrs_context_dict[key]["@id"] = "http://geojson.org/geojson-ld/vocab.html#FeatureCollection"
+        default_attrs_context_dict = super(FeatureEntryPointResourceContext, self).attributes_contextualized_dict()
+        for field in self.resource.fields_to_web():
+            default_attrs_context_dict[field.name]["@type"] = "@id"
+            default_attrs_context_dict[field.name]["@id"] = "http://geojson.org/geojson-ld/vocab.html#FeatureCollection"
         return default_attrs_context_dict
 
     def create_context_as_dict(self, dict_of_name_link):
@@ -831,34 +869,6 @@ class FeatureEntryPointResourceContext(EntryPointResourceContext):
 
 class RasterEntryPointResourceContext(EntryPointResourceContext):
     pass
-
-    '''
-    def attribute_contextualized_dict_for_field(self, iri):
-       return {
-            '@id': 'http://schema.org/ImageObject',
-            '@type':  "@id"
-       }
-
-    def attributes_contextualized_dict(self):
-        dic_field = {}
-        fields = self.resource.fields_to_web()
-        for field_model in fields:
-            dic_field[field_model] = self.attribute_contextualized_dict_for_field(field_model)
-        return dic_field
-
-    def supportedProperties(self, attribute_names=None):
-        arr_dict = []
-        if self.resource is None:
-            return []
-        fields = self.resource.fields_to_web()
-        for iri in fields:
-            arr_dict.append(SupportedProperty(property_name=iri, required=True, readable=True, writeable=False, is_unique=True, is_identifier=True, is_external=False))
-        #return arr_dict
-        return [supportedAttribute.context() for supportedAttribute in arr_dict]
-
-    def representationName(self):
-        return {}
-    '''
 
 class NonSpatialEntryPointResourceContext(EntryPointResourceContext):
     pass

@@ -99,7 +99,7 @@ class UsuarioList(CollectionResource):
     serializer_class = UsuarioSerializer
     contextclassname = 'usuario-list'
     def initialize_context(self):
-        self.context_resource = UsuarioContext()
+        self.context_resource = UsuarioCollectionContext()
         self.context_resource.resource = self
 
 class UsuarioDetail(NonSpatialResource):

@@ -42,29 +42,29 @@ class TiffResource(RasterResource):
 
         return CONTENT_TYPE_JSON
 
-    def default_resource_type(self):
+    def default_resource_representation(self):
         return 'Tiff'
 
-    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
+    def define_resource_representation_by_only_attributes(self, request, attributes_functions_str):
         attrs_arr = self.remove_last_slash(attributes_functions_str).split(",")
-        resource_type_by_accept = self.resource_type_or_default_resource_type(request)
+        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
 
-        if resource_type_by_accept != self.default_resource_type():
+        if resource_type_by_accept != self.default_resource_representation():
             return resource_type_by_accept
 
         if self.spatial_field_name() in attrs_arr:
-            return self.default_resource_type()
+            return self.default_resource_representation()
 
         if len(attrs_arr) == 1:
             return type( self.field_for(attrs_arr[0]) )
         return 'Thing'
 
-    def define_resource_type_by_operation(self, request, operation_name):
+    def define_resource_representation_by_operation(self, request, operation_name):
         operation_type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
-        res_type_by_accept = self.resource_type_or_default_resource_type(request)
+        res_type_by_accept = self.resource_representation_or_default_resource_representation(request)
 
         # 1°: Trying to define resource type by accept header ...
-        if res_type_by_accept != self.default_resource_type():
+        if res_type_by_accept != self.default_resource_representation():
             return res_type_by_accept
 
         # 2°: Defining resource type by operation return type ...

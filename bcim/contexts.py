@@ -65,7 +65,10 @@ class AldeiaIndigenaDetailContext(FeatureResouceContext):
     pass
 
 class AldeiaIndigenaListContext(FeatureCollectionResourceContext):
-    pass
+
+    # todo: can be defined programaticaly by checking model geometric attribute type
+    def get_default_resource_id_vocabulary(self):
+        return "http://geojson.org/geojson-ld/vocab.html#Point"
 
 class OutrasUnidProtegidasContext(FeatureResouceContext):
     pass

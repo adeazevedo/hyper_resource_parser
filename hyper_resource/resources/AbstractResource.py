@@ -137,7 +137,6 @@ class AbstractResource(APIView):
         self.operation_controller = BaseOperationController()
         self.e_tag = None
         self.temporary_content_type = None
-        self.resource_type = None
         self.is_entry_point = False
         self.http_allowed_methods = ['get', 'head', 'options']
 
@@ -156,11 +155,6 @@ class AbstractResource(APIView):
 
         return response
 
-    '''
-    # Should be overridden
-    def hashed_value(self, object):
-        return hash(object)
-    '''
     def hashed_value(self, object_):
         dt = datetime.now()
         return self.__class__.__name__ + str(dt.microsecond)
@@ -299,8 +293,8 @@ class AbstractResource(APIView):
         self.context_resource.resource = self
 
     def required_context_for_simple_path(self, request):
-        resource_type = self.resource_type_or_default_resource_type(request)
-        return RequiredObject(self.context_resource.context(resource_type), CONTENT_TYPE_LD_JSON, self.object_model, 200)
+        resource_representation = self.resource_representation_or_default_resource_representation(request)
+        return RequiredObject(self.context_resource.context(resource_representation), CONTENT_TYPE_LD_JSON, self.object_model, 200)
 
     def required_context_for_only_attributes(self, request, attributes_functions_str):
         context = self.get_context_by_only_attributes(request, attributes_functions_str)
@@ -320,42 +314,33 @@ class AbstractResource(APIView):
 
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         attrs_list = self.remove_last_slash(attributes_functions_str).split(",")
-        #if len(attrs_list) > 1:
         self._set_context_to_attributes(attrs_list)
-        #else:
-        #    self._set_context_to_only_one_attribute(attrs_list[0])
-
-        resource_type = self.define_resource_type_by_only_attributes(request, attributes_functions_str)
-        #self.context_resource.set_context_to_resource_type(request, self.object_model, resource_type)
-
-        supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        #supported_properties_dict = self.context_resource.supportedProperties(attribute_names=attrs_list)
-
         context = self.context_resource.get_dict_context()
-        fields_for_attrs = self.fields_to_web_for_attribute_names(attrs_list)
-        context.update( self.context_resource.get_resource_id_and_type_by_attributes(fields_for_attrs) )
 
+        resource_representation = self.define_resource_representation_by_only_attributes(request, attributes_functions_str)
+        supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
         context['hydra:supportedOperations'] = supported_operation_dict
-        #context['hydra:supportedProperties'] = supported_properties_dict
+
+        return_type_by_attributes = self.return_type_by_only_attributes(attributes_functions_str)
+        context.update(self.context_resource.get_resource_id_and_type_by_attributes_return_type(attrs_list, return_type_by_attributes))
         return context
 
     # WARNING: Not usefull for operations like 'projection' whose resource type depends of selected attribute
     def get_context_for_operation(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        context = self.context_resource.get_context_to_operation(operation_name)
+        resource_representation_by_operation = self.define_resource_representation_by_operation(request, operation_name)
+        operation_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
 
-        resource_type = self.define_resource_type_by_operation(request, operation_name)
-        context.update(self.context_resource.get_default_resource_type_identification())
-
-        context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        context['@context']['hydra'] = "http://www.w3.org/ns/hydra/core#"
+        context = self.context_resource.get_resource_id_and_type_by_operation_return_type(operation_name, operation_return_type)
+        context['@context'] = self.context_resource.get_subClassOf_term_definition()
+        context['@context'].update( self.context_resource.get_hydra_term_definition() )
+        context.update(self.context_resource.get_default_context_superclass())
+        context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_representation_by_operation)
         return context
 
     def get_context_for_projection_operation(self, request, attributes_functions_str):
         projection_attrs = self.extract_projection_attributes(attributes_functions_str, as_string=True)
-        context = self.get_context_by_only_attributes(request, projection_attrs)
-        context['@context'].update(self.context_resource.get_context_to_operation( self.operation_controller.projection_operation_name )['@context'])
-        return context
+        return self.get_context_by_only_attributes(request, projection_attrs)
 
     def get_context_for_join_operation(self, request, attributes_functions_str):
         raise NotImplementedError("'get_context_for_join_operation' must be implemented in subclasses")
@@ -470,15 +455,15 @@ class AbstractResource(APIView):
     def default_content_type(self):
         return CONTENT_TYPE_JSON
 
-    def default_resource_type(self):
+    def default_resource_representation(self):
         return object
 
-    def define_resource_type_by_only_attributes(self, request, attributes_functions_str):
-        raise NotImplementedError("'define_resource_type_by_only_attributes' must be implemented in subclasses")
+    def define_resource_representation_by_only_attributes(self, request, attributes_functions_str):
+        raise NotImplementedError("'define_resource_representation_by_only_attributes' must be implemented in subclasses")
 
-    def define_resource_type_by_operation(self, request, operation_name):
-        return self.resource_type_or_default_resource_type(request)
-        #raise NotImplementedError("'define_resource_type_by_operation' must be implemented in subclasses")
+    def define_resource_representation_by_operation(self, request, operation_name):
+        return self.resource_representation_or_default_resource_representation(request)
+        #raise NotImplementedError("'define_resource_representation_by_operation' must be implemented in subclasses")
 
     def define_content_type_by_only_attributes(self, request, attributes_functions_str):
         return self.content_type_or_default_content_type(request)
@@ -499,26 +484,26 @@ class AbstractResource(APIView):
 
         return a_content_type
 
-    def dict_by_accept_resource_type(self):
+    def dict_by_accept_resource_representation(self):
         dicti = {
             CONTENT_TYPE_OCTET_STREAM: bytes
         }
 
         return dicti
 
-    def resource_type_for_accept_header(self, accept):
-        return self.dict_by_accept_resource_type()[accept] if accept in self.dict_by_accept_resource_type() else None
+    def resource_representation_by_accept_header(self, accept):
+        return self.dict_by_accept_resource_representation()[accept] if accept in self.dict_by_accept_resource_representation() else None
 
-    def resource_type_or_default_resource_type(self, request):
+    def resource_representation_or_default_resource_representation(self, request):
         if request is None:
-            return self.default_resource_type()
+            return self.default_resource_representation()
 
         accept = request.META.get(HTTP_ACCEPT, '')
 
         if accept not in SUPPORTED_CONTENT_TYPES:
-            return self.default_resource_type()
+            return self.default_resource_representation()
 
-        return self.resource_type_for_accept_header(accept)
+        return self.resource_representation_by_accept_header(accept)
 
     # Answer if a client's etag is equal server's etag
     def conditional_etag_match(self, request):
@@ -1036,19 +1021,14 @@ class AbstractResource(APIView):
             return None
         return method_to_execute(attributes_functions_str)
 
-    def get_context_for_operation_resource_type(self, resource_type, attributes_functions_str):
+    def get_context_for_operation_resource_type(self, attributes_functions_str, resource_type):
         res_type_context = {}
+        res_type_context["@context"] = self.context_resource.get_subClassOf_term_definition()
+        res_type_context["@context"].update(self.context_resource.get_hydra_term_definition())
         res_type_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-
         operation_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
-        res_type_context.update( self.context_resource.get_resource_type_identification_by_operation_return(operation_return_type) )
-
-        #operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        #res_type_context['@context'] = self.context_resource.get_context_to_operation(operation_name)['@context']
-        res_type_context['@context'] = {
-            "hydra": "http://www.w3.org/ns/hydra/core#"
-        }
-
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        res_type_context.update(self.context_resource.get_resource_id_and_type_by_operation_return_type(operation_name, operation_return_type))
         return res_type_context
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
@@ -1300,6 +1280,15 @@ class AbstractResource(APIView):
 
     def get_objects_from_join_operation(self, request, attributes_functions_str):
         raise NotImplementedError("'get_operation_type_called' must be implemented in subclasses")
+
+    def return_type_by_only_attributes(self, attributes_functions_str):
+        attrs = self.remove_last_slash(attributes_functions_str).split(",")
+        if len(attrs) > 1:
+            return object
+
+        object_model = self.get_object(self.kwargs)
+        attr_val = getattr(object_model, attrs[0])
+        return type(attr_val)
 
     def return_type_for_join_operation(self, attributes_functions_str):
         pass
