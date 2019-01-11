@@ -57,7 +57,7 @@ class TiffResource(RasterResource):
 
         if len(attrs_arr) == 1:
             return type( self.field_for(attrs_arr[0]) )
-        return 'Thing'
+        return object
 
     def define_resource_representation_by_operation(self, request, operation_name):
         operation_type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
@@ -68,7 +68,8 @@ class TiffResource(RasterResource):
             return res_type_by_accept
 
         # 2°: Defining resource type by operation return type ...
-        return self.operation_controller.get_user_friendly_resource_type_name( operation_type_called.return_type )
+        #return self.operation_controller.get_user_friendly_resource_type_name( operation_type_called.return_type )
+        return operation_type_called.return_type
 
     def required_object_for_simple_path(self, request):
         return RequiredObject(self.object_model.vsi_buffer(),  self.content_type_or_default_content_type(request), self.object_model, 200)
@@ -114,28 +115,54 @@ class TiffResource(RasterResource):
     def operation_name_context_dic(self):
         dict = super(TiffResource, self).operation_name_context_dic()
         dict.update({
-            self.operation_controller.bands_operation_name: self.required_context_for_operation,
-            self.operation_controller.destructor_operation_name: self.required_context_for_operation,
-            self.operation_controller.driver_operation_name: self.required_context_for_operation,
-            self.operation_controller.extent_operation_name: self.required_context_for_operation,
-            self.operation_controller.geotransform_operation_name: self.required_context_for_operation,
-            self.operation_controller.height_operation_name: self.required_context_for_operation,
-            self.operation_controller.info_operation_name: self.required_context_for_operation,
-            self.operation_controller.metadata_operation_name: self.required_context_for_operation,
-            self.operation_controller.name_operation_name: self.required_context_for_operation,
-            self.operation_controller.origin_operation_name: self.required_context_for_operation,
-            self.operation_controller.ptr_operation_name: self.required_context_for_operation,
-            self.operation_controller.ptr_type_operation_name: self.required_context_for_operation,
-            self.operation_controller.scale_operation_name: self.required_context_for_operation,
-            self.operation_controller.skew_operation_name: self.required_context_for_operation,
-            self.operation_controller.srid_operation_name: self.required_context_for_operation,
-            self.operation_controller.srs_operation_name: self.required_context_for_operation,
-            self.operation_controller.transform_operation_name: self.required_context_for_operation,
-            self.operation_controller.vsi_buffer_operation_name: self.required_context_for_operation,
-            self.operation_controller.warp_operation_name: self.required_context_for_operation,
-            self.operation_controller.width_operation_name: self.required_context_for_operation,
+            self.operation_controller.bands_operation_name:         self.required_context_for_operation,
+            self.operation_controller.destructor_operation_name:    self.required_context_for_operation,
+            self.operation_controller.driver_operation_name:        self.required_context_for_driver_operation,
+            self.operation_controller.extent_operation_name:        self.required_context_for_operation,
+            self.operation_controller.geotransform_operation_name:  self.required_context_for_operation,
+            self.operation_controller.height_operation_name:        self.required_context_for_operation,
+            self.operation_controller.info_operation_name:          self.required_context_for_operation,
+            self.operation_controller.metadata_operation_name:      self.required_context_for_operation,
+            self.operation_controller.name_operation_name:          self.required_context_for_operation,
+            self.operation_controller.origin_operation_name:        self.required_context_for_operation,
+            self.operation_controller.ptr_operation_name:           self.required_context_for_operation,
+            self.operation_controller.ptr_type_operation_name:      self.required_context_for_operation,
+            self.operation_controller.scale_operation_name:         self.required_context_for_operation,
+            self.operation_controller.skew_operation_name:          self.required_context_for_operation,
+            self.operation_controller.srid_operation_name:          self.required_context_for_operation,
+            self.operation_controller.srs_operation_name:           self.required_context_for_operation,
+            self.operation_controller.transform_operation_name:     self.required_context_for_transform_operation,
+            self.operation_controller.vsi_buffer_operation_name:    self.required_context_for_operation,
+            self.operation_controller.warp_operation_name:          self.required_context_for_operation,
+            self.operation_controller.width_operation_name:         self.required_context_for_operation,
         })
         return dict
+
+    def operation_name_return_type_dic(self):
+        dicti = super(TiffResource, self).operation_name_return_type_dic()
+        dicti.update({
+            self.operation_controller.bands_operation_name:          self.return_type_for_bands_operation,
+            self.operation_controller.destructor_operation_name:     self.return_type_for_destructor_operation,
+            self.operation_controller.driver_operation_name:         self.return_type_for_driver_operation,
+            self.operation_controller.extent_operation_name:         self.return_type_for_extent_operation,
+            self.operation_controller.geotransform_operation_name:   self.return_type_for_geotransform_operation,
+            self.operation_controller.height_operation_name:         self.return_type_for_height_operation,
+            self.operation_controller.info_operation_name:           self.return_type_for_info_operation,
+            self.operation_controller.metadata_operation_name:       self.return_type_for_metadata_operation,
+            self.operation_controller.name_operation_name:           self.return_type_for_name_operation,
+            self.operation_controller.origin_operation_name:         self.return_type_for_origin_operation,
+            self.operation_controller.ptr_operation_name:            self.return_type_for_ptr_operation,
+            self.operation_controller.ptr_type_operation_name:       self.return_type_for_ptr_type_operation,
+            self.operation_controller.scale_operation_name:          self.return_type_for_scale_operation,
+            self.operation_controller.skew_operation_name:           self.return_type_for_skew_operation,
+            self.operation_controller.srid_operation_name:           self.return_type_for_srid_operation,
+            self.operation_controller.srs_operation_name:            self.return_type_for_srid_operation,
+            self.operation_controller.transform_operation_name:      self.return_type_for_transform_operation,
+            self.operation_controller.vsi_buffer_operation_name:     self.return_type_for_vsi_buffer_operation,
+            self.operation_controller.warp_operation_name:           self.return_type_for_warp_operation,
+            self.operation_controller.width_operation_name:          self.return_type_for_width_operation
+        })
+        return dicti
 
     def required_object_for_transform_operation(self, request, attributes_functions_str):
         object = self.get_object_from_transform_operation(request, attributes_functions_str)
@@ -172,6 +199,111 @@ class TiffResource(RasterResource):
 
         else:
             return RequiredObject( {operation_name: a_value} , content_type_by_operation, self.object_model, 200)
+
+    def required_context_for_transform_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_transform_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def required_context_for_driver_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_driver_operation(request, attributes_functions_str)
+        return RequiredObject(context, CONTENT_TYPE_LD_JSON, self.object_model, 200)
+
+    def get_context_by_only_attributes(self, request, attributes_functions_str):
+        attrs_list = self.remove_last_slash(attributes_functions_str).split(",")
+        if self.spatial_field_name() not in attrs_list:
+            return super(TiffResource, self).get_context_by_only_attributes(request, attributes_functions_str)
+
+        resource_representation = self.define_resource_representation_by_only_attributes(request, attributes_functions_str)
+        context = {
+            "@context" :self.context_resource.get_subClassOf_term_definition(),
+            'hydra:supportedOperations': self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
+        }
+
+        return_type_by_attributes = self.return_type_by_only_attributes(attributes_functions_str)
+        context.update(self.context_resource.get_resource_id_and_type_by_attributes_return_type(attrs_list, return_type_by_attributes))
+        return context
+
+    def get_context_for_transform_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_operation(request, attributes_functions_str)
+        return context
+
+    def get_context_for_driver_operation(self, request, attributes_functions_str):
+        context = self.get_context_for_operation(request, attributes_functions_str)
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        context["@context"].update(self.context_resource.get_operation_return_type_term_definition(operation_name))
+        return context
+
+    def return_type_by_only_attributes(self, attributes_functions_str):
+        attrs = self.remove_last_slash(attributes_functions_str).split(",")
+        if self.spatial_field_name() in attrs:
+            return self.default_resource_representation()
+
+        if len(attrs) == 1:
+            return object
+
+        object_model = self.get_object(self.kwargs)
+        attr_val = getattr(object_model, attrs[0])
+        return type(attr_val)
+
+    def return_type_for_bands_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_destructor_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_driver_operation(self, attributes_functions_str):
+        return str
+
+    def return_type_for_extent_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_geotransform_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_height_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_info_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_metadata_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_name_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_origin_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_ptr_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_ptr_type_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_scale_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_skew_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_srid_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_srs_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_transform_operation(self, attributes_functions_str):
+        return GDALRaster
+
+    def return_type_for_vsi_buffer_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_warp_operation(self, attributes_functions_str):
+        pass
+
+    def return_type_for_width_operation(self, attributes_functions_str):
+        pass
 
     def response_request_attributes_functions_str_with_url(self, attributes_functions_str, request=None):
         attributes_functions_str = re.sub(r':/+', '://', attributes_functions_str)
@@ -235,22 +367,3 @@ class TiffResource(RasterResource):
         resp = Response(data=req_obj.representation_object, status=200, content_type=req_obj.content_type)
         self.set_etag_in_header(resp, self.e_tag)
         return resp
-
-    '''
-    def get(self, request, format=None, *args, **kwargs):
-        required_object = self.basic_get(request, *args, **kwargs)
-
-        if required_object.status_code != 200:
-            return required_object
-
-        if required_object.content_type == CONTENT_TYPE_IMAGE_TIFF:
-            response = HttpResponse(required_object.representation_object, required_object.content_type)
-            response['Content-Disposition'] = 'attachment; filename=' + self.default_file_name()
-            return response
-
-        if required_object.content_type == CONTENT_TYPE_OCTET_STREAM:
-            return Response(data=bytes(required_object.representation_object),status=200, content_type=required_object.content_type)
-            #self.response_base_get_binary(request, required_object)
-
-        return Response(data=required_object.representation_object,status=200, content_type=required_object.content_type)
-    '''

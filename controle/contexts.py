@@ -1,8 +1,8 @@
-from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext, NonSpatialResourceContext, \
+from hyper_resource.contexts import FeatureResourceContext, FeatureCollectionResourceContext, NonSpatialResourceContext, \
     AbstractCollectionResourceContext
 
 
-class BusinessModelContext(FeatureResouceContext):
+class BusinessModelContext(FeatureResourceContext):
     pass
 class BusinessModelCollectionContext(FeatureCollectionResourceContext):
     pass

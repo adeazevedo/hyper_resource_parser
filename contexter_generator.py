@@ -3,6 +3,14 @@ import os
 import re
 import django
 
+from django.contrib.gis.db.models import GeometryField
+
+
+def is_spatial(model_class):
+    for field in model_class._meta.get_fields():
+      if isinstance(field, GeometryField):
+         return True
+    return False
 
 def convert_camel_case_to_hifen(camel_case_string):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', camel_case_string)
@@ -13,19 +21,23 @@ def detect_primary_key_field(fields_of_model_class):
 
 def generate_snippets_to_url(model_class_name, model_class):
 
-    #class MunicipioContext(FeatureContext):
-    #   pass
-
     arr = []
-    arr.append('class ' + model_class_name + 'DetailContext(FeatureResouceContext):' + '\n')
-    arr.append((' ' * 4) + 'pass\n')
-    arr.append('class ' + model_class_name + 'ListContext(FeatureCollectionResourceContext):' + '\n')
-    arr.append((' ' * 4) + 'pass\n')
+    if is_spatial(model_class):
+        arr.append('class ' + model_class_name + 'DetailContext(FeatureResourceContext):' + '\n')
+        arr.append((' ' * 4) + 'pass\n')
+        arr.append('class ' + model_class_name + 'ListContext(FeatureCollectionResourceContext):' + '\n')
+        arr.append((' ' * 4) + 'pass\n')
+    else:
+        arr.append('class ' + model_class_name + 'DetailContext(NonSpatialResourceContext):' + '\n')
+        arr.append((' ' * 4) + 'pass\n')
+        arr.append('class ' + model_class_name + 'ListContext(AbstractCollectionResourceContext):' + '\n')
+        arr.append((' ' * 4) + 'pass\n')
+
     return arr
 
 def imports_str_as_array():
     arr = []
-    arr.append("from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext\n")
+    arr.append("from hyper_resource.contexts import *\n")
     return arr
 
 def generate_file(package_name, default_name='contexts.py'):

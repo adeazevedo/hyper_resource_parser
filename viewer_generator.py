@@ -84,7 +84,7 @@ def imports_str_as_array(a_name):
     arr.append("from " + a_name + ".serializers import *\n")
     arr.append("from " + a_name + ".contexts import *\n\n")
     #arr.append("from hyper_resource.contexts import BaseContext, NonSpatialAPIRoot, FeatureAPIRoot\n")
-    arr.append("from hyper_resource.resources.EntryPointResource import *")
+    arr.append("from hyper_resource.resources.EntryPointResource import *\n")
     arr.append("from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource\n")
     arr.append("from hyper_resource.resources.AbstractResource import *\n")
     arr.append("from hyper_resource.resources.CollectionResource import CollectionResource\n")
@@ -127,24 +127,6 @@ def generate_file(package_name, default_name='views.py'):
         sr.write((' ' * 8) + '}\n\n')
         sr.write((' ' * 8) + 'ordered_dict_of_link = OrderedDict(sorted(root_links.items(), key=lambda t: t[0]))\n')
         sr.write((' ' * 8) + 'return ordered_dict_of_link\n\n')
-        '''
-        sr.write('class APIRoot(APIView):\n\n')
-        sr.write((' ' * 4) + 'def __init__(self):\n')
-        sr.write((' ' * 8) +'super(APIRoot, self).__init__()\n')
-        sr.write((' ' * 8) +'self.base_context = BaseContext('+"'"+'api-root'+"'"+')\n\n')
-        sr.write((' ' * 4) +'def options(self, request, *args, **kwargs):\n')
-        sr.write((' ' * 8) +'context = self.base_context.getContextData(request)\n')
-        sr.write((' ' * 8) +'root_links = get_root_response(request)\n')
-        #sr.write((' ' * 8) +'context.update(root_links)\n')
-        #sr.write((' ' * 8) +'self.base_context.addRootLinks(context, root_links)\n')
-        sr.write((' ' * 8) +'response = Response(context, status=status.HTTP_200_OK, content_type="application/ld+json")\n')
-        sr.write((' ' * 8) +'response = self.base_context.addContext(request, response)\n')
-        sr.write((' ' * 8) +'return response\n\n')
-        sr.write((' ' * 4) +'def get(self, request, format=None, *args, **kwargs):\n')
-        sr.write((' ' * 8) +'root_links = get_root_response(request)\n')
-        sr.write((' ' * 8) +'response = Response(root_links)\n')
-        sr.write((' ' * 8) +'return self.base_context.addContext(request, response)\n\n')
-        '''
         for tuple_name_and_class in arr_tuple_name_and_class:
 
             for str in generate_snippets_to_view(tuple_name_and_class[0], tuple_name_and_class[1], is_spatial(tuple_name_and_class[1])):

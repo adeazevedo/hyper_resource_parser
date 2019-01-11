@@ -1,4 +1,4 @@
-from hyper_resource.contexts import ContextResource, FeatureResouceContext, FeatureCollectionResourceContext
+from hyper_resource.contexts import ContextResource, FeatureResourceContext, FeatureCollectionResourceContext
 
 class UnidadeFederacaoListContext(FeatureCollectionResourceContext):
 
@@ -30,7 +30,7 @@ class UnidadeFederacaoListContext(FeatureCollectionResourceContext):
     #]}
     #return dic
 
-class UnidadeFederacaoDetailContext(FeatureResouceContext):
+class UnidadeFederacaoDetailContext(FeatureResourceContext):
 
     '''
     def attributes_contextualized_dict(self):
@@ -52,48 +52,49 @@ class UnidadeFederacaoDetailContext(FeatureResouceContext):
     def representation_name(self):
         return "sigla"
 
-class TrechoDrenagemListContext(FeatureResouceContext):
+class TrechoDrenagemListContext(FeatureResourceContext):
     pass
 
-class MunicipioListContext(FeatureResouceContext):
+class MunicipioListContext(FeatureResourceContext):
     pass
 
-class MunicipioDetailContext(FeatureResouceContext):
+class MunicipioDetailContext(FeatureResourceContext):
     pass
 
-class AldeiaIndigenaDetailContext(FeatureResouceContext):
+class AldeiaIndigenaDetailContext(FeatureResourceContext):
     pass
 
 class AldeiaIndigenaListContext(FeatureCollectionResourceContext):
+    pass
 
     # todo: can be defined programaticaly by checking model geometric attribute type
-    def get_default_resource_id_vocabulary(self):
-        return "http://geojson.org/geojson-ld/vocab.html#Point"
+    #def get_default_resource_id_vocabulary(self):
+    #    return "http://geojson.org/geojson-ld/vocab.html#Point"
 
-class OutrasUnidProtegidasContext(FeatureResouceContext):
+class OutrasUnidProtegidasContext(FeatureResourceContext):
     pass
-class AglomeradoRuralDeExtensaoUrbanaContext(FeatureResouceContext):
+class AglomeradoRuralDeExtensaoUrbanaContext(FeatureResourceContext):
     pass
-class AglomeradoRuralIsoladoContext(FeatureResouceContext):
+class AglomeradoRuralIsoladoContext(FeatureResourceContext):
     pass
 
 class TrechoFerroviarioListContext(FeatureCollectionResourceContext):
     pass
 
-class TrechoFerroviarioDetailContext(FeatureResouceContext):
+class TrechoFerroviarioDetailContext(FeatureResourceContext):
     pass
 
-class AreaDesenvolvimentoControleListContext(FeatureResouceContext):
+class AreaDesenvolvimentoControleListContext(FeatureResourceContext):
     pass
-class AreaEdificadaListContext(FeatureResouceContext):
+class AreaEdificadaListContext(FeatureResourceContext):
     pass
-class AreaEdificadaDetailContext(FeatureResouceContext):
+class AreaEdificadaDetailContext(FeatureResourceContext):
     pass
 
 class BancoAreiaListContext(FeatureCollectionResourceContext):
     pass
 
-class BancoAreiaDetailContext(FeatureResouceContext):
+class BancoAreiaDetailContext(FeatureResourceContext):
     pass
 class BarragemListContext(FeatureCollectionResourceContext):
     pass

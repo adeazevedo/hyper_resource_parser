@@ -3,6 +3,7 @@ import os
 import re
 import django
 
+ENTRY_POINT_CLASS_NAME = "EntryPoint"
 
 def convert_camel_case_to_hifen(camel_case_string):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', camel_case_string)
@@ -59,6 +60,10 @@ def generate_file(package_name, default_name='urls.py'):
         sr.write( 'urlpatterns = format_suffix_patterns((\n')
         sr.write((' ' * 4) + 'url(r' +"'"+'^$'+"'"+', views.APIRoot.as_view(), name='+"'"+'api_root'+"'"+'),\n\n')
         for model_class_arr in classes_from:
+
+            if model_class_arr[0] == ENTRY_POINT_CLASS_NAME:
+                continue
+
             for str in generate_snippets_to_url(model_class_arr[0], model_class_arr[1]):
                 sr.write(str)
             sr.write('\n')

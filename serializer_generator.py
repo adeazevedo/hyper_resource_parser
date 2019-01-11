@@ -8,6 +8,7 @@ from django.db.models import ForeignKey, ManyToOneRel
 from django.contrib.gis.db.models.fields import GeometryField
 
 from hyper_resource.models import FeatureModel
+from importlib import import_module, reload
 
 
 def is_spatial(model_class):
@@ -54,6 +55,8 @@ def generate_snippets_to_serializer(package_name, model_class_name, model_class)
     fields = model_class._meta.get_fields()
     arr.append((' ' * 8) + 'fields = [')
     for i, field in enumerate(fields):
+        if model_class_name == "EntryPoint" and field.name == 'id':
+            continue
         if isinstance(field, ManyToOneRel) and field.related_name is None:
             continue
         arr.append("'" + field.name + "'")
@@ -67,11 +70,17 @@ def generate_snippets_to_serializer(package_name, model_class_name, model_class)
             geom = field.name
     if geom is not None:
         arr.append((' ' * 8) + "geo_field = '" + geom + "'\n")
-    arr.append((' ' * 8) + "identifier = '" + identifier + "'\n")
+
+    if model_class_name != "EntryPoint":
+        arr.append((' ' * 8) + "identifier = '" + identifier + "'\n")
+    else:
+        arr.append((' ' * 8) + "identifier = None\n")
 
     unique_field_name = get_unique_field_name_or_none(model_class)
     if unique_field_name:
         arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "', '" + unique_field_name + "']\n")
+    elif model_class_name == "EntryPoint":
+        arr.append((' ' * 8) + "identifiers = []\n")
     else:
         arr.append((' ' * 8) + "identifiers = ['pk', " + "'" + identifier + "'"+ "]\n")
 
@@ -82,6 +91,12 @@ def generate_snippets_to_serializer(package_name, model_class_name, model_class)
     return arr
 
 def generate_file(package_name, default_name= '\serializers.py'):
+    #from importlib import reload
+    #models = import_module(os.path.abspath(package_name + "/models.py"))
+    #models = import_module('.' + package_name + '.' + 'models', package=__package__)
+    #models = import_module(".models.", package=package_name)
+    models = import_module(".models", package=package_name)
+    reload(models)
 
     classes_from = [(name, method) for name, method in  inspect.getmembers(sys.modules[package_name + '.models'],inspect.isclass)  if (name != 'BusinessModel' and name != 'FeatureModel' and isinstance(method, django.db.models.base.ModelBase)) ]
 
@@ -96,7 +111,6 @@ def generate_file(package_name, default_name= '\serializers.py'):
                 sr.write(snippet)
         sr.write('\n\n')
         sr.write('serializers_dict = {}')
-        sr.close()
 
 if __name__ == "__main__":
     if (len(sys.argv)) != 3:

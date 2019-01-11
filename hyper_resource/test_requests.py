@@ -376,19 +376,13 @@ def test_requests(request_test_list, test_label=''):
     print("\n\n" + fin_label_len * "*" + "\n* " + default_fin_test_label + " " + test_label + " *\n" + fin_label_len * "*" + "\n\n")
 
 test_requests(arr_get_for_non_spatial_resource, test_label = "Tests for NonSpatialResource")
-
 test_requests(arr_get_for_collection, test_label="Generic tests to collection operations")
-
 test_requests(arr_get_for_spatial_operations, test_label="Tests for spatial operations")
 test_requests(arr_get_for_complex_requests, test_label="Tests for complex requests")
-
 test_requests(arr_get_for_projection, test_label="Tests for FeatureCollection with and without projection")
-
 test_requests(arr_get_for_geometry_collection_operation, test_label="Tests for spatial collection operations")
-test_requests(arr_get_for_join_operation, test_label="Tests for join operation")
-
+#test_requests(arr_get_for_join_operation, test_label="Tests for join operation")
 test_requests(arr_options_for_collection_operation, test_label = "Tests OPTIONS for Collection operations")
-
 test_requests(arr_get_for_collect_operation_context, test_label = "Tests GET for Collect operation context")
 test_requests(arr_get_for_tiff_resource, test_label = "Tests GET for TiffResource")
 test_requests(arr_options_for_tiff_resource, test_label = "Tests OPTIONS for TiffResource")
@@ -421,6 +415,8 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.RasterTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing FeatureCollectionTest >>>")
     os.system("python manage.py test hyper_resource.tests.FeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing FeatureResourceTest >>>")
+    os.system("python manage.py test hyper_resource.tests.FeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
 
     # OPTIONS Tests
     print("\n\n\n<<< INITIALIZING OPTIONS TEST SET >>>\n")
@@ -440,6 +436,10 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing GetRequestContextTest >>>")
     os.system("python manage.py test hyper_resource.tests.GetRequestContextTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing OptionsFeatureResourceTest >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing OptionsCollectionResource >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsCollectionResource --testrunner=hyper_resource.tests.NoDbTestRunner")
 
     # HEAD Tests
     print("\n\n\n<<< INITIALIZING HEAD TEST SET >>>\n")
@@ -461,6 +461,8 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.AllowedMethodsForFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing AllowedMethodsForFeatureCollectionResourceTest >>>")
     os.system("python manage.py test hyper_resource.tests.AllowedMethodsForFeatureCollectionResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing HeadFeatureResourceTest >>>")
+    os.system("python manage.py test hyper_resource.tests.HeadFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
 
     # Not classified
     print("\n\n\n<<< INITIALIZING NOT CLASSIFIED TEST SET >>>\n")

@@ -82,6 +82,7 @@ CORS_EXPOSE_HEADERS = [
 ]
 
 ENABLE_COMPLEX_REQUESTS = True
+PARAM_SEPARATOR = "&"
 
 if ENABLE_COMPLEX_REQUESTS:
     print ('***************************************************************************************************************************')
@@ -314,18 +315,16 @@ class AbstractResource(APIView):
 
     def get_context_by_only_attributes(self, request, attributes_functions_str):
         attrs_list = self.remove_last_slash(attributes_functions_str).split(",")
-        self._set_context_to_attributes(attrs_list)
-        context = self.context_resource.get_dict_context()
-
         resource_representation = self.define_resource_representation_by_only_attributes(request, attributes_functions_str)
-        supported_operation_dict = self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
-        context['hydra:supportedOperations'] = supported_operation_dict
+        context = {
+            "@context": self.context_resource.attributes_term_definition_context_dict(attrs_list),
+            "hydra:supportedOperations": self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
+        }
 
         return_type_by_attributes = self.return_type_by_only_attributes(attributes_functions_str)
         context.update(self.context_resource.get_resource_id_and_type_by_attributes_return_type(attrs_list, return_type_by_attributes))
         return context
 
-    # WARNING: Not usefull for operations like 'projection' whose resource type depends of selected attribute
     def get_context_for_operation(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         resource_representation_by_operation = self.define_resource_representation_by_operation(request, operation_name)
@@ -333,8 +332,6 @@ class AbstractResource(APIView):
 
         context = self.context_resource.get_resource_id_and_type_by_operation_return_type(operation_name, operation_return_type)
         context['@context'] = self.context_resource.get_subClassOf_term_definition()
-        context['@context'].update( self.context_resource.get_hydra_term_definition() )
-        context.update(self.context_resource.get_default_context_superclass())
         context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_representation_by_operation)
         return context
 
@@ -400,14 +397,9 @@ class AbstractResource(APIView):
 
         return '/'.join(arr[:ind + 1])
 
+    '''
     def _set_context_to_attributes(self, attribute_name_array):
         self.context_resource.set_context_to_attributes(attribute_name_array)
-
-    '''
-    def _set_context_to_only_one_attribute(self, attribute_name):
-        attribute_type = self.field_for(attribute_name)
-        self.context_resource.set_context_to_only_one_attribute(self.current_object_state, attribute_name,
-                                                                attribute_type)
     '''
 
     def _set_context_to_operation(self, operation_name):
@@ -739,6 +731,7 @@ class AbstractResource(APIView):
         attributes_functions_str = self.kwargs.get("attributes_functions", None)
 
         if self.is_simple_path(attributes_functions_str):
+            self.add_allowed_methods(['delete', 'put'])
             return self.required_context_for_simple_path(request)
         if self.path_has_only_attributes(attributes_functions_str):
             return self.required_context_for_only_attributes(request, attributes_functions_str)
@@ -1024,7 +1017,6 @@ class AbstractResource(APIView):
     def get_context_for_operation_resource_type(self, attributes_functions_str, resource_type):
         res_type_context = {}
         res_type_context["@context"] = self.context_resource.get_subClassOf_term_definition()
-        res_type_context["@context"].update(self.context_resource.get_hydra_term_definition())
         res_type_context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
         operation_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
         operation_name = self.get_operation_name_from_path(attributes_functions_str)

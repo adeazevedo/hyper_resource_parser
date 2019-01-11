@@ -232,7 +232,7 @@ class FeatureResource(SpatialResource):
         dicti = super(FeatureResource, self).operation_name_return_type_dic()
         dicti.update({
             self.operation_controller.area_operation_name:              self.return_type_for_generic_spatial_operation,
-            self.operation_controller.boundary_operation_name:          self.return_type_for_generic_spatial_operation,
+            self.operation_controller.boundary_operation_name:          self.return_type_for_specialized_operation,
             self.operation_controller.buffer_operation_name:            self.return_type_for_specialized_operation,
             self.operation_controller.centroid_operation_name:          self.return_type_for_generic_spatial_operation,
             self.operation_controller.contains_operation_name:          self.return_type_for_generic_spatial_operation,
@@ -396,7 +396,7 @@ class FeatureResource(SpatialResource):
     def get_context_for_non_spatial_return_operation(self, request, attributes_functions_str):
         context = self.get_context_for_operation(request, attributes_functions_str)
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        context["@context"].update( self.context_resource.get_operation_return_type_vocabulary_by_operation_name(operation_name) )
+        context["@context"].update(self.context_resource.get_operation_return_type_term_definition(operation_name))
         return context
 
     def return_type_by_only_attributes(self, attributes_functions_str):
@@ -454,6 +454,7 @@ class FeatureResource(SpatialResource):
         attributes_functions_str = kwargs.get(self.attributes_functions_name_template())
 
         if self.is_simple_path(attributes_functions_str):
+            self.add_allowed_methods(['delete', 'put'])
             return self.required_object_for_simple_path(request)
 
         if self.path_has_only_attributes(attributes_functions_str):

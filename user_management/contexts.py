@@ -1,4 +1,4 @@
-from hyper_resource.contexts import FeatureResouceContext, FeatureCollectionResourceContext, ContextResource
+from hyper_resource.contexts import FeatureResourceContext, FeatureCollectionResourceContext, ContextResource
 
 
 class APIResourceDetailContext(ContextResource):

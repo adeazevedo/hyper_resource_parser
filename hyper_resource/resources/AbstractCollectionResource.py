@@ -1,6 +1,7 @@
 from hyper_resource.resources.AbstractResource import *
 
 COLLECTION_TYPE = "Collection"
+GROUP_BY_SUM_PROPERTY_NAME = "sum"
 
 class AbstractCollectionResource(AbstractResource):
 
@@ -22,6 +23,12 @@ class AbstractCollectionResource(AbstractResource):
         if resource_representation_by_accept == self.dict_by_accept_resource_representation()[CONTENT_TYPE_OCTET_STREAM]:
             return bytes
         return self.get_operation_type_called(attributes_functions_str).return_type
+
+    def define_resource_representation_from_distinct_operation(self, request, attributes_functions_str):
+        resource_representation_by_accept = self.resource_representation_or_default_resource_representation(request)
+        if resource_representation_by_accept != self.default_resource_representation():
+            return resource_representation_by_accept
+        return self.return_type_for_distinct_operation(attributes_functions_str)
 
     def attributes_functions_str_is_filter_with_spatial_operation(self, attributes_functions_str):
         arr_str = attributes_functions_str.split('/')[1:]
@@ -170,7 +177,8 @@ class AbstractCollectionResource(AbstractResource):
     # ---------------------------------------- REQUIRED OBJECT FOR OPERATIONS ----------------------------------------
     def required_object_for_count_resource_operation(self,request, attributes_functions_str):
         c_type_by_operation = self.define_content_type_by_operation(request, self.get_operation_name_from_path(attributes_functions_str))
-        return RequiredObject({'count_resource': self.model_class().objects.count()}, c_type_by_operation, self.object_model, 200)
+        operation_name = self.operation_controller.count_resource_collection_operation_name
+        return RequiredObject({operation_name: self.model_class().objects.count()}, c_type_by_operation, self.object_model, 200)
 
     def required_object_for_offset_limit_operation(self, request, attributes_functions_str):
         if not self.offset_limit_operation_sintax_is_ok(attributes_functions_str):
@@ -453,8 +461,9 @@ class AbstractCollectionResource(AbstractResource):
         return self.model_class().objects.values(*parameters).annotate(count=Count(*parameters))
 
     def get_objects_from_group_by_sum_operation(self, attributes_functions_str):
-        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")
-        return self.model_class().objects.all().values( attrs_funcs_arr[1] ).annotate(sum=Sum( attrs_funcs_arr[2] ))
+        attrs_funcs_arr = self.remove_last_slash(attributes_functions_str).split("/")[1]
+        grouper, sum_attr = attrs_funcs_arr.split(PARAM_SEPARATOR)
+        return self.model_class().objects.all().values( grouper ).annotate( **{GROUP_BY_SUM_PROPERTY_NAME: Sum( sum_attr )} )
 
     def get_objects_from_offset_limit_operation(self, attributes_functions_str):
         if self.path_has_projection(attributes_functions_str):
@@ -476,13 +485,8 @@ class AbstractCollectionResource(AbstractResource):
 
     # ---------------------------------------- GET CONTEXT FROM OPERATION  ----------------------------------------
     def get_context_for_filter_operation(self, request, attributes_functions_str):
-        operation_name = self.operation_controller.filter_collection_operation_name
-        resource_type = self.define_resource_representation_by_operation(request, operation_name)
-
-        self.context_resource.set_context_to_operation(self.object_model, operation_name)
-        context = self.context_resource.get_dict_context()
-        context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        context.update(self.context_resource.get_default_resource_type_identification())
+        context = self.get_context_for_operation(request, attributes_functions_str)
+        context["@context"].update(self.context_resource.attributes_contextualized_dict())
         return context
 
     def get_context_for_collect_operation(self, request, attributes_functions_str):
@@ -523,6 +527,8 @@ class AbstractCollectionResource(AbstractResource):
         return attrs_and_oper_context
 
     def get_context_for_count_resource_operation(self, request, attributes_functions_str):
+        #context = self.get_context_for_operation(request, attributes_functions_str)
+
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
         count_resource_return_type = self.return_type_for_count_resource_operation(attributes_functions_str)
         context = self.context_resource.get_resource_id_and_type_by_operation_return_type(operation_name, count_resource_return_type)
@@ -531,16 +537,24 @@ class AbstractCollectionResource(AbstractResource):
         context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
 
         context['@context'] = self.context_resource.get_subClassOf_term_definition()
-        context['@context']["total"] = {"@id": "https://schema.org/Integer", "@type": "https://schema.org/Integer"}
+        context['@context'].update(self.context_resource.get_operation_return_type_term_definition(operation_name, count_resource_return_type))
         return context
 
-    def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
-        return self.get_context_for_operation(request, attributes_functions_str)
-        #raise NotImplementedError("'required_context_for_offset_limit_operation' must be implemented in subclasses")
-
     def get_context_for_distinct_operation(self, request, attributes_functions_str):
-        resource_type = self.resource_representation_or_default_resource_representation(request)
-        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
+        return self.get_context_for_filter_operation(request, attributes_functions_str)
+        #distinct_oper_name = self.operation_controller.distinct_collection_operation_name
+        #distinct_return_type = self.return_type_for_distinct_operation(attributes_functions_str)
+        #context = self.context_resource.get_resource_id_and_type_by_operation_return_type(distinct_oper_name, distinct_return_type)
+
+        #resource_representation = self.define_resource_representation_from_distinct_operation(request, attributes_functions_str)
+        #context['hydra:supportedOperations'] = self.context_resource.supportedOperationsFor(self.object_model, resource_representation)
+
+        #context['@context'] = self.context_resource.get_subClassOf_term_definition()
+        #return context
+
+    def get_context_for_offset_limit_operation(self, request, attributes_functions_str):
+        return self.get_context_for_filter_operation(request, attributes_functions_str)
+        #raise NotImplementedError("'required_context_for_offset_limit_operation' must be implemented in subclasses")
 
     def get_context_for_group_by_operation(self, request, attributes_functions_str):
         resource_type = self.resource_representation_or_default_resource_representation(request)
@@ -576,19 +590,23 @@ class AbstractCollectionResource(AbstractResource):
         return context
 
     def get_context_for_group_by_sum_operation(self, request, attributes_functions_str):
-        context = {}
-        resource_type = self.resource_representation_or_default_resource_representation(request)
-        operation_name = self.operation_controller.group_by_sum_collection_operation_name
+        context = self.get_context_for_operation(request, attributes_functions_str)
         group_by_attr = self.remove_last_slash(attributes_functions_str).split("/")[1]
+        grouper, _ = group_by_attr.split(PARAM_SEPARATOR)
 
-        context = self.context_resource.get_default_resource_type_identification(resource_type)
-        context["hydra:supportedOperations"] = self.context_resource.supportedOperationsFor(self.object_model, resource_type)
-        context["@context"] = {
-            #operation_name: self.context_resource.get_context_to_operation( operation_name ),
-            group_by_attr: self.context_resource.attribute_contextualized_dict_for_field( self.field_for(group_by_attr) ),
-            "sum": {"@id": "http://schema.org/Float", "@type": "http://schema.org/Float", "hydra:supportedOperations": []}
-        }
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        operation_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
+        group_by_term_definition_dict = self.context_resource.get_operation_return_type_term_definition(operation_name, operation_return_type)
+
+        context['@context'].update(
+            {
+                GROUP_BY_SUM_PROPERTY_NAME: group_by_term_definition_dict[operation_name],
+                grouper: self.context_resource.attribute_contextualized_dict_for_field(self.field_for(grouper))
+            }
+        )
+
         return context
+
 
     # -------------------------------------- GET RETURN TYPE FROM OPERATION  --------------------------------------
     def return_type_by_only_attributes(self, attributes_functions_str):
@@ -598,25 +616,25 @@ class AbstractCollectionResource(AbstractResource):
         return COLLECTION_TYPE
 
     def return_type_for_filter_operation(self, attributes_functions_str):
-        pass
+        return COLLECTION_TYPE
 
     def return_type_for_count_resource_operation(self, attributes_functions_str):
         return int
 
     def return_type_for_offset_limit_operation(self, attributes_functions_str):
-        pass
+        return COLLECTION_TYPE
 
     def return_type_for_distinct_operation(self, attributes_functions_str):
-        pass
+        return COLLECTION_TYPE
 
     def return_type_for_offset_limit_and_collect_operation(self, attributes_functions_str):
-        pass
+        return COLLECTION_TYPE
 
     def return_type_for_group_by_count_operation(self, attributes_functions_str):
-        return "Collection"
+        return COLLECTION_TYPE
 
     def return_type_for_group_by_sum_operation(self, attributes_functions_str):
-        pass
+        return COLLECTION_TYPE
 
     def transform_queryset_in_object_model_list(self, queryset):
         if type(queryset[0]) == self.model_class():

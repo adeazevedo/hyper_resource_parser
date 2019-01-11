@@ -386,6 +386,15 @@ class FeatureCollectionResource(SpatialCollectionResource):
             return FeatureCollection
         return GeometryCollection
 
+    def return_type_for_filter_operation(self, attributes_functions_str):
+        return FeatureCollection
+
+    def return_type_for_offset_limit_operation(self, attributes_functions_str):
+        return FeatureCollection
+
+    def return_type_for_distinct_operation(self, attributes_functions_str):
+        return FeatureCollection
+
     def return_type_for_group_by_count_operation(self, attributes_functions_str):
         grouped_attribute = self.remove_last_slash(attributes_functions_str).split("/")[-1]
         if grouped_attribute != self.geometry_field_name():
@@ -394,6 +403,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def return_type_for_collect_operation(self, attributes_functions_str):
         attributes_in_collect_arr = self.extract_collect_operation_attributes(attributes_functions_str)
+
         if self.geometry_field_name() not in attributes_in_collect_arr:
             return super(FeatureCollectionResource, self).return_type_for_collect_operation(attributes_functions_str)
 
@@ -661,14 +671,12 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return context
 
     def get_context_for_specialized_operation(self, request, attributes_functions_str):
-        operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        resource_type = self.define_resource_representation_by_operation(request, operation_name)
-        context = self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
-        context["@context"].update(self.context_resource.attributes_contextualized_dict())
-        return context
+        return self.get_context_for_filter_operation(request, attributes_functions_str)
         #operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        #resource_type = self.define_resource_type_by_operation(request, operation_name)
-        #return self.context_resource.context(resource_type)
+        #resource_type = self.define_resource_representation_by_operation(request, operation_name)
+        #context = self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
+        #context["@context"].update(self.context_resource.attributes_contextualized_dict())
+        #return context
 
     def get_context_for_union_operation(self, request, attributes_functions_str):
         resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
@@ -677,7 +685,7 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
     def get_context_for_extent_operation(self, request, attributes_functions_str):
         resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
-        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else 'Thing'
+        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else object
         return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
     def get_context_for_make_line_operation(self, request, attributes_functions_str):

@@ -498,18 +498,20 @@ class BaseOperationController(object):
         self.join_operation_name = 'join'
         self.projection_operation_name = 'projection'
 
+    '''
     def user_friendly_resource_type_dict(self):
         return {
             'str': 'Text',
             str: 'Text'
         }
+    '''
 
     #Spatial Operations
     def geometry_operations_dict(self):
         dic = {}
         if len(dic) == 0:
             dic[self.area_operation_name] = Type_Called('area', [], float)
-            dic[self.boundary_operation_name] = Type_Called('boundary', [], float)
+            dic[self.boundary_operation_name] = Type_Called('boundary', [], GEOSGeometry)
             dic[self.buffer_operation_name] = Type_Called('buffer', [float], GEOSGeometry)
             dic[self.centroid_operation_name] = Type_Called('centroid', [], Point)
             dic[self.contains_operation_name] = Type_Called('contains', [GEOSGeometry], bool)
@@ -582,7 +584,7 @@ class BaseOperationController(object):
             dic[self.y_operation_name] = Type_Called('y', [], float)
             dic[self.z_operation_name] = Type_Called('z', [], float)
             dic[self.join_operation_name] = Type_Called('join', [tuple, object], GEOSGeometry)
-            dic[self.projection_operation_name] = Type_Called('projection', [list], object)
+            dic[self.projection_operation_name] = Type_Called('projection', [property], object)
             # dic['tuple'] = Type_Called('tuple', [], tuple)
             # dic['pop'] = Type_Called('pop', [], tuple)
             # dic['prepared'] = Type_Called('prepared', [], PreparedGeometry)
@@ -603,7 +605,7 @@ class BaseOperationController(object):
     def generic_object_operations_dict(self):
         d = {}
         d["join"] = Type_Called('join', [tuple, object], object)
-        d['projection'] = Type_Called('projection', [list], object)
+        d['projection'] = Type_Called('projection', [property], object)
         return d
 
     def boolean_operations_dict(self):
@@ -736,15 +738,18 @@ class RasterOperationController(BaseOperationController):
             cls._instance.initialize()
         return cls._instance
 
+    '''
     def user_friendly_resource_type_dict(self):
         d = super(RasterOperationController, self).user_friendly_resource_type_dict()
         d.update({
             GDALRaster: "Tiff",
         })
         return d
-
+    '''
+    '''
     def get_user_friendly_resource_type_name(self, operation_return_type):
         return self.user_friendly_resource_type_dict()[operation_return_type]
+    '''
 
     def initialize(self):
         self.bands_operation_name = 'bands'
@@ -792,7 +797,7 @@ class RasterOperationController(BaseOperationController):
         d[self.vsi_buffer_operation_name] = Type_Called('vsi_buffer', [], bytes)            # Encoding error
         d[self.warp_operation_name] = Type_Called('warp', [], object)                       # missing arguments and Raster return type
         d[self.width_operation_name] = Type_Called('width', [], object)                     # DONE
-        d[self.projection_operation_name] = Type_Called('projection', [list], object)       # DONE
+        d[self.projection_operation_name] = Type_Called('projection', [property], object)       # DONE
         return d
 
 class CollectionResourceOperationController(BaseOperationController):
@@ -824,7 +829,7 @@ class CollectionResourceOperationController(BaseOperationController):
         dict = {}
         dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
         dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int, list], object)
-        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
+        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [property], object)
         dict[self.filter_and_collect_collection_operation_name] = Type_Called(self.filter_and_collect_collection_operation_name, [list], object)
         dict[self.offset_limit_and_collect_collection_operation_name] = Type_Called(self.offset_limit_and_collect_collection_operation_name, [list], object)
         return dict
@@ -838,7 +843,7 @@ class CollectionResourceOperationController(BaseOperationController):
 
     def collect_operations_dict(self):
         dict = {}
-        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [object], object)
+        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [property, 'operation'], object)
         dict[self.filter_and_collect_collection_operation_name] = Type_Called(self.filter_and_collect_collection_operation_name, [list], object)
         dict[self.offset_limit_and_collect_collection_operation_name] = Type_Called(self.offset_limit_and_collect_collection_operation_name, [list], object)
         return dict
@@ -847,16 +852,16 @@ class CollectionResourceOperationController(BaseOperationController):
     def collection_operations_dict(self):
         dict = {}
         dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
-        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [list, 'hydra:operation'], object)
+        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [property, 'operation'], object)
         dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
         dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
-        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [list], object)
+        dict[self.distinct_collection_operation_name] = Type_Called(self.distinct_collection_operation_name, [property], object)
         #dict[self.group_by_collection_operation_name] = Type_Called(self.group_by_collection_operation_name, [list], object)
         dict[self.group_by_count_collection_operation_name] = Type_Called(self.group_by_count_collection_operation_name, [list], object)
         dict[self.group_by_sum_collection_operation_name] = Type_Called(self.group_by_sum_collection_operation_name, [str, str], object)
         #dict[self.spatialize_collection_operation_name] = Type_Called(self.spatialize_collection_operation_name, [tuple, object], GEOSGeometry)
         #dict[self.spatialize_operation_name] = Type_Called(self.spatialize_operation_name, [tuple, object], GEOSGeometry)
-        dict[self.projection_operation_name] = Type_Called(self.projection_operation_name, [list], object)
+        dict[self.projection_operation_name] = Type_Called(self.projection_operation_name, [property], object)
         return dict
 
     def dict_all_operation_dict(self):
@@ -975,7 +980,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
         d[self.extent_collection_operation_name] = Type_Called(self.extent_collection_operation_name, [GEOSGeometry], tuple)
         d[self.make_line_collection_operation_name] = Type_Called(self.make_line_collection_operation_name, [GEOSGeometry], GEOSGeometry)
         d[self.join_operation_name] = Type_Called(self.join_operation_name, [tuple, object], GEOSGeometry)
-        d[self.projection_operation_name] = Type_Called(self.projection_operation_name, [list], object)
+        d[self.projection_operation_name] = Type_Called(self.projection_operation_name, [property], object)
 
         return d
 
@@ -1056,10 +1061,10 @@ class EntryPointResourceOperationController(CollectionResourceOperationControlle
     def collection_operations_dict(self):
         dict = {}
         dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, [Q], object)
-        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [list, 'hydra:operation'], object)
+        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, [property, 'operation'], object)
         dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, [], int)
         dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, [int, int], object)
-        dict[self.projection_operation_name] = Type_Called(self.projection_operation_name, [list], object)
+        dict[self.projection_operation_name] = Type_Called(self.projection_operation_name, [property], object)
         return dict
 
 class BusinessModel(models.Model):
