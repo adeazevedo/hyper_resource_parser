@@ -464,6 +464,10 @@ class AbstractOptionsRequestTest(AbstractRequestTest):
                                        'srid', 'srs', 'transform', 'vsi_buffer', 'warp', 'width']
 
         self.entrypoint_operation_names = ["collect", "count-resource", "filter", "offset-limit", "projection"]
+        
+        self.collection_vocab = "http://www.w3.org/ns/hydra/core#Collection"
+        self.link_vocab = "http://www.w3.org/ns/hydra/core#Link"
+        self.entrypoint_vocab = "http://www.w3.org/ns/hydra/core#entrypoint"
 
     def aux_get_context_keys_merged_with_default_keys(self, expected_context_keys):
         expected_keys = deepcopy(expected_context_keys)
@@ -802,7 +806,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_collect_operation_for_feature_collection_buffer_operation_accept_octet_stream(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/collect/sigla&geom/buffer/0.2",
@@ -828,7 +832,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_collect_operation_for_feature_collection_lower_operation(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/collect/geom&sigla/lower/")
@@ -853,7 +857,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_collect_operation_for_feature_collection_lower_operation_accept_octet_stream(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/collect/geom&sigla/lower",
@@ -879,7 +883,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], 'https://purl.org/geojson/vocab#FeatureCollection')
-        self.assertEquals(response_dict["subClassOf"], 'hydra:Collection')
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     # GeometryCollection return
     def test_options_collect_operation_for_feature_collection_only_geometry_attribute_and_buffer_operation(self):
@@ -903,7 +907,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_collect_operation_for_feature_collection_only_geometry_attribute_and_buffer_operation_accept_octet_stream(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/collect/geom/buffer/0.2",
@@ -927,7 +931,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     # Collection return
     def test_options_collect_operation_for_feature_collection_area_operation(self):
@@ -950,7 +954,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Float")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collect_operation_for_feature_collection_area_operation_accept_octet_stream(self):
@@ -974,7 +978,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Float")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collect_operation_for_feature_collection_only_alphanumeric_attribute_and_lower_operation(self):
@@ -997,7 +1001,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Text")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict['subClassOf'], "hydra:Resource")
 
     def test_options_collect_operation_for_feature_collection_only_alphanumeric_attribute_and_lower_operation_accept_octet_stream(self):
@@ -1021,7 +1025,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Text")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict['subClassOf'], "hydra:Resource")
 
     # with projection
@@ -1048,7 +1052,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_collect_operation_for_feature_collection_with_projection_accept_octet_stream(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/projection/sigla,geom/collect/sigla&geom/buffer/0.2",
@@ -1074,7 +1078,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_collect_operation_for_feature_collection_with_projection_attributes_different_from_collect_attributes(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/projection/geom/collect/sigla&geom/buffer/0.2")
@@ -1103,7 +1107,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Text")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict['subClassOf'], "hydra:Resource")
 
     def test_options_collect_for_collection_with_lower_operation_accept_octet_stream(self):
@@ -1127,7 +1131,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Text")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collect_for_collection_with_lower_operation_two_attributes(self):
@@ -1152,7 +1156,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collect_for_collection_with_lower_operation_two_attributes_accept_octet_stream(self):
@@ -1178,7 +1182,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # with projection
@@ -1204,7 +1208,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collect_for_collection_with_lower_operation_two_attributes_and_projection_accept_octet_stream(self):
@@ -1230,7 +1234,7 @@ class OptionsForCollectOperationTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collect_for_collection_with_projection_diferent_from_collect_attrs(self):
@@ -1830,7 +1834,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEqual(f_resp_dict['@id'], 'https://schema.org/Thing')
-        self.assertEqual(f_resp_dict['@type'], 'hydra:Collection')
+        self.assertEqual(f_resp_dict['@type'], self.collection_vocab)
         self.assertEqual(f_resp_dict['subClassOf'], 'hydra:Resource')
 
         # explicit projection
@@ -1855,7 +1859,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEqual(s_resp_dict['@id'], 'https://schema.org/Thing')
-        self.assertEqual(s_resp_dict['@type'], 'hydra:Collection')
+        self.assertEqual(s_resp_dict['@type'], self.collection_vocab)
         self.assertEqual(s_resp_dict['subClassOf'], 'hydra:Resource')
 
     def test_options_for_collection_resource_projection_operation_with_collect_operation(self):
@@ -1880,7 +1884,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEqual(response_dict['@id'], 'https://schema.org/Thing')
-        self.assertEqual(response_dict['@type'], 'hydra:Collection')
+        self.assertEqual(response_dict['@type'], self.collection_vocab)
         self.assertEqual(response_dict['subClassOf'], 'hydra:Resource')
 
     def test_options_for_collection_resource_projection_operation_with_collect_operation_projection_list_different_from_collect_list(self):
@@ -1910,7 +1914,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         f_resp_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEqual(f_resp_dict['@id'], 'https://schema.org/Thing')
-        self.assertEqual(f_resp_dict['@type'], 'hydra:Collection')
+        self.assertEqual(f_resp_dict['@type'], self.collection_vocab)
         self.assertEqual(f_resp_dict['subClassOf'], 'hydra:Resource')
 
         # explicit projection
@@ -1936,7 +1940,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         s_resp_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEqual(s_resp_dict['@id'], 'https://schema.org/Thing')
-        self.assertEqual(s_resp_dict['@type'], 'hydra:Collection')
+        self.assertEqual(s_resp_dict['@type'], self.collection_vocab)
         self.assertEqual(s_resp_dict['subClassOf'], 'hydra:Resource')
 
     def test_options_for_collection_resource_projection_operation_with_collect_operation_accept_octet_stream(self):
@@ -1962,7 +1966,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEqual(response_dict['@id'], 'https://schema.org/Thing')
-        self.assertEqual(response_dict['@type'], 'hydra:Collection')
+        self.assertEqual(response_dict['@type'], self.collection_vocab)
         self.assertEqual(response_dict['subClassOf'], 'hydra:Resource')
 
     # --------------- TESTS FOR FEATURE COLLECTION ---------------------------------
@@ -1989,7 +1993,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEquals(f_response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(f_response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(f_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(f_response_dict["subClassOf"], self.collection_vocab)
 
         # explicit projection
         explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom")
@@ -2014,7 +2018,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEquals(s_response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(s_response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(s_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(s_response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_projection_operation_only_geometric_attribute(self):
         implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/geom")
@@ -2037,7 +2041,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEquals(f_response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(f_response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(f_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(f_response_dict["subClassOf"], self.collection_vocab)
 
         # explicit projection
         explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/geom")
@@ -2060,7 +2064,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEquals(s_response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(s_response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(s_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(s_response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_projection_operation_only_alphanumeric_attributes(self):
         implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/nome")
@@ -2082,7 +2086,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEqual(f_response_dict['@id'], 'https://schema.org/name')
-        self.assertEqual(f_response_dict['@type'], 'hydra:Collection')
+        self.assertEqual(f_response_dict['@type'], self.collection_vocab)
         self.assertEqual(f_response_dict['subClassOf'], 'hydra:Resource')
 
         # explicit projection
@@ -2105,7 +2109,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEqual(s_response_dict['@id'], 'https://schema.org/name')
-        self.assertEqual(s_response_dict['@type'], 'hydra:Collection')
+        self.assertEqual(s_response_dict['@type'], self.collection_vocab)
         self.assertEqual(s_response_dict['subClassOf'], 'hydra:Resource')
 
     def test_options_for_feature_collection_projection_operation_with_collect_operation(self):
@@ -2131,7 +2135,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_projection_operation_with_collect_operation_projection_list_different_from_collect_list(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom/collect/geom/buffer/0.2")
@@ -2162,7 +2166,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEquals(f_response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(f_response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(f_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(f_response_dict["subClassOf"], self.collection_vocab)
 
         #explicit projection
         explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/nome,geom",
@@ -2188,7 +2192,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEquals(s_response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(s_response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(s_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(s_response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_projection_operation_only_geometric_attribute_accept_octet_stream(self):
         implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/geom",
@@ -2212,7 +2216,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEquals(f_response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(f_response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(f_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(f_response_dict["subClassOf"], self.collection_vocab)
 
         # explicit projection
         explicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/projection/geom",
@@ -2236,7 +2240,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEquals(s_response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(s_response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(s_response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(s_response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_projection_operation_only_alphanumeric_attributes_accept_octet_stream(self):
         implicit_projection_resp = requests.options(self.bcim_base_uri + "unidades-federativas/nome",
@@ -2259,7 +2263,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         f_response_dict = self.aux_get_dict_from_response(implicit_projection_resp)
         self.assertEqual(f_response_dict['@id'], 'https://schema.org/name')
-        self.assertEqual(f_response_dict['@type'], 'hydra:Collection')
+        self.assertEqual(f_response_dict['@type'], self.collection_vocab)
         self.assertEqual(f_response_dict['subClassOf'], 'hydra:Resource')
 
         # explicit projection
@@ -2283,7 +2287,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
 
         s_response_dict = self.aux_get_dict_from_response(explicit_projection_resp)
         self.assertEqual(s_response_dict['@id'], 'https://schema.org/name')
-        self.assertEqual(s_response_dict['@type'], 'hydra:Collection')
+        self.assertEqual(s_response_dict['@type'], self.collection_vocab)
         self.assertEqual(s_response_dict['subClassOf'], 'hydra:Resource')
 
     def test_options_for_feature_collection_projection_operation_with_collect_operation_accept_octet_stream(self):
@@ -2310,7 +2314,7 @@ class OptionsForProjectionOperation(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
 #python manage.py test hyper_resource.tests.FilterOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner
 class FilterOperationTest(AbstractRequestTest):
@@ -2643,7 +2647,7 @@ class OptionsForJoinOperationTest(AbstractOptionsRequestTest):
         self.pesquisa_esporte_base_url = "http://172.30.10.86/esporte-list/"
         self.munic_2015_base_uri = "http://172.30.10.86/api/munic-2015/"
         self.pib_municipio_base_uri = "http://172.30.10.86/api/pib-municipio/"
-        self.keys_from_external_attr_context = ['@id', '@type', 'hydra:Link', 'hydra:method']
+        self.keys_from_external_attr_context = ['@id', '@type', self.link_vocab, 'hydra:method']
 
     # --------------- TESTS FOR FEATURE RESOURCE ---------------------------------
     # todo: provisory test, full context must be implemented
@@ -2897,8 +2901,8 @@ class OptionsEntryPointTest(AbstractOptionsRequestTest):
         self.assertEquals(supported_operations, self.entrypoint_operation_names)
 
         response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@id"], "hydra:Link")
-        self.assertEquals(response_dict["@type"], "hydra:entrypoint")
+        self.assertEquals(response_dict["@id"], self.link_vocab)
+        self.assertEquals(response_dict["@type"], self.entrypoint_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # operations
@@ -2956,8 +2960,8 @@ class OptionsEntryPointTest(AbstractOptionsRequestTest):
         self.assertEquals(supported_operations, [])
 
         response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@id"], "hydra:Link")
-        self.assertEquals(response_dict["@type"], "hydra:entrypoint")
+        self.assertEquals(response_dict["@id"], self.link_vocab)
+        self.assertEquals(response_dict["@type"], self.entrypoint_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # operations (binary)
@@ -3522,7 +3526,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/State")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     # only attributes
     def test_options_feature_collection_with_geometry_attribute(self):
@@ -3546,7 +3550,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_feature_collection_only_geometry_attribute(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/geom")
@@ -3567,7 +3571,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_feature_collection_without_geometry_attribute(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/nome,sigla")
@@ -3591,7 +3595,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], 'hydra:Collection')
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], 'hydra:Resource')
 
     def test_options_feature_collection_only_one_alphanumeric_attribute(self):
@@ -3614,7 +3618,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/name")
-        self.assertEquals(response_dict["@type"], 'hydra:Collection')
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], 'hydra:Resource')
 
     # operations
@@ -3653,7 +3657,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_feature_collection_union_operation(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/union")
@@ -3763,7 +3767,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/State")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     # only attributes (binary)
     def test_options_feature_collection_with_geometry_attribute_accept_octet_stream(self):
@@ -3788,7 +3792,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_feature_collection_only_geometry_attribute_accept_octet_stream(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/geom",
@@ -3810,7 +3814,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#geometry")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_feature_collection_without_geometry_attribute_accept_octet_stream(self):
         response = requests.options(self.bcim_base_uri + "unidades-federativas/nome,sigla",
@@ -3835,7 +3839,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], 'hydra:Collection')
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], 'hydra:Resource')
 
     def test_options_feature_collection_only_one_alphanumeric_attribute_accept_octet_stream(self):
@@ -3859,7 +3863,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/name")
-        self.assertEquals(response_dict["@type"], 'hydra:Collection')
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], 'hydra:Resource')
 
     # operations (binary)
@@ -3900,7 +3904,7 @@ class OptionsFeatureCollectionTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_feature_collection_union_operation_accept_octet_stream(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/union", headers={"Accept": "application/octet-stream"})
@@ -4460,7 +4464,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # only attributes
@@ -4486,7 +4490,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_only_one_attribute(self):
@@ -4509,7 +4513,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/name")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # operations
@@ -4545,7 +4549,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_collect_operation(self):
@@ -4570,7 +4574,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_count_resource_operation(self):
@@ -4628,7 +4632,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_distinct_operation(self):
@@ -4663,7 +4667,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_group_by_count_operation(self):
@@ -4688,7 +4692,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_group_by_sum_operation(self):
@@ -4713,7 +4717,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_projection_operation(self):
@@ -4738,7 +4742,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
 
@@ -4783,7 +4787,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # only attributes (binary)
@@ -4810,7 +4814,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_only_one_attribute_accept_octet_stream(self):
@@ -4834,7 +4838,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/name")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # operations (binary)
@@ -4871,7 +4875,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_collect_operation_accept_octet_stream(self):
@@ -4897,7 +4901,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_count_resource_operation_accept_octet_stream(self):
@@ -4957,7 +4961,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_distinct_operation_accept_octet_stream(self):
@@ -4993,7 +4997,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_group_by_count_operation_accept_octet_stream(self):
@@ -5019,7 +5023,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_group_by_sum_operation_accept_octet_stream(self):
@@ -5045,7 +5049,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_collection_projection_operation_accept_octet_stream(self):
@@ -5071,7 +5075,7 @@ class OptionsCollectionResource(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], "http://www.w3.org/ns/hydra/core#Collection")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
 # NonSpatialResource
@@ -8864,7 +8868,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_simple_path_with_accept_header(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/", headers={'accept': 'application/octet-stream'})
@@ -8904,7 +8908,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
 
     # tests for feature/geometry collection attributes
@@ -8931,7 +8935,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_only_attributes_with_accept_header(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/geom,nome",
@@ -8957,7 +8961,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_only_geometric_attribute(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/geom")
@@ -8980,7 +8984,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Point")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_only_geometric_attribute_accept_header(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/geom",
@@ -9004,7 +9008,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Point")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_only_alphanumeric_attributes(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/nome,nomeabrev")
@@ -9028,7 +9032,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_for_feature_collection_only_alphanumeric_attributes_with_accept_header(self):
@@ -9054,7 +9058,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
 
@@ -9097,7 +9101,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_operation_with_geometry_collection_return_and_accept_header(self):
         response = requests.options(
@@ -9140,7 +9144,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_options_for_feature_collection_count_resource(self):
         response = requests.options(self.bcim_base_uri + "aldeias-indigenas/count-resource")
@@ -9220,7 +9224,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict['subClassOf'], "hydra:Resource")
 
     def test_options_for_collection_simple_path_with_accept_header(self):
@@ -9252,7 +9256,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict['subClassOf'], "hydra:Resource")
 
     # tests for collection attributes
@@ -9278,7 +9282,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_for_collection_only_attributes_with_accept_header(self):
@@ -9304,7 +9308,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     # tests for collection operation
@@ -9330,7 +9334,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_for_collection_operation_with_collection_return_and_accept_header(self):
@@ -9356,7 +9360,7 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], "hydra:Collection")
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
 
     def test_options_for_collection_operation_with_integer_return(self):
@@ -9998,8 +10002,8 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
                                               'unidades-federativas', 'vegetacoes-de-restinga', 'vilas'])
 
         response_dict = self.aux_get_dict_from_response(response)
-        self.assertEquals(response_dict["@id"], "hydra:Link")
-        self.assertEquals(response_dict["@type"], "hydra:entrypoint")
+        self.assertEquals(response_dict["@id"], self.link_vocab)
+        self.assertEquals(response_dict["@type"], self.entrypoint_vocab)
         self.assertEquals(response_dict["@context"]['aglomerados-rurais-de-extensao-urbana']["@id"], "https://purl.org/geojson/vocab#FeatureCollection")
         self.assertEquals(response_dict["@context"]['aglomerados-rurais-de-extensao-urbana']["@type"], "@id")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
@@ -10018,8 +10022,8 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
 
-        self.assertEquals(response_dict["@id"], "hydra:Link")
-        self.assertEquals(response_dict["@type"], "hydra:entrypoint")
+        self.assertEquals(response_dict["@id"], self.link_vocab)
+        self.assertEquals(response_dict["@type"], self.entrypoint_vocab)
         self.assertEquals(response_dict["@context"]['imagem-exemplo-tile1-list']["@id"], "https://schema.org/Thing")
         self.assertEquals(response_dict["@context"]['imagem-exemplo-tile1-list']["@type"], "@id")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
@@ -10033,8 +10037,8 @@ class RequestOptionsTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
 
-        self.assertEquals(response_dict["@id"], "hydra:Link")
-        self.assertEquals(response_dict["@type"], "hydra:entrypoint")
+        self.assertEquals(response_dict["@id"], self.link_vocab)
+        self.assertEquals(response_dict["@type"], self.entrypoint_vocab)
         self.assertEquals(response_dict["@context"]['gasto-list']["@id"], "https://schema.org/Thing")
         self.assertEquals(response_dict["@context"]['gasto-list']["@type"], "@id")
         self.assertEquals(response_dict["subClassOf"], "hydra:Resource")
@@ -10257,7 +10261,7 @@ class GetRequestContextTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://schema.org/State")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], 'hydra:Collection')
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     # tests for feature collection attributes
     def test_suffixed_request_to_feature_collection_resource_only_attributes(self):
@@ -10283,7 +10287,7 @@ class GetRequestContextTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], 'hydra:Collection')
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_suffixed_request_feature_collection_only_geometric_attribute(self):
         response = requests.get(self.bcim_base_uri + "aldeias-indigenas/geom.jsonld")
@@ -10306,7 +10310,7 @@ class GetRequestContextTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Point")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#GeometryCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_suffixed_request_feature_collection_only_alphanumeric_attributes(self):
         response = requests.get(self.bcim_base_uri + "aldeias-indigenas/nome,nomeabrev.jsonld")
@@ -10330,7 +10334,7 @@ class GetRequestContextTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], 'https://schema.org/Thing')
-        self.assertEquals(response_dict["@type"], 'hydra:Collection')
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], 'hydra:Resource')
 
     # tests for feature collection operations
@@ -10372,7 +10376,7 @@ class GetRequestContextTest(AbstractOptionsRequestTest):
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict["@id"], "https://purl.org/geojson/vocab#Feature")
         self.assertEquals(response_dict["@type"], "https://purl.org/geojson/vocab#FeatureCollection")
-        self.assertEquals(response_dict["subClassOf"], "hydra:Collection")
+        self.assertEquals(response_dict["subClassOf"], self.collection_vocab)
 
     def test_suffixed_request_feature_collection_operation_with_integer_return(self):
         response = requests.get(self.bcim_base_uri + "aldeias-indigenas/count-resource.jsonld")
@@ -10499,7 +10503,7 @@ class GetRequestContextTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict['@type'], "hydra:Collection")
+        self.assertEquals(response_dict['@type'], self.collection_vocab)
         self.assertEquals(response_dict['subClassOf'], "hydra:Resource")
 
     # tests for collection attributes
@@ -10525,7 +10529,7 @@ class GetRequestContextTest(AbstractOptionsRequestTest):
 
         response_dict = self.aux_get_dict_from_response(response)
         self.assertEquals(response_dict['@id'], "https://schema.org/Thing")
-        self.assertEquals(response_dict["@type"], 'hydra:Collection')
+        self.assertEquals(response_dict["@type"], self.collection_vocab)
         self.assertEquals(response_dict["subClassOf"], 'hydra:Resource')
 
     # tests for collection operation

@@ -68,9 +68,10 @@ def vocabularyDict():
     dict[Q] = 'http://extension.schema.org/expression'
     dict[bytes] = 'https://extension.schema.org/binary'
     dict[object] = 'https://schema.org/Thing'
-    dict['Collection'] = 'hydra:Collection'
-    dict['Link'] = 'hydra:Link'
+    dict['Collection'] = 'http://www.w3.org/ns/hydra/core#Collection'
+    dict['Link'] = "http://www.w3.org/ns/hydra/core#Link"
     dict[GROUP_BY_SUM_PROPERTY_NAME] = 'https://schema.org/Float'
+    dict["hydra"] = "http://www.w3.org/ns/hydra/core#"
 
     dict['nome'] = 'https://schema.org/name'
     dict['name'] = 'https://schema.org/name'
@@ -234,9 +235,9 @@ def vocabularyDict():
     dict['same_as'] = 'http://opengis.org/operations/same_as'
     dict['coveredby'] = 'http://opengis.org/operations/coveredby'
     dict['strictly_above'] = 'http://opengis.org/operations/strictly_above'
-    dict['operation'] = 'hydra:operation'
-    dict[property] = 'hydra:property'
-    dict['EntryPoint'] = 'hydra:entrypoint'
+    dict['operation'] = 'http://www.w3.org/ns/hydra/core#operation'
+    dict[property] = 'http://www.w3.org/ns/hydra/core#property'
+    dict['EntryPoint'] = 'http://www.w3.org/ns/hydra/core#entrypoint'
     dict['Tiff'] = "https://schema.org/ImageObject"
     dict[GDALRaster] = "https://schema.org/ImageObject"
     dict[RasterField] = "https://schema.org/ImageObject"
@@ -481,7 +482,7 @@ class ContextResource:
         return dicti
 
     def get_hydra_term_definition(self):
-        return {"hydra": "http://www.w3.org/ns/hydra/core#"}
+        return {"hydra": vocabulary("hydra")}
 
     def attributes_contextualized_dict(self):
         dic_field = {}
@@ -532,39 +533,23 @@ class ContextResource:
 
         arr = []
         for k, v_typed_called in dict_operations.items():
-            exps = [] if v_typed_called.parameters is None else [vocabulary(param) for param in v_typed_called.parameters]
-            rets = (vocabulary(v_typed_called.return_type) if v_typed_called.return_type in vocabularyDict() else ("NOT FOUND"))
-            link_id = vocabulary(v_typed_called.name)
-            arr.append( SupportedOperation(operation=k, title=v_typed_called.name, method='GET', expects=exps, returns=rets, type='', link=link_id))
-
-        # SupportedOperations.context() returns the vocabulary for a SupportedOperation object in a dict form
-        return [supportedOperation.context() for supportedOperation in arr]
-
-    '''
-    def supportedOperationsFor(self, object, object_type=None):
-        dict = initialize_dict()
-        a_type = object_type if object_type is not None else type(object)
-        dict_operations = dict[a_type] if a_type in dict else {}
-
-        arr = []
-        for k, v_typed_called in dict_operations.items():
 
             exps = []
-            if v_typed_called.has_parameters():
-                for return_type, representations in v_typed_called.get_parameters():
-
-                    reprepresentation_voc_list = [vocabulary(repr) for repr in representations]
+            if v_typed_called.has_parameters:
+                for parameter, representation_list in v_typed_called.get_parameters_and_representations():
+                    reprepresentation_voc_list = [vocabulary(representation) for representation in representation_list]
                     exps.append({
-                        "@id": vocabulary(return_type),
-                        "hydra:VariableRepresentation": reprepresentation_voc_list
+                        "parameter": vocabulary(parameter),
+                        "represantations": reprepresentation_voc_list
                     })
 
             rets = (vocabulary(v_typed_called.return_type) if v_typed_called.return_type in vocabularyDict() else ("NOT FOUND"))
             link_id = vocabulary(v_typed_called.name)
             arr.append( SupportedOperation(operation=k, title=v_typed_called.name, method='GET', expects=exps, returns=rets, type='', link=link_id))
-        return [supportedOperation.context() for supportedOperation in arr]
-    '''
 
+        return [supportedOperation.context() for supportedOperation in arr]
+
+    '''
     def supportedOperations(self):
         arr = []
         if self.resource is None:
@@ -579,6 +564,7 @@ class ContextResource:
             arr.append( SupportedOperation(operation=k, title=v_typed_called.name, method='GET', expects=exps, returns=rets, type='', link=link_id))
 
         return [supportedOperation.context() for supportedOperation in arr]
+    '''
 
     def iriTemplates(self):
         iri_templates = []
@@ -857,7 +843,7 @@ class FeatureCollectionResourceContext(AbstractCollectionResourceContext):
         return dic
 
     def get_default_context_superclass(self):
-        return {"subClassOf": "hydra:Collection"}
+        return {"subClassOf": vocabulary("Collection")}
 
     def get_context_superclass_by_return_type(self, return_type):
         if return_type not in [GeometryCollection, FeatureCollection]:

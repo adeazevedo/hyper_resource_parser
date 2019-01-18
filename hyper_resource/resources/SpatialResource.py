@@ -35,7 +35,7 @@ class SpatialResource(AbstractResource):
         parameters_converted = []
 
         if self.is_operation_and_has_parameters(attribute_or_function_name):
-            parameters_type = self.operations_with_parameters_type()[attribute_or_function_name].parameters
+            parameters_type = self.operations_with_parameters_type()[attribute_or_function_name].get_parameters()
 
             for i in range(len(parameters)):
                 if GEOSGeometry == parameters_type[i]:

@@ -375,6 +375,7 @@ def test_requests(request_test_list, test_label=''):
     fin_label_len = len(test_label) + len(default_fin_test_label) + 5
     print("\n\n" + fin_label_len * "*" + "\n* " + default_fin_test_label + " " + test_label + " *\n" + fin_label_len * "*" + "\n\n")
 
+'''
 test_requests(arr_get_for_non_spatial_resource, test_label = "Tests for NonSpatialResource")
 test_requests(arr_get_for_collection, test_label="Generic tests to collection operations")
 test_requests(arr_get_for_spatial_operations, test_label="Tests for spatial operations")
@@ -386,11 +387,13 @@ test_requests(arr_options_for_collection_operation, test_label = "Tests OPTIONS 
 test_requests(arr_get_for_collect_operation_context, test_label = "Tests GET for Collect operation context")
 test_requests(arr_get_for_tiff_resource, test_label = "Tests GET for TiffResource")
 test_requests(arr_options_for_tiff_resource, test_label = "Tests OPTIONS for TiffResource")
+'''
 
 print("\n\n" + 25 * "X" + "\nX End of all test sets  X\n" + 25 * "X" + "\n\n")
 
 args = sys.argv
 if '-a' in args:
+    '''
     print("\n\n\n<<< INITIALIZING SINTAX CHECK TEST SET >>>\n")
     print("\n\n<<< Testing GenericOperationsSintaxTest >>>")
     os.system("python manage.py test hyper_resource.tests.GenericOperationsSintaxTest --testrunner=hyper_resource.tests.NoDbTestRunner")
@@ -417,13 +420,14 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.FeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing FeatureResourceTest >>>")
     os.system("python manage.py test hyper_resource.tests.FeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    '''
 
     # OPTIONS Tests
     print("\n\n\n<<< INITIALIZING OPTIONS TEST SET >>>\n")
     print("\n\n<<< Testing OptionsForCollectOperationTest >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsForCollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("\n\n<<< Testing OptionsForProjectionOperation >>>")
-    os.system("python manage.py test hyper_resource.tests.OptionsForProjectionOperation --testrunner=hyper_resource.tests.NoDbTestRunner")
+    #print("\n\n<<< Testing OptionsForProjectionOperation >>>")
+    #os.system("python manage.py test hyper_resource.tests.OptionsForProjectionOperation --testrunner=hyper_resource.tests.NoDbTestRunner")
 
     #print("\n\n<<< Testing OptionsForJoinOperationTest >>>")
     #os.system("python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
@@ -432,14 +436,14 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.OptionsEntryPointTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing OptionsForRasterTest >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsForRasterTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("\n\n<<< Testing OptionsFeatureCollectionTest >>>")
-    os.system("python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    #print("\n\n<<< Testing OptionsFeatureCollectionTest >>>")
+    #os.system("python manage.py test hyper_resource.tests.OptionsFeatureCollectionTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing RequestOptionsTest >>>")
     os.system("python manage.py test hyper_resource.tests.RequestOptionsTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("\n\n<<< Testing GetRequestContextTest >>>")
-    os.system("python manage.py test hyper_resource.tests.GetRequestContextTest --testrunner=hyper_resource.tests.NoDbTestRunner")
-    print("\n\n<<< Testing OptionsFeatureResourceTest >>>")
-    os.system("python manage.py test hyper_resource.tests.OptionsFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    #print("\n\n<<< Testing GetRequestContextTest >>>")
+    #os.system("python manage.py test hyper_resource.tests.GetRequestContextTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+    #print("\n\n<<< Testing OptionsFeatureResourceTest >>>")
+    #os.system("python manage.py test hyper_resource.tests.OptionsFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing OptionsCollectionResource >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsCollectionResource --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing OptionsNonSpatialResource >>>")

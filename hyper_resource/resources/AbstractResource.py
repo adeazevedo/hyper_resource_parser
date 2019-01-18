@@ -1044,7 +1044,7 @@ class AbstractResource(APIView):
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
         dic = self.operations_with_parameters_type()
-        return (attribute_or_method_name in dic) and len(dic[attribute_or_method_name].parameters)
+        return (attribute_or_method_name in dic) and dic[attribute_or_method_name].has_parameters()
 
     def path_has_join_operation(self, attributes_functions_str):
         arr_att_funcs = self.remove_last_slash(attributes_functions_str).split('/')
@@ -1085,7 +1085,7 @@ class AbstractResource(APIView):
         parameters_converted = []
 
         if self.is_operation_and_has_parameters(attribute_or_function_name):
-            parameters_type = self.operations_with_parameters_type()[attribute_or_function_name].parameters
+            parameters_type = self.operations_with_parameters_type()[attribute_or_function_name].get_parameters()
 
             for i in range(len(parameters)):
                 if parameters_type[i] == GEOSGeometry:
