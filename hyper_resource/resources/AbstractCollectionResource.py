@@ -760,16 +760,32 @@ class AbstractCollectionResource(AbstractResource):
     def operation_name_return_type_dic(self):
         dicti = super(AbstractCollectionResource, self).operation_name_return_type_dic()
         dicti.update({
-            self.operation_controller.filter_collection_operation_name: self.return_type_for_filter_operation,
-            self.operation_controller.collect_collection_operation_name: self.return_type_for_collect_operation,
-            self.operation_controller.count_resource_collection_operation_name: self.return_type_for_count_resource_operation,
-            self.operation_controller.offset_limit_collection_operation_name: self.return_type_for_offset_limit_operation,
-            self.operation_controller.distinct_collection_operation_name: self.return_type_for_distinct_operation,
-            self.operation_controller.group_by_count_collection_operation_name: self.return_type_for_group_by_count_operation,
-            self.operation_controller.filter_and_collect_collection_operation_name: self.return_type_for_collect_operation,
-            self.operation_controller.offset_limit_and_collect_collection_operation_name: self.return_type_for_offset_limit_and_collect_operation,
-            self.operation_controller.filter_and_count_resource_collection_operation_name: self.return_type_for_count_resource_operation,
-            self.operation_controller.group_by_sum_collection_operation_name: self.return_type_for_group_by_sum_operation,
+            self.operation_controller.filter_collection_operation_name:                     self.return_type_for_filter_operation,
+            self.operation_controller.collect_collection_operation_name:                    self.return_type_for_collect_operation,
+            self.operation_controller.count_resource_collection_operation_name:             self.return_type_for_count_resource_operation,
+            self.operation_controller.offset_limit_collection_operation_name:               self.return_type_for_offset_limit_operation,
+            self.operation_controller.distinct_collection_operation_name:                   self.return_type_for_distinct_operation,
+            self.operation_controller.group_by_count_collection_operation_name:             self.return_type_for_group_by_count_operation,
+            self.operation_controller.filter_and_collect_collection_operation_name:         self.return_type_for_collect_operation,
+            self.operation_controller.offset_limit_and_collect_collection_operation_name:   self.return_type_for_offset_limit_and_collect_operation,
+            self.operation_controller.filter_and_count_resource_collection_operation_name:  self.return_type_for_count_resource_operation,
+            self.operation_controller.group_by_sum_collection_operation_name:               self.return_type_for_group_by_sum_operation,
+        })
+        return dicti
+
+    def operation_name_resource_representation_dic(self):
+        dicti = super(AbstractCollectionResource, self).operation_name_resource_representation_dic()
+        dicti.update({
+            self.operation_controller.filter_collection_operation_name:                     self.define_resource_representation_by_operation,
+            self.operation_controller.collect_collection_operation_name:                    self.define_resource_representation_by_operation,
+            self.operation_controller.count_resource_collection_operation_name:             self.define_resource_representation_by_operation,
+            self.operation_controller.offset_limit_collection_operation_name:               self.define_resource_representation_by_operation,
+            self.operation_controller.distinct_collection_operation_name:                   self.define_resource_representation_by_operation,
+            self.operation_controller.group_by_count_collection_operation_name:             self.define_resource_representation_by_operation,
+            self.operation_controller.filter_and_collect_collection_operation_name:         self.define_resource_representation_by_operation,
+            self.operation_controller.offset_limit_and_collect_collection_operation_name:   self.define_resource_representation_by_operation,
+            self.operation_controller.filter_and_count_resource_collection_operation_name:  self.define_resource_representation_by_operation,
+            self.operation_controller.group_by_sum_collection_operation_name:               self.define_resource_representation_by_operation,
         })
         return dicti
 
@@ -801,7 +817,7 @@ class AbstractCollectionResource(AbstractResource):
         required_object = self.basic_options(request, *args, **kwargs)
         response = Response(data=required_object.representation_object, content_type=required_object.content_type, status=required_object.status_code)
         if required_object.status_code == 200:
-            self.add_base_headers(request, response)
+            self.add_options_headers(request, response)
         return response
 
     def head(self, request, *args, **kwargs):

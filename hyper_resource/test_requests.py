@@ -84,7 +84,7 @@ arr_get_for_spatial_operations = [
     RequestTest("api/bcim/municipios/3301009/overlaps/" + SERVER + "api/bcim/unidades-federativas/ES", 200),
     RequestTest("api/bcim/unidades-federativas/ES/point_on_surface", 200),
     RequestTest("api/bcim/unidades-federativas/ES/relate/" + SERVER + "api/bcim/unidades-federativas/GO/", 200),
-    RequestTest("api/bcim/unidades-federativas/ES/relate_pattern/" + SERVER + "api/bcim/unidades-federativas/GO/*&FF*FF****", 200),
+    RequestTest("api/bcim/unidades-federativas/ES/relate_pattern/" + SERVER + "api/bcim/unidades-federativas/GO/&FF*FF****", 200),
     RequestTest("api/bcim/trechos-hidroviarios/59121/ring", 200),
     RequestTest("api/bcim/unidades-federativas/ES/simple", 200),
     RequestTest("api/bcim/unidades-federativas/ES/simplify/0.0&False", 200),
@@ -424,8 +424,10 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.OptionsForCollectOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing OptionsForProjectionOperation >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsForProjectionOperation --testrunner=hyper_resource.tests.NoDbTestRunner")
+
     #print("\n\n<<< Testing OptionsForJoinOperationTest >>>")
     #os.system("python manage.py test hyper_resource.tests.OptionsForJoinOperationTest --testrunner=hyper_resource.tests.NoDbTestRunner")
+
     print("\n\n<<< Testing OptionsEntryPointTest >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsEntryPointTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing OptionsForRasterTest >>>")
@@ -440,6 +442,9 @@ if '-a' in args:
     os.system("python manage.py test hyper_resource.tests.OptionsFeatureResourceTest --testrunner=hyper_resource.tests.NoDbTestRunner")
     print("\n\n<<< Testing OptionsCollectionResource >>>")
     os.system("python manage.py test hyper_resource.tests.OptionsCollectionResource --testrunner=hyper_resource.tests.NoDbTestRunner")
+    print("\n\n<<< Testing OptionsNonSpatialResource >>>")
+    os.system("python manage.py test hyper_resource.tests.OptionsNonSpatialResource --testrunner=hyper_resource.tests.NoDbTestRunner")
+
 
     # HEAD Tests
     print("\n\n\n<<< INITIALIZING HEAD TEST SET >>>\n")

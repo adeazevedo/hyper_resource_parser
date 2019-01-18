@@ -66,7 +66,7 @@ class SpatialResource(AbstractResource):
         if required_object.status_code == 200:
             response = Response(required_object.representation_object, content_type=required_object.content_type,
                                 status=200)
-            self.add_base_headers(request, response)
+            self.add_options_headers(request, response)
         else:
             response = Response(data={"This request is not supported": self.kwargs.get("attributes_functions", None)},
                                 status=required_object.status_code)

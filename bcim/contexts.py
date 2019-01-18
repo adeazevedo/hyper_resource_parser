@@ -189,7 +189,7 @@ class TrechoDutoListContext(FeatureCollectionResourceContext):
     pass
 class TrechoHidroviarioListContext(FeatureCollectionResourceContext):
     pass
-class TrechoRodoviarioListContext(FeatureCollectionResourceContext):
+class TrechoRodoviarioListContext(FeatureResourceContext):
     pass
 class TunelListContext(FeatureCollectionResourceContext):
     pass

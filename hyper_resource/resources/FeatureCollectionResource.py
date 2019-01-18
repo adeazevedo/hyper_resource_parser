@@ -16,8 +16,7 @@ from hyper_resource.resources.FeatureResource import FeatureResource
 from hyper_resource.resources.SpatialCollectionResource import SpatialCollectionResource
 from hyper_resource.resources.AbstractCollectionResource import AbstractCollectionResource, COLLECTION_TYPE
 from hyper_resource.models import SpatialCollectionOperationController, BaseOperationController, FactoryComplexQuery, \
-    ConverterType, FeatureModel
-from hyper_resource.contexts import FeatureCollection
+    ConverterType, FeatureModel, FeatureCollection
 from copy import deepcopy
 from image_generator.img_generator import BuilderPNG
 
@@ -80,6 +79,22 @@ class FeatureCollectionResource(SpatialCollectionResource):
         }
 
         return dict
+
+    def define_resource_representation_by_operation(self, request, attributes_functions_str):
+        resource_representation_by_accept = self.resource_representation_or_default_resource_representation(request)
+        resource_representation_by_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
+        accept_is_binary = resource_representation_by_accept == self.dict_by_accept_resource_representation()[CONTENT_TYPE_OCTET_STREAM]
+
+        if not issubclass(resource_representation_by_return_type, GEOSGeometry):
+            if accept_is_binary:
+                return bytes
+
+        if resource_representation_by_accept != self.default_resource_representation():
+            if accept_is_binary:
+                if resource_representation_by_return_type not in [FeatureCollection, GeometryCollection]:
+                    return "Geobuf"
+            return resource_representation_by_accept
+        return resource_representation_by_return_type
 
     #todo: need prioritize in unity tests
     def define_resource_representation_from_collect_operation(self, request, attributes_functions_str):
@@ -371,6 +386,43 @@ class FeatureCollectionResource(SpatialCollectionResource):
         })
         return dicti
 
+    def operation_name_resource_representation_dic(self):
+        dicti = super(FeatureCollectionResource, self).operation_name_resource_representation_dic()
+        dicti.update({
+            self.operation_controller.bbcontaining_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.bboverlaping_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.contained_operation_name:             self.define_resource_representation_by_operation,
+            self.operation_controller.containing_operation_name:            self.define_resource_representation_by_operation,
+            self.operation_controller.containing_properly_operation_name:   self.define_resource_representation_by_operation,
+            self.operation_controller.covering_by_operation_name:           self.define_resource_representation_by_operation,
+            self.operation_controller.covering_operation_name:              self.define_resource_representation_by_operation,
+            self.operation_controller.crossing_operation_name:              self.define_resource_representation_by_operation,
+            self.operation_controller.disjointing_operation_name:           self.define_resource_representation_by_operation,
+            self.operation_controller.intersecting_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.isvalid_operation_name:               self.define_resource_representation_by_operation,
+            self.operation_controller.overlaping_operation_name:            self.define_resource_representation_by_operation,
+            self.operation_controller.relating_operation_name:              self.define_resource_representation_by_operation,
+            self.operation_controller.touching_operation_name:              self.define_resource_representation_by_operation,
+            self.operation_controller.within_operation_name:                self.define_resource_representation_by_operation,
+            self.operation_controller.on_left_operation_name:               self.define_resource_representation_by_operation,
+            self.operation_controller.on_right_operation_name:              self.define_resource_representation_by_operation,
+            self.operation_controller.overlaping_left_operation_name:       self.define_resource_representation_by_operation,
+            self.operation_controller.overlaping_right_operation_name:      self.define_resource_representation_by_operation,
+            self.operation_controller.overlaping_above_operation_name:      self.define_resource_representation_by_operation,
+            self.operation_controller.overlaping_below_operation_name:      self.define_resource_representation_by_operation,
+            self.operation_controller.strictly_above_operation_name:        self.define_resource_representation_by_operation,
+            self.operation_controller.strictly_below_operation_name:        self.define_resource_representation_by_operation,
+            self.operation_controller.distance_gt_operation_name:           self.define_resource_representation_by_operation,
+            self.operation_controller.distance_gte_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.distance_lt_operation_name:           self.define_resource_representation_by_operation,
+            self.operation_controller.distance_lte_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.dwithin_operation_name:               self.define_resource_representation_by_operation,
+            self.operation_controller.union_collection_operation_name:      self.define_resource_representation_by_operation,
+            self.operation_controller.extent_collection_operation_name:     self.define_resource_representation_by_operation,
+            self.operation_controller.make_line_collection_operation_name:  self.define_resource_representation_by_operation
+        })
+        return dicti
+
     # Responds an array of operations name.
     def array_of_operation_name(self):
         collection_operations_array = super(FeatureCollectionResource, self).array_of_operation_name()
@@ -423,13 +475,23 @@ class FeatureCollectionResource(SpatialCollectionResource):
         return self.default_resource_representation()
 
     def return_type_for_union_operation(self, attributes_functions_str):
-        pass
+        geometry_field_type = type(self.field_for(self.geometry_field_name()))
+        multi_object_class_for_geom_type = {
+            PointField: MultiPoint,
+            LineStringField: MultiLineString,
+            PolygonField: MultiPolygon,
+            MultiPointField: MultiPoint,
+            MultiLineString: MultiLineString,
+            MultiPolygonField: MultiPolygon,
+            GEOSGeometry: MultiPolygon
+        }
+        return multi_object_class_for_geom_type[geometry_field_type]
 
     def return_type_for_make_line_operation(self, attributes_functions_str):
-        pass
+        return LineString
 
     def return_type_for_extent_operation(self, attributes_functions_str):
-        pass
+        return list
 
     def required_object_for_specialized_operation(self, request, attributes_functions_str):
         first_oper_snippet, second_oper_snippet = self.split_combined_operation(attributes_functions_str)
@@ -679,19 +741,22 @@ class FeatureCollectionResource(SpatialCollectionResource):
         #return context
 
     def get_context_for_union_operation(self, request, attributes_functions_str):
-        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
-        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else 'Feature'
-        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
+        return self.get_context_for_operation(request, attributes_functions_str)
+        #resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
+        #resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else 'Feature'
+        #return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
     def get_context_for_extent_operation(self, request, attributes_functions_str):
-        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
-        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else object
-        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
+        context = self.get_context_for_operation(request, attributes_functions_str)
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        context["@context"].update(self.context_resource.get_operation_return_type_term_definition(operation_name))
+        return context
 
     def get_context_for_make_line_operation(self, request, attributes_functions_str):
-        resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
-        resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else LineString
-        return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
+        return self.get_context_for_operation(request, attributes_functions_str)
+        #resource_type_by_accept = self.resource_representation_or_default_resource_representation(request)
+        #resource_type = resource_type_by_accept if resource_type_by_accept != self.default_resource_representation() else LineString
+        #return self.get_context_for_operation_resource_type(attributes_functions_str, resource_type)
 
     def get_context_for_collect_operation(self, request, attributes_functions_str):
         context = super(FeatureCollectionResource, self).get_context_for_collect_operation(request, attributes_functions_str)

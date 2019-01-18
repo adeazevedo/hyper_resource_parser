@@ -30,7 +30,7 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from django.core.cache import cache
 import hashlib
-from hyper_resource.models import  FactoryComplexQuery, BusinessModel, ConverterType
+from hyper_resource.models import FactoryComplexQuery, BusinessModel, ConverterType
 from image_generator.img_generator import BuilderPNG
 
 SECRET_KEY = '-&t&pd%%((qdof5m#=cp-=-3q+_+pjmu(ru_b%e+6u#ft!yb$$'
@@ -239,6 +239,9 @@ class AbstractResource(APIView):
         response['access-control-allow-headers'] = self.access_control_allow_headers_str()
         response['access-control-expose-headers'] = self.access_control_expose_headers_str()
 
+    def add_options_headers(self, request, response):
+        self.add_cors_headers_in_header(response)
+
     def add_base_headers(self, request, response):
         iri_base = self.remove_last_slash(request.build_absolute_uri())
 
@@ -327,7 +330,7 @@ class AbstractResource(APIView):
 
     def get_context_for_operation(self, request, attributes_functions_str):
         operation_name = self.get_operation_name_from_path(attributes_functions_str)
-        resource_representation_by_operation = self.define_resource_representation_by_operation(request, operation_name)
+        resource_representation_by_operation = self.define_resource_representation_from_method_to_execute(request, attributes_functions_str)
         operation_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
 
         context = self.context_resource.get_resource_id_and_type_by_operation_return_type(operation_name, operation_return_type)
@@ -453,8 +456,11 @@ class AbstractResource(APIView):
     def define_resource_representation_by_only_attributes(self, request, attributes_functions_str):
         raise NotImplementedError("'define_resource_representation_by_only_attributes' must be implemented in subclasses")
 
-    def define_resource_representation_by_operation(self, request, operation_name):
-        return self.resource_representation_or_default_resource_representation(request)
+    def define_resource_representation_by_operation(self, request, attributes_functions_str):
+        resource_representation_by_accept = self.resource_representation_or_default_resource_representation(request)
+        if resource_representation_by_accept != self.default_resource_representation():
+            return resource_representation_by_accept
+        return self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
         #raise NotImplementedError("'define_resource_representation_by_operation' must be implemented in subclasses")
 
     def define_content_type_by_only_attributes(self, request, attributes_functions_str):
@@ -904,7 +910,15 @@ class AbstractResource(APIView):
             param = attributes_functions_str_url[param_inx+2:]
             return [attributes_functions_str_url[0:res], attributes_functions_str_url[res:param_inx], param]
 
-        return [attributes_functions_str_url[0:res], attributes_functions_str_url[res:], None]
+        operation_name = attributes_functions_str_url[0:res]
+        url_external_resource = attributes_functions_str_url[res:]
+
+        if PARAM_SEPARATOR in url_external_resource:
+            resource_url_without_params = url_external_resource[0:url_external_resource.index(PARAM_SEPARATOR) ]
+            other_params = url_external_resource[ url_external_resource.index(PARAM_SEPARATOR)+1: ]
+            return [operation_name, resource_url_without_params, other_params]
+
+        return [operation_name, url_external_resource, None]
 
     def path_has_url(self, attributes_functions_str_url):
         return attributes_functions_str_url.find('http:') > -1 \
@@ -959,8 +973,7 @@ class AbstractResource(APIView):
 
         if self.operation_controller.is_operation(object, attribute_or_method_name):
             if self.operation_controller.operation_has_parameters(object, attribute_or_method_name):
-                parameters = array_of_attribute_or_method_name[0].split('&') if len(
-                    array_of_attribute_or_method_name) > 0 else []
+                parameters = array_of_attribute_or_method_name[0].split('&') if len(array_of_attribute_or_method_name) > 0 else []
                 array_of_attribute_or_method_name = array_of_attribute_or_method_name[1:]
 
         obj = self._value_from_object(object, attribute_or_method_name, parameters)
@@ -968,8 +981,7 @@ class AbstractResource(APIView):
         if len(array_of_attribute_or_method_name) == 0:
             return obj
 
-        return self._execute_attribute_or_method(obj, array_of_attribute_or_method_name[0],
-                                                 array_of_attribute_or_method_name[1:])
+        return self._execute_attribute_or_method(obj, array_of_attribute_or_method_name[0], array_of_attribute_or_method_name[1:])
 
     def array_of_operation_name(self):
         return list(self.operation_controller.dict_all_operation_dict().keys())
@@ -1014,6 +1026,13 @@ class AbstractResource(APIView):
             return None
         return method_to_execute(attributes_functions_str)
 
+    def define_resource_representation_from_method_to_execute(self, request, attributes_functions_str):
+        operation_name = self.get_operation_name_from_path(attributes_functions_str)
+        method_to_execute = self.get_resource_representation_from_operation(operation_name)
+        if method_to_execute is None:
+            return None
+        return method_to_execute(*[request, attributes_functions_str])
+
     def get_context_for_operation_resource_type(self, attributes_functions_str, resource_type):
         res_type_context = {}
         res_type_context["@context"] = self.context_resource.get_subClassOf_term_definition()
@@ -1025,7 +1044,6 @@ class AbstractResource(APIView):
 
     def is_operation_and_has_parameters(self, attribute_or_method_name):
         dic = self.operations_with_parameters_type()
-
         return (attribute_or_method_name in dic) and len(dic[attribute_or_method_name].parameters)
 
     def path_has_join_operation(self, attributes_functions_str):
@@ -1347,6 +1365,14 @@ class AbstractResource(APIView):
 
         return d[operation_name]
 
+    def get_resource_representation_from_operation(self, operation_name):
+        d = self.operation_name_resource_representation_dic()
+
+        if operation_name is None:
+            return None
+
+        return d[operation_name]
+
     # Must be overrided
     def operation_name_method_dic(self):
         d = {
@@ -1365,6 +1391,12 @@ class AbstractResource(APIView):
         return {
             self.operation_controller.join_operation_name: self.return_type_for_join_operation,
             self.operation_controller.projection_operation_name: self.return_type_for_projection_operation
+        }
+
+    def operation_name_resource_representation_dic(self):
+        return {
+            self.operation_controller.join_operation_name: self.define_resource_representation_by_operation,
+            self.operation_controller.projection_operation_name: self.define_resource_representation_by_operation
         }
 
     def projection_operation_sintax_is_ok(self, attributes_functions_str):

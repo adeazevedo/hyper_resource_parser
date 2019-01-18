@@ -59,8 +59,8 @@ class TiffResource(RasterResource):
             return type( self.field_for(attrs_arr[0]) )
         return object
 
-    def define_resource_representation_by_operation(self, request, operation_name):
-        operation_type_called = self.operation_controller.dict_all_operation_dict()[operation_name]
+    def define_resource_representation_by_operation(self, request, attributes_functions_str):
+        operation_return_type = self.execute_method_to_get_return_type_from_operation(attributes_functions_str)
         res_type_by_accept = self.resource_representation_or_default_resource_representation(request)
 
         # 1°: Trying to define resource type by accept header ...
@@ -68,8 +68,7 @@ class TiffResource(RasterResource):
             return res_type_by_accept
 
         # 2°: Defining resource type by operation return type ...
-        #return self.operation_controller.get_user_friendly_resource_type_name( operation_type_called.return_type )
-        return operation_type_called.return_type
+        return operation_return_type
 
     def required_object_for_simple_path(self, request):
         return RequiredObject(self.object_model.vsi_buffer(),  self.content_type_or_default_content_type(request), self.object_model, 200)
@@ -161,6 +160,32 @@ class TiffResource(RasterResource):
             self.operation_controller.vsi_buffer_operation_name:     self.return_type_for_vsi_buffer_operation,
             self.operation_controller.warp_operation_name:           self.return_type_for_warp_operation,
             self.operation_controller.width_operation_name:          self.return_type_for_width_operation
+        })
+        return dicti
+
+    def operation_name_resource_representation_dic(self):
+        dicti = super(TiffResource, self).operation_name_resource_representation_dic()
+        dicti.update({
+            self.operation_controller.bands_operation_name:         self.define_resource_representation_by_operation,
+            self.operation_controller.destructor_operation_name:    self.define_resource_representation_by_operation,
+            self.operation_controller.driver_operation_name:        self.define_resource_representation_by_operation,
+            self.operation_controller.extent_operation_name:        self.define_resource_representation_by_operation,
+            self.operation_controller.geotransform_operation_name:  self.define_resource_representation_by_operation,
+            self.operation_controller.height_operation_name:        self.define_resource_representation_by_operation,
+            self.operation_controller.info_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.metadata_operation_name:      self.define_resource_representation_by_operation,
+            self.operation_controller.name_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.origin_operation_name:        self.define_resource_representation_by_operation,
+            self.operation_controller.ptr_operation_name:           self.define_resource_representation_by_operation,
+            self.operation_controller.ptr_type_operation_name:      self.define_resource_representation_by_operation,
+            self.operation_controller.scale_operation_name:         self.define_resource_representation_by_operation,
+            self.operation_controller.skew_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.srid_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.srs_operation_name:           self.define_resource_representation_by_operation,
+            self.operation_controller.transform_operation_name:     self.define_resource_representation_by_operation,
+            self.operation_controller.vsi_buffer_operation_name:    self.define_resource_representation_by_operation,
+            self.operation_controller.warp_operation_name:          self.define_resource_representation_by_operation,
+            self.operation_controller.width_operation_name:         self.define_resource_representation_by_operation,
         })
         return dicti
 
