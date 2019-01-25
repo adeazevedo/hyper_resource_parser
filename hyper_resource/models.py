@@ -65,121 +65,39 @@ def boolean_operator():
 def logical_operator():
     return ['or', 'and', '*or', '*and']
 
-class Type_Called():
+class Type_Called:
     """
     Type_called is a definition type that contains a name,
     a list of parameters and a return type
     """
-    def __init__(self, a_name='', params={}, answer=None):
+    def __init__(self, a_name='', params=list(), answer=None):
         self.name = a_name
-        self.parameters_dict = params
+        self.parameters = params
         self.return_type = answer
 
     def get_parameters(self):
-        return list(self.parameters_dict.keys())
+        return self.parameters
 
     def get_parameters_and_representations(self):
-        return self.parameters_dict.items()
+        return [(param, REPRESENTATION[param]) for param in self.parameters]
 
     def has_parameters(self):
-        return False if self.get_parameters() is [] else True
+        return self.get_parameters() or False
 
-GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT.update({
-    GEOSGeometry: ['wkt', 'wkb', 'ewkt', 'ewkb', 'hex', 'hexewkb', 'geojson', 'Link']
-})
-
-OBJECT_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-OBJECT_PARAM_REPRESENTATIONS_DICT.update({
-    object: [object]
-})
-
-TUPLE_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-TUPLE_PARAM_REPRESENTATIONS_DICT.update({
-    tuple: [tuple]
-})
-
-LIST_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-LIST_PARAM_REPRESENTATIONS_DICT.update({
-    list: [list]
-})
-
-FLOAT_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-FLOAT_PARAM_REPRESENTATIONS_DICT.update({
-    float: [float]
-})
-
-BOOL_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-BOOL_PARAM_REPRESENTATIONS_DICT.update({
-    bool: [bool]
-})
-
-STR_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-STR_PARAM_REPRESENTATIONS_DICT.update({
-    str: [str]
-})
-
-INT_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-INT_PARAM_REPRESENTATIONS_DICT.update({
-    int: [int]
-})
-
-PROPERTY_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-PROPERTY_PARAM_REPRESENTATIONS_DICT.update({
-    property: [property]
-})
-
-OPERATION_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-OPERATION_PARAM_REPRESENTATIONS_DICT.update({
-    'operation': ['operation']
-})
-
-AND_OPERATOR_PARAM_REPRESENTATION_DICT = OrderedDict()
-AND_OPERATOR_PARAM_REPRESENTATION_DICT.update({
-    'and': [str]
-})
-
-Q_OBJECT_PARAM_REPRESENTATION_DICT = OrderedDict()
-Q_OBJECT_PARAM_REPRESENTATION_DICT.update({
-    Q: [Q]
-})
-
-GEOSGEOMETRY_PLUS_FLOAT_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-GEOSGEOMETRY_PLUS_FLOAT_PARAM_REPRESENTATIONS_DICT.update(GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT)
-GEOSGEOMETRY_PLUS_FLOAT_PARAM_REPRESENTATIONS_DICT.update(FLOAT_PARAM_REPRESENTATIONS_DICT)
-
-FLOAT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-FLOAT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT.update(FLOAT_PARAM_REPRESENTATIONS_DICT)
-FLOAT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT.update(BOOL_PARAM_REPRESENTATIONS_DICT)
-
-GEOSGEOMETRY_PLUS_STR_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-GEOSGEOMETRY_PLUS_STR_PARAM_REPRESENTATIONS_DICT.update(GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT)
-GEOSGEOMETRY_PLUS_STR_PARAM_REPRESENTATIONS_DICT.update(STR_PARAM_REPRESENTATIONS_DICT)
-
-INT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-INT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT.update(INT_PARAM_REPRESENTATIONS_DICT)
-INT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT.update(BOOL_PARAM_REPRESENTATIONS_DICT)
-
-TUPLE_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-TUPLE_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT.update(TUPLE_PARAM_REPRESENTATIONS_DICT)
-TUPLE_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT.update(OBJECT_PARAM_REPRESENTATIONS_DICT)
-
-STR_PLUS_STR_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-STR_PLUS_STR_PARAM_REPRESENTATIONS_DICT.update(STR_PARAM_REPRESENTATIONS_DICT)
-STR_PLUS_STR_PARAM_REPRESENTATIONS_DICT.update(STR_PARAM_REPRESENTATIONS_DICT)
-
-INT_PLUS_INT_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-INT_PLUS_INT_PARAM_REPRESENTATIONS_DICT.update(INT_PARAM_REPRESENTATIONS_DICT)
-INT_PLUS_INT_PARAM_REPRESENTATIONS_DICT.update(INT_PARAM_REPRESENTATIONS_DICT)
-
-OBJECT_PLUS_AND_OPERATOR_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-OBJECT_PLUS_AND_OPERATOR_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT.update(OBJECT_PARAM_REPRESENTATIONS_DICT)
-OBJECT_PLUS_AND_OPERATOR_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT.update(AND_OPERATOR_PARAM_REPRESENTATION_DICT)
-OBJECT_PLUS_AND_OPERATOR_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT.update(OBJECT_PARAM_REPRESENTATIONS_DICT)
-
-PROPERTY_PLUS_OPERATION_PARAM_REPRESENTATIONS_DICT = OrderedDict()
-PROPERTY_PLUS_OPERATION_PARAM_REPRESENTATIONS_DICT.update(PROPERTY_PARAM_REPRESENTATIONS_DICT)
-PROPERTY_PLUS_OPERATION_PARAM_REPRESENTATIONS_DICT.update(OPERATION_PARAM_REPRESENTATIONS_DICT)
+REPRESENTATION = {
+    GEOSGeometry: ['wkt', 'wkb', 'ewkt', 'ewkb', 'hex', 'hexewkb', 'geojson', 'Link'],
+    object: [object],
+    tuple: [tuple],
+    list: [list],
+    float: [float],
+    bool: [bool],
+    str: [str],
+    int: [int],
+    property: [property],
+    'operation': ['operation'],
+    'and': [str],
+    Q: [Q],
+}
 
 class JoinOperation():
     def __init__(self, left_join_data, left_join_attr, right_join_attr, right_join_data):
@@ -607,158 +525,148 @@ class BaseOperationController(object):
     #Spatial Operations
     def geometry_operations_dict(self):
         dicti = {
-            self.area_operation_name:               Type_Called('area', {}, float),
-            self.boundary_operation_name:           Type_Called('boundary', {}, GEOSGeometry),
-            self.buffer_operation_name:             Type_Called('buffer', FLOAT_PARAM_REPRESENTATIONS_DICT, GEOSGeometry),
-            self.centroid_operation_name:           Type_Called('centroid', {}, Point),
-            self.contains_operation_name:           Type_Called('contains', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.convex_hull_operation_name:        Type_Called('convex_hull', {}, Polygon),
-            self.coord_seq_operation_name:          Type_Called('coord_seq', {}, tuple),
-            self.coords_operation_name:             Type_Called('coords', {}, tuple),
-            self.count_operation_name:              Type_Called('count', {}, int),
-            self.crosses_operation_name:            Type_Called('crosses', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.crs_operation_name:                Type_Called('crs', {}, SpatialReference),
-            self.difference_operation_name:         Type_Called('difference', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, GEOSGeometry),
-            self.dims_operation_name:               Type_Called('dims', {}, int),
-            self.disjoint_operation_name:           Type_Called('disjoint', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.distance_operation_name:           Type_Called('distance', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, float),
-            self.empty_operation_name:              Type_Called('empty', {}, bool),
-            self.envelope_operation_name:           Type_Called('envelope', {}, GEOSGeometry),
-            self.equals_operation_name:             Type_Called('equals', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.equals_exact_operation_name:       Type_Called('equals_exact', GEOSGEOMETRY_PLUS_FLOAT_PARAM_REPRESENTATIONS_DICT, bool),
-            self.ewkb_operation_name:               Type_Called('ewkb', {}, str),
-            self.ewkt_operation_name:               Type_Called('ewkt', {}, str),
-            self.extend_operation_name:             Type_Called('extend', {}, tuple),
-            self.extent_operation_name:             Type_Called('extent', {}, tuple),
-            self.geojson_operation_name:            Type_Called('geojson', {}, str),
-            self.geom_type_operation_name:          Type_Called('geom_type', {}, str),
-            self.geom_typeid_operation_name:        Type_Called('geom_typeid', {}, int),
-            self.get_coords_operation_name:         Type_Called('get_coords', {}, tuple),
-            self.get_srid_operation_name:           Type_Called('get_srid', {}, str),
-            self.get_x_operation_name:              Type_Called('get_x', {}, str),
-            self.get_y_operation_name:              Type_Called('get_y', {}, str),
-            self.get_z_operation_name:              Type_Called('get_z', {}, str),
-            self.has_cs_operation_name:             Type_Called('has_cs', {}, bool),
-            self.hasz_operation_name:               Type_Called('hasz', {}, bool),
-            self.hex_operation_name:                Type_Called('hex', {}, str),
-            self.hexewkb_operation_name:            Type_Called('hexewkb', {}, str),
-            self.index_operation_name:              Type_Called('index', {}, int),
-            self.intersection_operation_name:       Type_Called('intersection', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, GEOSGeometry),
-            self.intersects_operation_name:         Type_Called('intersects', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.interpolate_operation_name:        Type_Called('interpolate', FLOAT_PARAM_REPRESENTATIONS_DICT, Point),
-            self.json_operation_name:               Type_Called('json', {}, str),
-            self.kml_operation_name:                Type_Called('kml', {}, str),
-            self.length_operation_name:             Type_Called('length', {}, float),
-            self.normalize_operation_name:          Type_Called('normalize', FLOAT_PARAM_REPRESENTATIONS_DICT, Point),
-            self.num_coords_operation_name:         Type_Called('num_coords', {}, int),
-            self.num_geom_operation_name:           Type_Called('num_geom', {}, int),
-            self.num_points_operation_name:         Type_Called('num_points', {}, int),
-            self.ogr_operation_name:                Type_Called('ogr', {}, OGRGeometry),
-            self.overlaps_operation_name:           Type_Called('overlaps', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.point_on_surface_operation_name:   Type_Called('point_on_surface', {}, Point),
-            self.relate_operation_name:             Type_Called('relate', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, str),
-            self.relate_pattern_operation_name:     Type_Called('relate_pattern', GEOSGEOMETRY_PLUS_STR_PARAM_REPRESENTATIONS_DICT, bool),
-            self.ring_operation_name:               Type_Called('ring', {}, bool),
-            self.simple_operation_name:             Type_Called('simple', {}, bool),
-            self.simplify_operation_name:           Type_Called('simplify', FLOAT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT, GEOSGeometry),
-            self.srid_operation_name:               Type_Called('srid', {}, int),
-            self.srs_operation_name:                Type_Called('srs', {}, SpatialReference),
-            self.sym_difference_operation_name:     Type_Called('sym_difference', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, GEOSGeometry),
-            self.touches_operation_name:            Type_Called('touches', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.transform_operation_name:          Type_Called('transform', INT_PLUS_BOOL_PARAM_REPRESENTATIONS_DICT, GEOSGeometry),
-            self.union_operation_name:              Type_Called('union', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, GEOSGeometry),
-            self.valid_operation_name:              Type_Called('valid', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.valid_reason_operation_name:       Type_Called('valid_reason', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, str),
-            self.within_operation_name:             Type_Called('within', GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-            self.wkb_operation_name:                Type_Called('wkb', {}, bytes),
-            self.wkt_operation_name:                Type_Called('wkt', {}, str),
-            self.x_operation_name:                  Type_Called('x', {}, float),
-            self.y_operation_name:                  Type_Called('y', {}, float),
-            self.z_operation_name:                  Type_Called('z', {}, float),
+            self.area_operation_name:               Type_Called('area', [], float),
+            self.boundary_operation_name:           Type_Called('boundary', [], GEOSGeometry),
+            self.buffer_operation_name:             Type_Called('buffer', [float], GEOSGeometry),
+            self.centroid_operation_name:           Type_Called('centroid', [], Point),
+            self.contains_operation_name:           Type_Called('contains', [GEOSGeometry], bool),
+            self.convex_hull_operation_name:        Type_Called('convex_hull', [], Polygon),
+            self.coord_seq_operation_name:          Type_Called('coord_seq', [], tuple),
+            self.coords_operation_name:             Type_Called('coords', [], tuple),
+            self.count_operation_name:              Type_Called('count', [], int),
+            self.crosses_operation_name:            Type_Called('crosses', [GEOSGeometry], bool),
+            self.crs_operation_name:                Type_Called('crs', [], SpatialReference),
+            self.difference_operation_name:         Type_Called('difference', [GEOSGeometry], GEOSGeometry),
+            self.dims_operation_name:               Type_Called('dims', [], int),
+            self.disjoint_operation_name:           Type_Called('disjoint', [GEOSGeometry], bool),
+            self.distance_operation_name:           Type_Called('distance', [GEOSGeometry], float),
+            self.empty_operation_name:              Type_Called('empty', [], bool),
+            self.envelope_operation_name:           Type_Called('envelope', [], GEOSGeometry),
+            self.equals_operation_name:             Type_Called('equals_exact', [GEOSGeometry, float], bool),
+            self.equals_exact_operation_name:       Type_Called('equals_exact', [GEOSGeometry, float], bool),
+            self.ewkb_operation_name:               Type_Called('ewkb', [], str),
+            self.ewkt_operation_name:               Type_Called('ewkt', [], str),
+            self.extend_operation_name:             Type_Called('extend', [], tuple),
+            self.extent_operation_name:             Type_Called('extent', [], tuple),
+            self.geojson_operation_name:            Type_Called('geojson', [], str),
+            self.geom_type_operation_name:          Type_Called('geom_type', [], str),
+            self.geom_typeid_operation_name:        Type_Called('geom_typeid', [], int),
+            self.get_coords_operation_name:         Type_Called('get_coords', [], tuple),
+            self.get_srid_operation_name:           Type_Called('get_srid', [], str),
+            self.get_x_operation_name:              Type_Called('get_x', [], str),
+            self.get_y_operation_name:              Type_Called('get_y', [], str),
+            self.get_z_operation_name:              Type_Called('get_z', [], str),
+            self.has_cs_operation_name:             Type_Called('has_cs', [], bool),
+            self.hasz_operation_name:               Type_Called('hasz', [], bool),
+            self.hex_operation_name:                Type_Called('hex', [], str),
+            self.hexewkb_operation_name:            Type_Called('hexewkb', [], str),
+            self.index_operation_name:              Type_Called('index', [], int),
+            self.intersection_operation_name:       Type_Called('intersection', [GEOSGeometry], GEOSGeometry),
+            self.intersects_operation_name:         Type_Called('intersects', [GEOSGeometry], bool),
+            self.interpolate_operation_name:        Type_Called('interpolate', [float], Point),
+            self.json_operation_name:               Type_Called('json', [], str),
+            self.kml_operation_name:                Type_Called('kml', [], str),
+            self.length_operation_name:             Type_Called('length', [], float),
+            self.normalize_operation_name:          Type_Called('normalize', [float], Point),
+            self.num_coords_operation_name:         Type_Called('num_coords', [], int),
+            self.num_geom_operation_name:           Type_Called('num_geom', [], int),
+            self.num_points_operation_name:         Type_Called('num_points', [], int),
+            self.ogr_operation_name:                Type_Called('ogr', [], OGRGeometry),
+            self.overlaps_operation_name:           Type_Called('overlaps', [GEOSGeometry], bool),
+            self.point_on_surface_operation_name:   Type_Called('point_on_surface', [], Point),
+            self.relate_operation_name:             Type_Called('relate', [GEOSGeometry], str),
+            self.relate_pattern_operation_name:     Type_Called('relate_pattern', [GEOSGeometry, str], str),
+            self.ring_operation_name:               Type_Called('ring', [], bool),
+            self.simple_operation_name:             Type_Called('simple', [], bool),
+            self.simplify_operation_name:           Type_Called('simplify', [float, bool], GEOSGeometry),
+            self.srid_operation_name:               Type_Called('srid', [], int),
+            self.srs_operation_name:                Type_Called('srs', [], SpatialReference),
+            self.sym_difference_operation_name:     Type_Called('sym_difference', [GEOSGeometry], GEOSGeometry),
+            self.touches_operation_name:            Type_Called('touches', [GEOSGeometry], bool),
+            self.transform_operation_name:          Type_Called('transform', [int, bool], GEOSGeometry),
+            self.union_operation_name:              Type_Called('union', [GEOSGeometry], GEOSGeometry),
+            self.valid_operation_name:              Type_Called('valid', [GEOSGeometry], bool),
+            self.valid_reason_operation_name:       Type_Called('valid_reason', [GEOSGeometry], str),
+            self.within_operation_name:             Type_Called('within', [GEOSGeometry], bool),
+            self.wkb_operation_name:                Type_Called('wkb', [], bytes),
+            self.wkt_operation_name:                Type_Called('wkt', [], str),
+            self.x_operation_name:                  Type_Called('x', [], float),
+            self.y_operation_name:                  Type_Called('y', [], float),
+            self.z_operation_name:                  Type_Called('z', [], float),
         }
         dicti.update(self.generic_object_operations_dict())
         return dicti
 
     def point_operations_dict(self):
-        dicti = self.geometry_operations_dict()
-        return dicti
+        return self.geometry_operations_dict()
 
     def line_operations_dict(self):
-        dicti = self.geometry_operations_dict()
-        return dicti
+        return self.geometry_operations_dict()
 
     def polygon_operations_dict(self):
-        dicti = self.geometry_operations_dict()
-        return dicti
+        return self.geometry_operations_dict()
 
     def generic_object_operations_dict(self):
         return {
-            self.join_operation_name:       Type_Called(self.join_operation_name, TUPLE_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT, object),
-            self.projection_operation_name: Type_Called(self.projection_operation_name, TUPLE_PARAM_REPRESENTATIONS_DICT, object)
+            self.join_operation_name:       Type_Called('join', [tuple, object], object),
+            self.projection_operation_name: Type_Called('projection', [property], object),
         }
 
     def boolean_operations_dict(self):
-        d = {}
-        return d
+        return {}
 
     def int_operations_dict(self):
-        d = {}
-        return d
+        return {}
 
     def float_operations_dict(self):
-        d = {}
-        return d
+        return {}
 
     def date_operations_dict(self):
-        d = {}
-        return d
+        return {}
 
     def unicode_operations_dict(self):
         return self.string_operations_dict()
 
     def string_operations_dict(self):
-        d = {}
-        d['capitalize'] = Type_Called('capitalize', {}, str)
-        d['center'] = Type_Called('center', INT_PARAM_REPRESENTATIONS_DICT, str)
-        d['count'] = Type_Called('count', STR_PARAM_REPRESENTATIONS_DICT, int)
-        d['endswith'] = Type_Called('endswith', STR_PARAM_REPRESENTATIONS_DICT, bool)
-        d['find'] = Type_Called('find', STR_PARAM_REPRESENTATIONS_DICT, int)
-        d['isdigit'] = Type_Called('isdigit', {}, bool)
-        d['isalnum'] = Type_Called('isalnum', {}, bool)
-        d['isalpha'] = Type_Called('isalpha', {}, bool)
-        d['islower'] = Type_Called('islower', {}, bool)
-        d['isupper'] = Type_Called('isupper', {}, bool)
-        d['lower'] = Type_Called('lower', {}, str)
-        d['join'] = Type_Called('join', STR_PARAM_REPRESENTATIONS_DICT, bool)
-        d['startswith'] = Type_Called('startswith', STR_PARAM_REPRESENTATIONS_DICT, bool)
-        d['split'] = Type_Called('split', STR_PARAM_REPRESENTATIONS_DICT, list)
-        d['upper'] = Type_Called('upper', {}, str)
-        return d
+        return {
+            'capitalize': Type_Called('capitalize', [], str),
+            'center': Type_Called('center', [int], str),
+            'count': Type_Called('count', [str], int),
+            'endswith': Type_Called('endswith', [str], bool),
+            'find': Type_Called('find', [str], int),
+            'isdigit': Type_Called('isdigit', [], bool),
+            'isalnum': Type_Called('isalnum', [], bool),
+            'isalpha': Type_Called('isalpha', [], bool),
+            'islower': Type_Called('islower', [], bool),
+            'isupper': Type_Called('isupper', [], bool),
+            'lower': Type_Called('lower', [], str),
+            'join': Type_Called('join', [str], bool),
+            'startswith': Type_Called('startswith', [str], bool),
+            'split': Type_Called('split', [str], list),
+            'upper': Type_Called('upper', [], str),
+        }
 
     def dict_by_type_geometry_operations_dict(self):
-
-        dicti = {}
         # self.geometry_operation_dict() returns a dict with all geospatial operations
         # the index GEOSGeometry of 'dicti' contains another dict of geospetial operations
-        dicti[GEOSGeometry] = self.geometry_operations_dict()
-        dicti[Point] = self.point_operations_dict()
-        dicti[Polygon] = self.polygon_operations_dict()
-        dicti[LineString] = self.line_operations_dict()
-        dicti[MultiPoint] = self.point_operations_dict()
-        dicti[MultiPolygon] = self.polygon_operations_dict()
-        dicti[MultiLineString] = self.line_operations_dict()
-        dicti[GeometryCollection] = self.geometry_operations_dict()
-        # all indexes above point to a dict returned by geometry_operations_dict(), direct or indirectly
-        return dicti
+        return {
+            GEOSGeometry: self.geometry_operations_dict(),
+            Point: self.point_operations_dict(),
+            Polygon: self.polygon_operations_dict(),
+            LineString: self.line_operations_dict(),
+            MultiPoint: self.point_operations_dict(),
+            MultiPolygon: self.polygon_operations_dict(),
+            MultiLineString: self.line_operations_dict(),
+            GeometryCollection: self.geometry_operations_dict()
+        }
 
     def dict_by_type_primitive_operations_dict(self):
-        d = {}
-        d[int]= self.int_operations_dict()
-        d[float]= self.float_operations_dict()
-        d[date]= self.date_operations_dict()
-        d[str]= self.string_operations_dict()
-
-        return d
+        return {
+            int: self.int_operations_dict(),
+            float: self.float_operations_dict(),
+            date: self.date_operations_dict(),
+            str: self.string_operations_dict()
+        }
 
     def dict_all_operation_dict(self):
         d =  self.dict_by_type_geometry_operations_dict()
@@ -769,13 +677,14 @@ class BaseOperationController(object):
         d.update(self.string_operations_dict())
         d.update(self.geometry_operations_dict())
         d.update(self.generic_object_operations_dict())
+
         return d
 
     def is_operation(self, an_object, name):
         if isinstance(an_object, BusinessModel):
             return an_object.is_operation(name)#return hasattr(an_object, name) and callable(getattr(an_object, name))
 
-        a_type=type(an_object)
+        a_type = type(an_object)
         if a_type not in self.dict_all_operation_dict():
             return False
 
@@ -785,7 +694,8 @@ class BaseOperationController(object):
     def operation_has_parameters(self, an_object, att_or_method_name):
         if isinstance(an_object, BusinessModel):
             return an_object.operation_has_parameters(att_or_method_name)
-        a_type=type(an_object)
+
+        a_type = type(an_object)
 
         #if isinstance(an_object, GeometryCollection):
         #    return att_or_method_name in self.dict_all_operation_dict()
@@ -795,9 +705,9 @@ class BaseOperationController(object):
 
         operation_dict = self.dict_all_operation_dict()[a_type]
         if att_or_method_name in operation_dict:
-
             type_called = operation_dict[att_or_method_name]
             return len(type_called.get_parameters()) > 0
+
         return False
 
 class RasterOperationController(BaseOperationController):
@@ -834,27 +744,27 @@ class RasterOperationController(BaseOperationController):
 
     def dict_all_operation_dict(self):
         return {
-            self.bands_operation_name:          Type_Called('bands', {}, object),
-            self.destructor_operation_name:     Type_Called('destructor', {}, object),        # not a Raster operation (is Band operation)
-            self.driver_operation_name:         Type_Called('driver', {}, str),
-            self.extent_operation_name:         Type_Called('extent', {}, str),
-            self.geotransform_operation_name:   Type_Called('geotransform', {}, object),
-            self.height_operation_name:         Type_Called('height', {}, int),
-            self.info_operation_name:           Type_Called('info', {}, str),
-            self.metadata_operation_name:       Type_Called('metadata', {}, str),
-            self.name_operation_name:           Type_Called('name', {}, str),
-            self.origin_operation_name:         Type_Called('origin', {}, str),
-            self.ptr_operation_name:            Type_Called('ptr', {}, object),                        # not Raster operation (is Band operation)
-            self.ptr_type_operation_name:       Type_Called('ptr_type', {}, object),               # not Raster operation (is Band operation)
-            self.scale_operation_name:          Type_Called('scale', {}, list),
-            self.skew_operation_name:           Type_Called('skew', {}, object),
-            self.srid_operation_name:           Type_Called('srid', {}, int),
-            self.srs_operation_name:            Type_Called('srs', {}, SpatialReference),
-            self.transform_operation_name:      Type_Called('transform', INT_PARAM_REPRESENTATIONS_DICT, GDALRaster),      # missing 'srid' parameter
-            self.vsi_buffer_operation_name:     Type_Called('vsi_buffer', {}, bytes),            # Encoding error
-            self.warp_operation_name:           Type_Called('warp', {}, object),                       # missing arguments and Raster return type
-            self.width_operation_name:          Type_Called('width', {}, object),
-            self.projection_operation_name:     Type_Called('projection', TUPLE_PARAM_REPRESENTATIONS_DICT, object)
+            self.bands_operation_name:          Type_Called('bands', [], object),
+            self.destructor_operation_name:     Type_Called('destructor', [], object),        # not a Raster operation (is Band operation)
+            self.driver_operation_name:         Type_Called('driver', [], str),
+            self.extent_operation_name:         Type_Called('extent', [], str),
+            self.geotransform_operation_name:   Type_Called('geotransform', [], object),
+            self.height_operation_name:         Type_Called('height', [], int),
+            self.info_operation_name:           Type_Called('info', [], str),
+            self.metadata_operation_name:       Type_Called('metadata', [], str),
+            self.name_operation_name:           Type_Called('name', [], str),
+            self.origin_operation_name:         Type_Called('origin', [], str),
+            self.ptr_operation_name:            Type_Called('ptr', [], object),                  # not Raster operation (is Band operation)
+            self.ptr_type_operation_name:       Type_Called('ptr_type', [], object),             # not Raster operation (is Band operation)
+            self.scale_operation_name:          Type_Called('scale', [], list),
+            self.skew_operation_name:           Type_Called('skew', [], object),
+            self.srid_operation_name:           Type_Called('srid', [], int),
+            self.srs_operation_name:            Type_Called('srs', [], SpatialReference),
+            self.transform_operation_name:      Type_Called('transform', [int], GDALRaster),     # missing 'srid' parameter
+            self.vsi_buffer_operation_name:     Type_Called('vsi_buffer', [], bytes),            # Encoding error
+            self.warp_operation_name:           Type_Called('warp', [], object),                 # missing arguments and Raster return type
+            self.width_operation_name:          Type_Called('width', [], object),
+            self.projection_operation_name:     Type_Called('projection', [property], object)
         }
 
 class CollectionResourceOperationController(BaseOperationController):
@@ -894,11 +804,11 @@ class CollectionResourceOperationController(BaseOperationController):
     '''
 
     def internal_collection_operations_dict(self):
-        dict = {}
-        dict[self.filter_and_collect_collection_operation_name] = Type_Called(self.filter_and_collect_collection_operation_name, LIST_PARAM_REPRESENTATIONS_DICT, object)
-        dict[self.filter_and_count_resource_collection_operation_name] = Type_Called(self.filter_and_count_resource_collection_operation_name, LIST_PARAM_REPRESENTATIONS_DICT, int)
-        dict[self.offset_limit_and_collect_collection_operation_name] = Type_Called(self.offset_limit_and_collect_collection_operation_name, LIST_PARAM_REPRESENTATIONS_DICT, object)
-        return dict
+        return {
+            self.filter_and_collect_collection_operation_name: Type_Called(self.filter_and_collect_collection_operation_name, [list], object),
+            self.filter_and_count_resource_collection_operation_name: Type_Called(self.filter_and_count_resource_collection_operation_name, [list], int),
+            self.offset_limit_and_collect_collection_operation_name: Type_Called(self.offset_limit_and_collect_collection_operation_name, [list], object)
+        }
 
     '''
     def collect_operations_dict(self):
@@ -912,13 +822,13 @@ class CollectionResourceOperationController(BaseOperationController):
         # Abstract collection Operations
     def collection_operations_dict(self):
         dict = {
-            self.filter_collection_operation_name:          Type_Called(self.filter_collection_operation_name, Q_OBJECT_PARAM_REPRESENTATION_DICT, object),
-            self.collect_collection_operation_name:         Type_Called(self.collect_collection_operation_name, PROPERTY_PLUS_OPERATION_PARAM_REPRESENTATIONS_DICT, object),
-            self.count_resource_collection_operation_name:  Type_Called(self.count_resource_collection_operation_name, {}, int),
-            self.offset_limit_collection_operation_name:    Type_Called(self.offset_limit_collection_operation_name, INT_PLUS_INT_PARAM_REPRESENTATIONS_DICT, object),
-            self.distinct_collection_operation_name:        Type_Called(self.distinct_collection_operation_name, PROPERTY_PARAM_REPRESENTATIONS_DICT, object),
-            self.group_by_count_collection_operation_name:  Type_Called(self.group_by_count_collection_operation_name, LIST_PARAM_REPRESENTATIONS_DICT, object),
-            self.group_by_sum_collection_operation_name:    Type_Called(self.group_by_sum_collection_operation_name, STR_PLUS_STR_PARAM_REPRESENTATIONS_DICT, object)
+            self.filter_collection_operation_name:          Type_Called(self.filter_collection_operation_name, [Q], object),
+            self.collect_collection_operation_name:         Type_Called(self.collect_collection_operation_name, [property, 'operation'], object),
+            self.count_resource_collection_operation_name:  Type_Called(self.count_resource_collection_operation_name, [], int),
+            self.offset_limit_collection_operation_name:    Type_Called(self.offset_limit_collection_operation_name, [int, int], object),
+            self.distinct_collection_operation_name:        Type_Called(self.distinct_collection_operation_name, [property], object),
+            self.group_by_count_collection_operation_name:  Type_Called(self.group_by_count_collection_operation_name, [list], object),
+            self.group_by_sum_collection_operation_name:    Type_Called(self.group_by_sum_collection_operation_name, [str, str], object),
         }
         dict.update(self.generic_object_operations_dict())
         return dict
@@ -936,36 +846,37 @@ class CollectionResourceOperationController(BaseOperationController):
         return True if len(self.expression_operators_dict()[operator_name].get_parameters()) > 0 else False
 
     def expression_operators_dict(self):
-        d = {}
-        d['neq'] = Type_Called('neq', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['eq'] = Type_Called('eq', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['lt'] = Type_Called('lt', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['lte'] = Type_Called('lte', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['gt'] = Type_Called('gt', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['gte'] = Type_Called('gte', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['between'] = Type_Called('between', OBJECT_PLUS_AND_OPERATOR_PLUS_OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['isnull'] = Type_Called('isnull', {}, None)
-        d['isnotnull'] = Type_Called('isnotnull', {}, None)
-        d['like'] = Type_Called('like', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['notlike'] = Type_Called('notlike', OBJECT_PARAM_REPRESENTATIONS_DICT, None)
-        d['in'] = Type_Called('in', LIST_PARAM_REPRESENTATIONS_DICT, None)
-        d['notin'] = Type_Called('notin', LIST_PARAM_REPRESENTATIONS_DICT, None)
-        return d
+        return {
+            'neq': Type_Called('neq', [object], None),
+            'eq': Type_Called('eq', [object], None),
+            'lt': Type_Called('lt', [object], None),
+            'lte': Type_Called('lte', [object], None),
+            'gt': Type_Called('gt', [object], None),
+            'gte': Type_Called('gte', [object], None),
+            'between': Type_Called('between', [object, 'and', object], None),
+            'isnull': Type_Called('isnull', [], None),
+            'isnotnull': Type_Called('isnotnull', [], None),
+            'like': Type_Called('like', [object], None),
+            'notlike': Type_Called('notlike', [object], None),
+            'in': Type_Called('in', [list], None),
+            'notin': Type_Called('notin', [list], None)
+        }
 
     def expression_logical_operators(self):
-        d = {}
-        d['and'] = Type_Called('and', {}, None)
-        d['or'] = Type_Called('or', {}, None)
+        return {
+            'and': Type_Called('and', [], None),
+            'or': Type_Called('or', [], None),
+        }
         #d['not'] = Type_Called('not', [], None)
-        return d
 
 class SpatialCollectionOperationController(CollectionResourceOperationController):
-
     _instance = None
+
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = object.__new__(cls, *args, **kwargs)
             cls._instance.initialize()
+
         return cls._instance
 
     def initialize(self):
@@ -1005,42 +916,42 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
 
     #Abstract spatial collection Operations
     def spatial_collection_operations_dict(self):
-        dicti = {
-            self.bbcontaining_operation_name:           Type_Called(self.bbcontaining_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.bboverlaping_operation_name:           Type_Called(self.bboverlaping_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.contained_operation_name:              Type_Called(self.contained_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.containing_operation_name:             Type_Called(self.containing_operation_name,GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.containing_properly_operation_name:    Type_Called(self.containing_properly_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.covering_by_operation_name:            Type_Called(self.covering_by_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.covering_operation_name:               Type_Called(self.covering_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.crossing_operation_name:               Type_Called(self.crossing_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.disjointing_operation_name:            Type_Called(self.disjointing_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.intersecting_operation_name:           Type_Called(self.intersecting_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.isvalid_operation_name:                Type_Called(self.isvalid_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.overlaping_operation_name:             Type_Called(self.overlaping_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.relating_operation_name:               Type_Called(self.relating_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.touching_operation_name:               Type_Called(self.touching_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.within_operation_name:                 Type_Called(self.within_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.on_left_operation_name:                Type_Called(self.on_left_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.on_right_operation_name:               Type_Called(self.on_right_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.overlaping_left_operation_name:        Type_Called(self.overlaping_left_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.overlaping_right_operation_name:       Type_Called(self.overlaping_right_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.overlaping_above_operation_name:       Type_Called(self.overlaping_above_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.overlaping_below_operation_name:       Type_Called(self.overlaping_below_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.strictly_above_operation_name:         Type_Called(self.strictly_above_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.strictly_below_operation_name:         Type_Called(self.strictly_below_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.distance_gt_operation_name:            Type_Called(self.distance_gt_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.distance_gte_operation_name:           Type_Called(self.distance_gte_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.distance_lt_operation_name:            Type_Called(self.distance_lt_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.distance_lte_operation_name:           Type_Called(self.distance_lte_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.dwithin_operation_name:                Type_Called(self.dwithin_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, bool),
-
-            self.union_collection_operation_name:       Type_Called(self.union_collection_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, FeatureCollection),
-            self.extent_collection_operation_name:      Type_Called(self.extent_collection_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, list),
-            self.make_line_collection_operation_name:   Type_Called(self.make_line_collection_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, LineString),
+        d = {
+            self.bbcontaining_operation_name: Type_Called(self.bbcontaining_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.bboverlaping_operation_name: Type_Called(self.bboverlaping_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.contained_operation_name: Type_Called(self.contained_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.containing_operation_name: Type_Called(self.containing_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.containing_properly_operation_name: Type_Called(self.containing_properly_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.covering_by_operation_name: Type_Called(self.covering_by_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.covering_operation_name: Type_Called(self.covering_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.crossing_operation_name: Type_Called(self.crossing_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.disjointing_operation_name: Type_Called(self.disjointing_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.intersecting_operation_name: Type_Called(self.intersecting_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.isvalid_operation_name: Type_Called(self.isvalid_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.overlaping_operation_name: Type_Called(self.overlaping_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.relating_operation_name: Type_Called(self.relating_operation_name, [tuple], GEOSGeometry),
+            self.touching_operation_name: Type_Called(self.touching_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.within_operation_name: Type_Called(self.within_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.on_left_operation_name: Type_Called(self.on_left_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.on_right_operation_name: Type_Called(self.on_right_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.overlaping_left_operation_name: Type_Called(self.overlaping_left_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.overlaping_right_operation_name: Type_Called(self.overlaping_right_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.overlaping_above_operation_name: Type_Called(self.overlaping_above_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.overlaping_below_operation_name: Type_Called(self.overlaping_below_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.strictly_above_operation_name: Type_Called(self.strictly_above_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.strictly_below_operation_name: Type_Called(self.strictly_below_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.distance_gt_operation_name: Type_Called(self.distance_gt_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.distance_gte_operation_name: Type_Called(self.distance_gte_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.distance_lt_operation_name: Type_Called(self.distance_lt_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.distance_lte_operation_name: Type_Called(self.distance_lte_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.dwithin_operation_name: Type_Called(self.dwithin_operation_name, [GEOSGeometry], bool),
+            self.union_collection_operation_name: Type_Called(self.union_collection_operation_name, [GEOSGeometry], GEOSGeometry),
+            self.extent_collection_operation_name: Type_Called(self.extent_collection_operation_name, [GEOSGeometry], tuple),
+            self.make_line_collection_operation_name: Type_Called(self.make_line_collection_operation_name, [GEOSGeometry], GEOSGeometry)
         }
-        dicti.update(self.generic_object_operations_dict())
-        return dicti
+
+        d.update(self.generic_object_operations_dict())
+        return d
 
     def feature_collection_operations_dict(self):
         return dict(self.collection_operations_dict(), **self.spatial_collection_operations_dict())
@@ -1059,7 +970,7 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
       if isinstance(an_object, GeometryCollection):
           return name in self.dict_all_operation_dict()
 
-      a_type=type(an_object)
+      a_type = type(an_object)
 
       if a_type not in self.dict_all_operation_dict():
          return False
@@ -1070,35 +981,36 @@ class SpatialCollectionOperationController(CollectionResourceOperationController
     def expression_operators_dict(self):
         d = super(SpatialCollectionOperationController, self).expression_operators_dict()
         d.update({
-            self.bbcontaining_operation_name:       Type_Called(self.bbcontaining_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.bboverlaping_operation_name:       Type_Called(self.bboverlaping_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.contained_operation_name:          Type_Called(self.contained_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.containing_operation_name:         Type_Called(self.containing_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.containing_properly_operation_name:Type_Called(self.containing_properly_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.covering_by_operation_name:        Type_Called(self.covering_by_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.covering_operation_name:           Type_Called(self.covering_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.crossing_operation_name:           Type_Called(self.crossing_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.disjointing_operation_name:        Type_Called(self.disjointing_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.intersecting_operation_name:       Type_Called(self.intersecting_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.isvalid_operation_name:            Type_Called(self.isvalid_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.overlaping_operation_name:         Type_Called(self.overlaping_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.relating_operation_name:           Type_Called(self.relating_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.touching_operation_name:           Type_Called(self.touching_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.within_operation_name:             Type_Called(self.within_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.on_left_operation_name:            Type_Called(self.on_left_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.on_right_operation_name:           Type_Called(self.on_right_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.overlaping_left_operation_name:    Type_Called(self.overlaping_left_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.overlaping_right_operation_name:   Type_Called(self.overlaping_right_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.overlaping_above_operation_name:   Type_Called(self.overlaping_above_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.overlaping_below_operation_name:   Type_Called(self.overlaping_below_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.strictly_above_operation_name:     Type_Called(self.strictly_above_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.strictly_below_operation_name:     Type_Called(self.strictly_below_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.distance_gt_operation_name:        Type_Called(self.distance_gt_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.distance_gte_operation_name:       Type_Called(self.distance_gte_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.distance_lt_operation_name:        Type_Called(self.distance_lt_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.distance_lte_operation_name:       Type_Called(self.distance_lte_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None),
-            self.dwithin_operation_name:            Type_Called(self.dwithin_operation_name, GEOSGEOMETRY_PARAM_REPRESENTATIONS_DICT, None)
+            self.bbcontaining_operation_name: Type_Called(self.bbcontaining_operation_name, [GEOSGeometry], None),
+            self.bboverlaping_operation_name: Type_Called(self.bboverlaping_operation_name, [GEOSGeometry], None),
+            self.contained_operation_name: Type_Called(self.contained_operation_name, [GEOSGeometry], None),
+            self.containing_operation_name: Type_Called(self.containing_operation_name, [GEOSGeometry], None),
+            self.containing_properly_operation_name: Type_Called(self.containing_properly_operation_name, [GEOSGeometry], None),
+            self.covering_by_operation_name: Type_Called(self.covering_by_operation_name, [GEOSGeometry], None),
+            self.covering_operation_name: Type_Called(self.covering_operation_name, [GEOSGeometry], None),
+            self.crossing_operation_name: Type_Called(self.crossing_operation_name, [GEOSGeometry], None),
+            self.disjointing_operation_name: Type_Called(self.disjointing_operation_name, [GEOSGeometry], None),
+            self.intersecting_operation_name: Type_Called(self.intersecting_operation_name, [GEOSGeometry], None),
+            self.isvalid_operation_name: Type_Called(self.isvalid_operation_name, [GEOSGeometry], None),
+            self.overlaping_operation_name: Type_Called(self.overlaping_operation_name, [GEOSGeometry], None),
+            self.relating_operation_name: Type_Called(self.relating_operation_name, [GEOSGeometry], None),
+            self.touching_operation_name: Type_Called(self.touching_operation_name, [GEOSGeometry], None),
+            self.within_operation_name: Type_Called(self.within_operation_name, [GEOSGeometry], None),
+            self.on_left_operation_name: Type_Called(self.on_left_operation_name, [GEOSGeometry], None),
+            self.on_right_operation_name: Type_Called(self.on_right_operation_name, [GEOSGeometry], None),
+            self.overlaping_left_operation_name: Type_Called(self.overlaping_left_operation_name, [GEOSGeometry], None),
+            self.overlaping_right_operation_name: Type_Called(self.overlaping_right_operation_name, [GEOSGeometry], None),
+            self.overlaping_above_operation_name: Type_Called(self.overlaping_above_operation_name, [GEOSGeometry], None),
+            self.overlaping_below_operation_name: Type_Called(self.overlaping_below_operation_name, [GEOSGeometry], None),
+            self.strictly_above_operation_name: Type_Called(self.strictly_above_operation_name, [GEOSGeometry], None),
+            self.strictly_below_operation_name: Type_Called(self.strictly_below_operation_name, [GEOSGeometry], None),
+            self.distance_gt_operation_name: Type_Called(self.distance_gt_operation_name, [GEOSGeometry], None),
+            self.distance_gte_operation_name: Type_Called(self.distance_gte_operation_name, [GEOSGeometry], None),
+            self.distance_lt_operation_name: Type_Called(self.distance_lt_operation_name, [GEOSGeometry], None),
+            self.distance_lte_operation_name: Type_Called(self.distance_lte_operation_name, [GEOSGeometry], None),
+            self.dwithin_operation_name: Type_Called(self.dwithin_operation_name, [GEOSGeometry], None)
         })
+
         return d
 
 class EntryPointResourceOperationController(CollectionResourceOperationController):
@@ -1117,13 +1029,13 @@ class EntryPointResourceOperationController(CollectionResourceOperationControlle
         self.projection_operation_name = 'projection'
 
     def collection_operations_dict(self):
-        dict = {}
-        dict[self.filter_collection_operation_name] = Type_Called(self.filter_collection_operation_name, Q_OBJECT_PARAM_REPRESENTATION_DICT, object)
-        dict[self.collect_collection_operation_name] = Type_Called(self.collect_collection_operation_name, PROPERTY_PLUS_OPERATION_PARAM_REPRESENTATIONS_DICT, object)
-        dict[self.count_resource_collection_operation_name] = Type_Called(self.count_resource_collection_operation_name, {}, int)
-        dict[self.offset_limit_collection_operation_name] = Type_Called(self.offset_limit_collection_operation_name, INT_PLUS_INT_PARAM_REPRESENTATIONS_DICT, object)
-        dict[self.projection_operation_name] = Type_Called(self.projection_operation_name, PROPERTY_PARAM_REPRESENTATIONS_DICT, object)
-        return dict
+        return {
+            self.filter_collection_operation_name: Type_Called(self.filter_collection_operation_name, [Q], object),
+            self.collect_collection_operation_name: Type_Called(self.collect_collection_operation_name, [property, 'operation'], object),
+            self.count_resource_collection_operation_name: Type_Called(self.count_resource_collection_operation_name, [], int),
+            self.offset_limit_collection_operation_name: Type_Called(self.offset_limit_collection_operation_name, [int, int], object),
+            self.projection_operation_name: Type_Called(self.projection_operation_name, [property], object)
+        }
 
 class BusinessModel(models.Model):
     class Meta:
@@ -1266,6 +1178,7 @@ class FeatureModel(SpatialModel):
         geo_object = self.get_spatial_object()
         if geo_object is None:
             return None
+
         return type(geo_object)
 
     def get_geometry_type(self):
