@@ -542,7 +542,7 @@ class BaseOperationController(object):
             self.distance_operation_name:           Type_Called('distance', [GEOSGeometry], float),
             self.empty_operation_name:              Type_Called('empty', [], bool),
             self.envelope_operation_name:           Type_Called('envelope', [], GEOSGeometry),
-            self.equals_operation_name:             Type_Called('equals_exact', [GEOSGeometry, float], bool),
+            self.equals_operation_name:             Type_Called('equals', [GEOSGeometry], bool),
             self.equals_exact_operation_name:       Type_Called('equals_exact', [GEOSGeometry, float], bool),
             self.ewkb_operation_name:               Type_Called('ewkb', [], str),
             self.ewkt_operation_name:               Type_Called('ewkt', [], str),
