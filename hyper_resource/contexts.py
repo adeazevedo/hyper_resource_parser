@@ -528,7 +528,7 @@ class ContextResource:
 
     def supportedOperationsFor(self, object, object_type=None):
         dict = initialize_dict()
-        a_type = object_type if object_type is not None else type(object)
+        a_type = object_type or type(object)
         dict_operations = dict[a_type] if a_type in dict else {}
 
         arr = []
@@ -537,15 +537,15 @@ class ContextResource:
             exps = []
             if v_typed_called.has_parameters:
                 for parameter, representation_list in v_typed_called.get_parameters_and_representations():
-                    reprepresentation_voc_list = [vocabulary(representation) for representation in representation_list]
+                    representation_voc_list = [vocabulary(representation) for representation in representation_list]
                     exps.append({
                         "parameter": vocabulary(parameter),
-                        "represantations": reprepresentation_voc_list
+                        "represantations": representation_voc_list
                     })
 
-            rets = (vocabulary(v_typed_called.return_type) if v_typed_called.return_type in vocabularyDict() else ("NOT FOUND"))
+            rets = vocabulary(v_typed_called.return_type) if v_typed_called.return_type in vocabularyDict() else "NOT FOUND"
             link_id = vocabulary(v_typed_called.name)
-            arr.append( SupportedOperation(operation=k, title=v_typed_called.name, method='GET', expects=exps, returns=rets, type='', link=link_id))
+            arr.append(SupportedOperation(operation=k, title=v_typed_called.name, method='GET', expects=exps, returns=rets, type='', link=link_id))
 
         return [supportedOperation.context() for supportedOperation in arr]
 
