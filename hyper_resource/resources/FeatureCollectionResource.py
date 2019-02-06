@@ -805,8 +805,11 @@ class FeatureCollectionResource(SpatialCollectionResource):
 
             wkt += ',' if i != len(queryset) - 1 else ')'
 
-        if isinstance(queryset[0], FeatureModel):
-            geom_type = queryset[0].get_spatial_object().geom_type
+        if len(queryset):
+            if isinstance(queryset[0], FeatureModel):
+                geom_type = queryset[0].get_spatial_object().geom_type
+        else:
+            geom_type = ''
 
         config = {'wkt': wkt, 'type': geom_type}
         style = self.get_style_file(request)
